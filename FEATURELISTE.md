@@ -56,24 +56,32 @@ Die Zielbereiche funktionieren dabei wie eine kleine **persönliche Verfassung**
 
 Ein Zielbereich kann gerade deshalb wichtig sein, weil er ohne ausdrücklichen Schutz systematisch zu kurz kommen würde.
 
-### Zielhierarchie
+### Flexible Fortschrittsstruktur statt Pflicht-Hierarchie
 
-Die Fortschrittsstruktur soll grundsätzlich so aufgebaut sein:
+Als Denkmodell bleibt folgende Kette nützlich:
 
 **Zielbereich → Ziel → Meilenstein → Aufgabe → klare Handlungsanweisung**
 
-Zusätzlich braucht die Struktur einen **Ist-Stand**, damit echter Fortschritt überhaupt bestimmbar ist.
+Sie darf aber **keine verpflichtende Baumstruktur** sein.
+
+Jede Ebene ist optional:
+- ein Ziel kann direkt einem Zielbereich zugeordnet sein
+- eine Aufgabe kann ohne vorher definierten Meilenstein existieren
+- eine klare Handlungsanweisung kann direkt erfasst und erledigt werden
+- ein bereits geschehener Fortschritt kann erst im Nachhinein eingeordnet werden
+- Zuordnungen können später ergänzt, verändert oder entfernt werden
+
+Zusätzlich kann ein **Ist-Stand** hinterlegt werden, wo er für echten Fortschritt hilfreich ist.
 
 - **Zielbereich:** langfristig wichtiger Lebensbereich bzw. Gut
-- **Ziel:** ein gewünschter konkreterer Zustand innerhalb dieses Bereichs
-- **Meilenstein:** erkennbarer Zwischenzustand auf dem Weg zum Ziel
-- **Aufgabe:** eine begrenzte Handlung, die einen Meilenstein tatsächlich näherbringt
-- **klare Handlungsanweisung:** so konkret, dass in einer unentschlossenen Situation klar ist, was als Nächstes zu tun wäre
-- **Ist-Stand:** wo der betreffende Bereich / das Ziel tatsächlich gerade steht
+- **Ziel:** gewünschter konkreterer Zustand
+- **Meilenstein:** erkennbarer Zwischenzustand
+- **Aufgabe:** begrenzte Handlung
+- **klare Handlungsanweisung:** so konkret, dass unmittelbar klar ist, was getan werden kann
+- **Fortschrittsereignis:** etwas, das tatsächlich geschehen ist und einen Zustand verändert hat
+- **Ist-Stand:** wo ein Bereich oder Ziel tatsächlich gerade steht
 
-Die Kette kann damit auch so gelesen werden:
-
-**persönliche Verfassung → gewünschter Zustand → Ist-Stand → Zwischenzustand → reale Zustandsänderung → nächster konkreter Schritt**
+Wichtig: Ein Fortschrittsereignis muss **nicht vorher geplant** gewesen sein, um als echter Fortschritt zu zählen.
 
 ### Zielbereiche müssen vom User bestimmbar sein
 
@@ -95,30 +103,37 @@ Zu jedem Zielbereich sollte festgehalten werden können:
 
 Damit kann ein Zielbereich bei realen Entscheidungen als legitimer Grund auftreten und muss nicht jedes Mal über ein anderes Ziel gerechtfertigt werden.
 
-### Ziele, Meilensteine, Aufgaben und Anweisungen
+### Ziele, Meilensteine, Aufgaben, Anweisungen und Fortschrittsereignisse
 
-Zu jedem Zielbereich sollen mehrere Ziele angelegt werden können.
+Die App soll sowohl **von oben nach unten** als auch **von unten nach oben** funktionieren.
 
-Zu jedem Ziel:
-- Ist-Stand
-- gewünschter Zustand
-- optionale Begründung
-- Meilensteine
+Von oben nach unten:
+- Zielbereich
+- Ziel
+- optionaler Meilenstein
+- optionale Aufgabe
+- optionale klare Handlungsanweisung
 
-Zu jedem Meilenstein:
-- erkennbare Abschlussbedingung
-- Aufgaben
+Von unten nach oben:
+- etwas wurde konkret getan
+- es wird als Fortschrittsereignis gespeichert
+- erst später wird entschieden, zu welchem Ziel, Meilenstein oder Zielbereich es gehört
 
-Zu jeder Aufgabe:
-- konkrete nächste Handlung
-- bei Bedarf eine noch kleinere, klare Handlungsanweisung
-- optional notwendige Voraussetzungen oder Informationen
+Damit kann PACE auch spontanen echten Fortschritt erfassen, ohne dass vorher die perfekte Struktur gepflegt worden sein muss.
 
 Die unterste Ebene soll besonders dann helfen, wenn die Frage lautet:
 
 **„Ich will echten Fortschritt, aber was könnte ich jetzt konkret tun?“**
 
-Die App soll dann nicht aus dem Nichts generische Produktivitätsvorschläge erzeugen, sondern aus der persönlichen Lebenslandkarte **reale nächste Schritte** anbieten.
+Die App soll dann nicht aus dem Nichts generische Produktivitätsvorschläge erzeugen, sondern aus der persönlichen Lebenslandkarte reale nächste Schritte anbieten.
+
+### Mehrfachzuordnung statt Ausschluss
+
+Ziele, Meilensteine, Aufgaben und Fortschrittsereignisse dürfen zu **mehreren Zielbereichen gleichzeitig** gehören.
+
+Ein Schritt kann gleichzeitig mehreren langfristigen Gütern dienen. Die App soll solche Überschneidungen sichtbar machen, nicht künstlich eine einzige Schublade erzwingen.
+
+Technisch ist deshalb eher ein **Netz aus Beziehungen** sinnvoll als ein starrer Baum.
 
 ### Fortschritt ist trotzdem keine tägliche Pflicht
 
@@ -206,6 +221,29 @@ Kompetenz ist nicht dasselbe wie echter Fortschritt.
 Ein Tag kann ein starkes Kompetenzerleben enthalten, obwohl sich langfristig kaum etwas verändert hat. Umgekehrt kann echter Fortschritt auch durch eher unspektakuläre Schritte entstehen.
 
 Kompetenz sollte möglichst an konkretes eigenes Tun gebunden sein und nicht von äußerer Bestätigung abhängen.
+
+
+## 5a. Private Beispielsammlung für alle PACE-Bereiche
+
+PACE soll gute, konkrete Beispiele aus dem eigenen Leben privat archivieren können – nicht nur Resonanzmomente.
+
+Mögliche Sammlungen:
+- Kompetenzerlebnisse
+- echte Fortschrittsereignisse
+- Resonanzerlebnisse
+- gelungene Reserve-Entscheidungen
+
+Zweck:
+- in unklaren oder „meh“-Situationen nachsehen können, wie der jeweilige Bereich im eigenen Leben tatsächlich aussehen kann
+- abstrakte Begriffe mit persönlichen Beispielen füllen
+- gute Muster wiedererkennen, ohne daraus tägliche Sollwerte zu machen
+- später neue Vorschläge oder nächste Schritte aus realen eigenen Erfahrungen ableiten
+
+Wichtig:
+- persönliche Beispiele bleiben privat
+- keine Streaks, Punkte oder Häufigkeitsziele
+- Beispiele dürfen nachträglich kategorisiert und mehreren Bereichen zugeordnet werden
+- Archivieren ist optional; ein gutes Ereignis muss nicht dokumentiert werden, um zu zählen
 
 ## 6. „Meh“-Modus
 
