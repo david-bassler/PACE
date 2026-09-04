@@ -1,6 +1,6 @@
 import { KEYS, dateKey, loadJSON, nowIso, saveJSON } from '../core/storage.js';
 import { $, $$, announce, emptyMessage, openDialog } from '../core/ui.js';
-import { loadTables, replaceTables, upsertRow } from '../core/google.js';
+import { isConnected, loadTables, replaceTables, upsertRow } from '../core/google.js';
 import { markDirty, registerSync } from '../core/sync.js';
 
 export const META = {
