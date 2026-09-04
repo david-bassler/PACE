@@ -37,6 +37,7 @@
     <section class="today-panel" aria-labelledby="todayTitle">
       <div class="section-head"><div><p class="micro">HEUTE</p><h2 id="todayTitle">Ein hinreichend guter Tag</h2></div><button id="resetDay" class="quiet-button" type="button">Neu</button></div>
       <div id="todaySummary" class="today-summary" aria-live="polite"></div>
+      <div id="smallDayNote" class="small-day-note" hidden><div><strong>Heute kleiner.</strong><p id="smallDayCopy"></p></div><button id="smallDayClear" class="tiny-button" type="button">Wieder öffnen</button></div>
     </section>
 
     <section class="feature-card meh-home" aria-labelledby="mehHomeTitle">
@@ -51,6 +52,11 @@
         <button id="nextProgressAction" class="secondary-button" type="button">Was könnte ich tun?</button>
         <button id="openProgress" class="secondary-button" type="button">Lebenslandkarte</button>
       </div>
+    </section>
+
+    <section class="feature-card space-home" aria-labelledby="spaceHomeTitle">
+      <div><p class="micro">RAUM SCHAFFEN</p><h2 id="spaceHomeTitle">Nicht alles muss im Kopf bleiben.</h2><p class="hint">Offene Schleifen parken, den Tag verkleinern oder einen schönen Moment einfach behalten.</p></div>
+      <div class="feature-actions"><button id="openParking" class="secondary-button" type="button">Etwas parken</button><button id="shrinkDay" class="secondary-button" type="button">Tag verkleinern</button><button id="openKeep" class="primary-button" type="button">Das behalten</button></div>
     </section>
 
     <button id="stuckButton" class="stuck-button" type="button"><span aria-hidden="true">↯</span><span><strong>Ich stecke fest</strong><small>Raus aus der Schleife, rein in den nächsten Schritt</small></span></button>
@@ -69,7 +75,37 @@
 
   <dialog id="choiceDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><div><p id="choiceMicro" class="micro"></p><h2 id="choiceTitle"></h2><p id="choiceHint" class="hint"></p><div class="choice-actions"><button id="choiceUse" class="primary-button" type="button">Für heute auswählen</button><button id="choiceAnother" class="secondary-button" type="button">Anderen Vorschlag</button></div></div></dialog>
   <dialog id="stuckDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><div><p class="micro">FESTSTECKEN IST EIN SIGNAL</p><h2>Was bringt wieder Bewegung hinein?</h2><p class="hint">Nicht lösen müssen. Nur die Schleife unterbrechen.</p><div id="stuckChoices" class="dialog-list"></div></div></dialog>
-  <dialog id="eveningDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><form id="eveningForm" class="evening-form"><p class="micro">ABENDABSCHLUSS</p><h2>Was darf von heute bleiben?</h2><label><span>Was ist weiter als heute Morgen?</span><textarea id="eveningProgress" rows="3" maxlength="1000"></textarea></label><label><span>Was war heute lebendig oder gut?</span><textarea id="eveningResonance" rows="3" maxlength="1000"></textarea></label><label><span>Was habe ich mir heute erspart?</span><textarea id="eveningReserve" rows="3" maxlength="1000"></textarea></label><button class="primary-button" type="submit">Tag schließen</button></form></dialog>
+  <dialog id="eveningDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><form id="eveningForm" class="evening-form"><p class="micro">ABENDABSCHLUSS</p><h2>Was darf von heute bleiben?</h2><div id="eveningKeeps" class="evening-keeps" hidden></div><label><span>Was ist weiter als heute Morgen?</span><textarea id="eveningProgress" rows="3" maxlength="1000"></textarea></label><label><span>Was war heute lebendig oder gut?</span><textarea id="eveningResonance" rows="3" maxlength="1000"></textarea></label><label><span>Was habe ich mir heute erspart?</span><textarea id="eveningReserve" rows="3" maxlength="1000"></textarea></label><button class="primary-button" type="submit">Tag schließen</button></form></dialog>
+
+  <dialog id="parkingDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div><p class="micro">PARKEN</p><h2>Für jetzt aus dem Kopf.</h2><p class="hint">Nicht lösen. Nur festhalten, was offen ist und wie du wieder hineinkommst.</p>
+      <div id="parkedList" class="library-list"></div>
+      <form id="parkForm" class="stack-form">
+        <label><span>Was ist offen?</span><textarea id="parkText" rows="3" maxlength="1600" required></textarea></label>
+        <label><span>Nächster Schritt <small>(optional)</small></span><input id="parkNext" maxlength="700"></label>
+        <label><span>Wann / wodurch wieder aufnehmen? <small>(optional)</small></span><input id="parkResume" maxlength="500"></label>
+        <button class="primary-button" type="submit">Für jetzt parken</button>
+      </form>
+    </div>
+  </dialog>
+
+  <dialog id="keepDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div><p class="micro">DAS BEHALTEN</p><h2>Ein Satz reicht.</h2><p class="hint">Kein Tagebuchzwang. Nur etwas markieren, das du heute vielleicht noch einmal ansehen möchtest.</p>
+      <div id="keepList" class="keep-list"></div>
+      <form id="keepForm" class="stack-form"><label><span>Was möchtest du behalten?</span><textarea id="keepText" rows="4" maxlength="2000" required></textarea></label><button class="primary-button" type="submit">Für heute behalten</button></form>
+    </div>
+  </dialog>
+
+  <dialog id="shrinkDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <form id="shrinkForm" class="stack-form dialog-form-clear"><p class="micro">TAG VERKLEINERN</p><h2>Der ursprüngliche Plan ist nicht bindend.</h2><p class="hint">Ein Fokus und etwas, das dafür weg darf. Alles andere bleibt optional.</p>
+      <label><span>Was soll heute wirklich noch weiterkommen? <small>(optional)</small></span><textarea id="shrinkFocus" rows="2" maxlength="1000"></textarea></label>
+      <label><span>Was darf dafür weg, später oder einfacher sein? <small>(optional)</small></span><textarea id="shrinkRelease" rows="2" maxlength="1000"></textarea></label>
+      <button class="primary-button" type="submit">Tag kleiner machen</button>
+    </form>
+  </dialog>
 
   <dialog id="mehDialog" class="dialog">
     <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>

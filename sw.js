@@ -1,8 +1,8 @@
-const CACHE = 'pace-v13';
+const CACHE = 'pace-v14';
 const ASSETS = [
   './', './index.html', './style.css', './manifest.webmanifest', './icon.svg', './icon-maskable.svg',
   './js/main.js', './js/core/storage.js', './js/core/ui.js', './js/core/google.js',
-  './js/features/day.js', './js/features/settings.js', './js/features/progress.js', './js/features/wellbeing.js'
+  './js/features/day.js', './js/features/settings.js', './js/features/progress.js', './js/features/wellbeing.js', './js/features/space.js'
 ];
 
 self.addEventListener('install', event => {

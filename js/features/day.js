@@ -16,7 +16,7 @@ let energy = localStorage.getItem(KEYS.energy) || 'normal';
 let syncTimer = null;
 
 function blankDay() {
-  return { date: dateKey(), selections: {}, done: {}, stuckCount: 0, rescue: '', evening: { progress: '', resonance: '', reserve: '', closedAt: '' }, updatedAt: nowIso() };
+  return { date: dateKey(), selections: {}, done: {}, stuckCount: 0, rescue: '', smallDay: { active: false, focus: '', release: '' }, evening: { progress: '', resonance: '', reserve: '', closedAt: '' }, updatedAt: nowIso() };
 }
 
 let state = (() => {
@@ -181,12 +181,25 @@ function renderEvening() {
   $('eveningStatus').textContent = state.evening.closedAt ? 'Abgeschlossen. Der Tag darf jetzt zu sein.' : '';
 }
 
+function renderSmallDay() {
+  const small = state.smallDay || { active: false, focus: '', release: '' };
+  const note = $('smallDayNote');
+  note.hidden = !small.active;
+  document.body.classList.toggle('small-day-active', Boolean(small.active));
+  if (!small.active) return;
+  const parts = [];
+  if (small.focus) parts.push(`Fokus: ${small.focus}`);
+  if (small.release) parts.push(`Dafür darf weg: ${small.release}`);
+  $('smallDayCopy').textContent = parts.join(' · ') || 'Alles außer dem Nötigen ist heute optional.';
+}
+
 function renderAll() {
   renderEnergy();
   renderReserve();
   renderSummary();
   renderRescue();
   renderEvening();
+  renderSmallDay();
 }
 
 function renderSuggestions(key) {
@@ -300,6 +313,11 @@ export function initDayFeature() {
   });
   $('stuckButton').addEventListener('click', openStuck);
   $('resetDay').addEventListener('click', resetDay);
+  $('smallDayClear').addEventListener('click', () => {
+    state.smallDay = { active: false, focus: '', release: '' };
+    saveDay();
+    renderAll();
+  });
   $('eveningButton').addEventListener('click', () => {
     $('eveningProgress').value = state.evening.progress || '';
     $('eveningResonance').value = state.evening.resonance || '';
@@ -326,5 +344,10 @@ export function googleConnectedDay() {
 }
 
 export function getDayState() { return structuredClone(state); }
+export function setSmallDay(next) {
+  state.smallDay = { active: Boolean(next?.active), focus: next?.focus || '', release: next?.release || '' };
+  saveDay();
+  renderAll();
+}
 export function getSuggestions(key) { return [...(content.lists[key] || [])]; }
 export function addProgressSelection(text) { choose('A', text); }
