@@ -637,12 +637,6 @@
       setGoogleStatus("Noch keine privaten Inhalte für "+META[key].title+" geladen.");
       return;
     }
-    if(key!=="C"&&!state.selections.C&&(content.lists.C||[]).length){
-      openPanel("C");
-      $("reserveFirst").scrollIntoView({behavior:"smooth",block:"center"});
-      return;
-    }
-
     const p=$("suggestions-"+key);
     const opening=p.hidden;
     rows.forEach(other=>{
