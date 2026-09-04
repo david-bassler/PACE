@@ -39,6 +39,11 @@
       <div id="todaySummary" class="today-summary" aria-live="polite"></div>
     </section>
 
+    <section class="feature-card meh-home" aria-labelledby="mehHomeTitle">
+      <div><p class="micro">WENN DER TAG EINFACH „MEH“ IST</p><h2 id="mehHomeTitle">Ich weiß gerade nicht so recht.</h2><p class="hint">Keine Krisenfunktion. Nur ein Weg zurück zu einer Richtung, wenn gerade nichts richtig zieht.</p></div>
+      <div class="feature-actions"><button id="openMeh" class="primary-button" type="button">Was könnte jetzt gut sein?</button><button id="openLibrary" class="secondary-button" type="button">Eigene Beispiele</button><button id="openExplanations" class="quiet-button" type="button">Gedanken dahinter</button></div>
+    </section>
+
     <section class="feature-card progress-home" aria-labelledby="progressHomeTitle">
       <div><p class="micro">ECHTER FORTSCHRITT</p><h2 id="progressHomeTitle">Persönliche Verfassung</h2><p id="progressOverview" class="hint">Die Lebenslandkarte wird privat gespeichert.</p></div>
       <div class="feature-actions">
@@ -65,6 +70,49 @@
   <dialog id="choiceDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><div><p id="choiceMicro" class="micro"></p><h2 id="choiceTitle"></h2><p id="choiceHint" class="hint"></p><div class="choice-actions"><button id="choiceUse" class="primary-button" type="button">Für heute auswählen</button><button id="choiceAnother" class="secondary-button" type="button">Anderen Vorschlag</button></div></div></dialog>
   <dialog id="stuckDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><div><p class="micro">FESTSTECKEN IST EIN SIGNAL</p><h2>Was bringt wieder Bewegung hinein?</h2><p class="hint">Nicht lösen müssen. Nur die Schleife unterbrechen.</p><div id="stuckChoices" class="dialog-list"></div></div></dialog>
   <dialog id="eveningDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><form id="eveningForm" class="evening-form"><p class="micro">ABENDABSCHLUSS</p><h2>Was darf von heute bleiben?</h2><label><span>Was ist weiter als heute Morgen?</span><textarea id="eveningProgress" rows="3" maxlength="1000"></textarea></label><label><span>Was war heute lebendig oder gut?</span><textarea id="eveningResonance" rows="3" maxlength="1000"></textarea></label><label><span>Was habe ich mir heute erspart?</span><textarea id="eveningReserve" rows="3" maxlength="1000"></textarea></label><button class="primary-button" type="submit">Tag schließen</button></form></dialog>
+
+  <dialog id="mehDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div><p class="micro">MEH</p><h2>Was würde diesen Abschnitt des Tages ein kleines Stück besser machen?</h2>
+      <p class="hint">Nur eine Richtung wählen. Nicht vier Dinge erledigen.</p>
+      <div class="meh-grid">
+        <button type="button" data-meh="A"><strong>Etwas weiterbringen</strong><small>echter Fortschritt</small></button>
+        <button type="button" data-meh="P"><strong>Etwas können</strong><small>Kompetenz erleben</small></button>
+        <button type="button" data-meh="E"><strong>Etwas erleben lassen</strong><small>Resonanz ermöglichen</small></button>
+        <button type="button" data-meh="C"><strong>Etwas weglassen</strong><small>Reserve schaffen</small></button>
+      </div>
+      <div id="mehResult" class="meh-result"></div>
+      <button id="mehAnother" class="secondary-button" type="button">Noch eine Möglichkeit in dieser Richtung</button>
+    </div>
+  </dialog>
+
+  <dialog id="libraryDialog" class="dialog wide-dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div><p class="micro">PRIVATE BEISPIELBIBLIOTHEK</p><h2>So sieht das bei mir in echt aus.</h2><p class="hint">Gute Beispiele dürfen später Orientierung geben. Sie werden nicht gezählt und sind keine Pflichtdokumentation.</p>
+      <section class="dialog-section">
+        <h3>Beispiele</h3><div id="libraryExampleList" class="library-list"></div>
+        <form id="exampleForm" class="stack-form">
+          <label><span>PACE-Bereich</span><select id="exampleArea"><option value="P">Kompetenz</option><option value="A">Fortschritt</option><option value="C">Reserve</option><option value="E">Resonanz</option></select></label>
+          <label><span>Kurzer Titel <small>(optional)</small></span><input id="exampleTitle" maxlength="220"></label>
+          <label><span>Was ist passiert?</span><textarea id="exampleText" rows="4" maxlength="2500" required></textarea></label>
+          <button class="primary-button" type="submit">Beispiel privat speichern</button>
+        </form>
+      </section>
+      <section class="dialog-section">
+        <h3>Resonanzchancen</h3><p class="hint">Keine Resonanz-Aufgaben. Nur Dinge, Orte oder Situationen, in denen etwas passieren könnte.</p><div id="resonanceChanceList" class="library-list"></div>
+        <form id="chanceForm" class="stack-form">
+          <label><span>Titel</span><input id="chanceTitle" maxlength="220" required></label>
+          <label><span>Beschreibung <small>(optional)</small></span><textarea id="chanceText" rows="3" maxlength="1500"></textarea></label>
+          <button class="primary-button" type="submit">Resonanzchance speichern</button>
+        </form>
+      </section>
+    </div>
+  </dialog>
+
+  <dialog id="explanationDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div><p class="micro">GEDANKEN DAHINTER</p><h2>PACE griffbereit</h2><p class="hint">Für die Momente, in denen du nicht akut überfordert bist, sondern einfach den Faden verloren hast.</p><div id="explanationList" class="explanation-list"></div></div>
+  </dialog>
 
   <dialog id="progressDialog" class="dialog wide-dialog">
     <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>

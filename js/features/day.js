@@ -326,4 +326,5 @@ export function googleConnectedDay() {
 }
 
 export function getDayState() { return structuredClone(state); }
+export function getSuggestions(key) { return [...(content.lists[key] || [])]; }
 export function addProgressSelection(text) { choose('A', text); }

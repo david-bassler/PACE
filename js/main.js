@@ -1,6 +1,7 @@
 import { initDayFeature } from './features/day.js';
 import { initSettings, setConnectedHandler, setExtraSheetsProvider } from './features/settings.js';
 import { initProgressFeature, progressSheetSpecs, syncProgress } from './features/progress.js';
+import { initWellbeingFeature, syncWellbeing, wellbeingSheetSpecs } from './features/wellbeing.js';
 
 function initServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
@@ -20,7 +21,11 @@ function initServiceWorker() {
 
 initDayFeature();
 initProgressFeature();
-setExtraSheetsProvider(() => progressSheetSpecs);
-setConnectedHandler(syncProgress);
+initWellbeingFeature();
+setExtraSheetsProvider(() => ({ ...progressSheetSpecs, ...wellbeingSheetSpecs }));
+setConnectedHandler(async () => {
+  await syncProgress();
+  await syncWellbeing();
+});
 initSettings();
 initServiceWorker();
