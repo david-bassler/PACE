@@ -1,4 +1,4 @@
-const CACHE="pace-v7";
+const CACHE="pace-v8";
 const ASSETS=[
   "./",
   "./index.html",
@@ -10,15 +10,22 @@ const ASSETS=[
 ];
 
 self.addEventListener("install",event=>{
-  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));
-  self.skipWaiting();
+  event.waitUntil((async()=>{
+    const cache=await caches.open(CACHE);
+    for(const asset of ASSETS){
+      const response=await fetch(new Request(asset,{cache:"reload"}));
+      if(response.ok)await cache.put(asset,response);
+    }
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener("activate",event=>{
-  event.waitUntil(
-    caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key))))
-  );
-  self.clients.claim();
+  event.waitUntil((async()=>{
+    const keys=await caches.keys();
+    await Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)));
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener("fetch",event=>{
@@ -26,13 +33,22 @@ self.addEventListener("fetch",event=>{
   const url=new URL(event.request.url);
   if(url.origin!==self.location.origin)return;
 
-  event.respondWith(
-    caches.match(event.request).then(cached=>
-      cached||fetch(event.request).then(response=>{
-        const copy=response.clone();
-        caches.open(CACHE).then(cache=>cache.put(event.request,copy));
-        return response;
-      }).catch(()=>caches.match("./index.html"))
-    )
-  );
+  event.respondWith((async()=>{
+    try{
+      const response=await fetch(new Request(event.request,{cache:"no-store"}));
+      if(response&&response.ok){
+        const cache=await caches.open(CACHE);
+        cache.put(event.request,response.clone());
+      }
+      return response;
+    }catch(e){
+      const cached=await caches.match(event.request);
+      if(cached)return cached;
+      if(event.request.mode==="navigate"){
+        const fallback=await caches.match("./index.html");
+        if(fallback)return fallback;
+      }
+      throw e;
+    }
+  })());
 });
