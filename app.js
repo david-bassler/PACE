@@ -11,7 +11,8 @@
   const HEADERS = ["Datum","Tagesform","Kompetenz","Kompetenz_erledigt","Fortschritt","Fortschritt_erledigt","Reserve","Reserve_erledigt","Resonanz","Resonanz_erledigt","Feststecken_Anzahl","Abend_Fortschritt","Abend_Resonanz","Abend_Reserve","Abgeschlossen_um","Aktualisiert_um"];
   const DAY_KEY="pace-day-v4";
   const ENERGY_KEY="pace-energy-v4";
-  const CONFIG_KEY="pace-google-config-v2";
+  const CONFIG_KEY="pace-google-config";
+  const LEGACY_CONFIG_KEYS=["pace-google-config-v2","pace-google-config-v1"];
   const CONTENT_KEY="pace-private-content-v1";
   const SCOPE="https://www.googleapis.com/auth/drive.file";
 
@@ -67,8 +68,20 @@
     return ["P","A","C","E"].some(k=>content.lists[k].length)||content.stuck.length;
   }
   function loadConfig(){
-    try{return Object.assign({clientId:"",sheetId:""},JSON.parse(localStorage.getItem(CONFIG_KEY)||"{}"));}
-    catch(e){return {clientId:"",sheetId:""};}
+    const empty={clientId:"",sheetId:""};
+    try{
+      const current=localStorage.getItem(CONFIG_KEY);
+      if(current) return Object.assign({},empty,JSON.parse(current));
+
+      for(const key of LEGACY_CONFIG_KEYS){
+        const legacy=localStorage.getItem(key);
+        if(!legacy) continue;
+        const migrated=Object.assign({},empty,JSON.parse(legacy));
+        localStorage.setItem(CONFIG_KEY,JSON.stringify(migrated));
+        return migrated;
+      }
+    }catch(e){}
+    return empty;
   }
   function extractSheetId(v){
     const m=v.match(/\/spreadsheets\/d\/([A-Za-z0-9_-]+)/);
