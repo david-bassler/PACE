@@ -152,6 +152,35 @@ Mögliche Elemente:
 - Reserve-Frage
 - Möglichkeit: „Nichts davon – später nochmal“
 
+
+
+## 6a. Sammlung konkreter Resonanzmomente
+
+PACE soll eine **private** Sammlung kurzer Beschreibungen realer Resonanzerlebnisse enthalten.
+
+Nicht als Tagebuchpflicht und nicht als Leistungsnachweis, sondern als Resonanzbibliothek: kleine Szenen, die tatsächlich einmal schön, lebendig, witzig, warm oder nachhallend waren.
+
+### Zweck
+
+Diese Texte sollen besonders in „meh“-Situationen griffbereit sein.
+
+Mögliche Wirkung:
+- erinnern, wie Resonanz persönlich tatsächlich aussehen kann
+- Aufmerksamkeit wieder für kleine, ungeplante Dinge öffnen
+- zeigen, dass Resonanz nicht groß oder spektakulär sein muss
+- eventuell schon durch das Lesen selbst einen kleinen positiven Nachhall erzeugen
+- Ideen für Umgebungen oder Situationen geben, in denen wieder etwas passieren darf
+
+Wichtig:
+- **keine persönlichen Resonanztexte im öffentlichen GitHub-Repo**
+- persönliche Einträge nur im privaten Backend / privaten Projektmaterial
+- keine Pflicht, täglich etwas einzutragen
+- keine Bewertung oder Zählung
+- nicht „heute noch Resonanz erzeugen“
+- eher: **„So kann sich ein guter Moment bei mir anfühlen.“**
+
+Die Sammlung sollte leicht durchblätterbar sein, z. B. per Zufallskarte oder kurzem Feed, ohne endloses Scrollen und ohne Algorithmus, der daraus neue Anforderungen macht.
+
 ## 7. Akute Feststecken-Situationen
 
 Davon getrennt bleibt der bestehende „Ich stecke fest“-Mechanismus.
