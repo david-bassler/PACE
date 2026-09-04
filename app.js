@@ -399,7 +399,7 @@
 
   async function api(url,options={}){
     if(!accessToken)throw new Error("Bitte zuerst mit Google verbinden.");
-    const headers=Object.assign({},options.headers||{},Authorization:"Bearer "+accessToken);
+    const headers=Object.assign({},options.headers||{},{"Authorization":"Bearer "+accessToken});
     if(options.body&&!headers["Content-Type"])headers["Content-Type"]="application/json";
 
     const r=await fetch(url,Object.assign({},options,{headers}));
