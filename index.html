@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173f5f">
+  <meta name="description" content="PACE – Kompetenz, Fortschritt, Reserve und Resonanz für einen tragfähigen Tag.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <title>PACE – Für heute</title>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <div class="hero-art" aria-hidden="true"><span class="sun"></span><span class="hill h1"></span><span class="hill h2"></span><span class="path"></span></div>
+      <div class="top-actions"><span id="syncDot" class="sync-dot" title="Lokal gespeichert"></span><button id="settingsButton" class="icon-button" type="button" aria-label="Einstellungen">⚙</button></div>
+      <p class="eyebrow">FÜR HEUTE</p><h1>PACE</h1><p class="tagline">In einem Tempo, das morgen noch möglich ist.</p>
+    </header>
+
+    <section class="energy-strip" aria-labelledby="energyTitle">
+      <div><p class="micro">TAGESFORM</p><h2 id="energyTitle">Was ist heute realistisch?</h2></div>
+      <div class="segmented" role="group" aria-label="Tagesform">
+        <button type="button" data-energy="low">wenig</button><button type="button" data-energy="normal" class="active">normal</button><button type="button" data-energy="good">viel</button>
+      </div><p id="energyHint" class="hint"></p>
+    </section>
+
+    <section id="reserveFirst" class="reserve-first" aria-labelledby="reserveFirstTitle">
+      <div class="reserve-first-head"><span class="reserve-badge">C</span><div><p class="micro">RESERVE ZUERST</p><h2 id="reserveFirstTitle">Was muss heute nicht auch noch sein?</h2></div></div>
+      <p class="hint">Plane Entlastung, bevor der Tag sie dir abverlangt.</p><div id="reserveFirstChoices" class="quick-choices"></div>
+      <button id="moreReserve" class="secondary-button" type="button">Alle Reserve-Vorschläge</button>
+    </section>
+
+    <section class="today-panel" aria-labelledby="todayTitle">
+      <div class="section-head"><div><p class="micro">HEUTE</p><h2 id="todayTitle">Ein hinreichend guter Tag</h2></div><button id="resetDay" class="quiet-button" type="button">Neu</button></div>
+      <div id="todaySummary" class="today-summary" aria-live="polite"></div><p id="enoughNote" class="enough-note" hidden>Für heute ist genug ausgewählt. Mehr ist optional.</p>
+    </section>
+
+    <button id="stuckButton" class="stuck-button" type="button"><span aria-hidden="true">↯</span><span><strong>Ich stecke fest</strong><small>Raus aus der Schleife, rein in den nächsten Schritt</small></span></button>
+    <div id="rescueCurrent" class="rescue-current" hidden aria-live="polite"></div>
+
+    <section class="pace-list" aria-label="PACE Bereiche">
+      <button class="pace-row" type="button" data-key="P" aria-expanded="false"><span class="letter letter-p">P</span><span class="row-copy"><strong>Proficiency</strong><span>Kompetenz · Ich nutze, was ich kann.</span><small data-chosen="P">Vorschläge anzeigen</small></span><span class="chevron" aria-hidden="true">⌄</span></button><div class="suggestions" id="suggestions-P" hidden></div>
+      <button class="pace-row" type="button" data-key="A" aria-expanded="false"><span class="letter letter-a">A</span><span class="row-copy"><strong>Advancement</strong><span>Fortschritt · Etwas ist abends weiter.</span><small data-chosen="A">Vorschläge anzeigen</small></span><span class="chevron" aria-hidden="true">⌄</span></button><div class="suggestions" id="suggestions-A" hidden></div>
+      <button class="pace-row" type="button" data-key="C" aria-expanded="false"><span class="letter letter-c">C</span><span class="row-copy"><strong>Capacity</strong><span>Reserve · Ich lasse etwas übrig.</span><small data-chosen="C">Vorschläge anzeigen</small></span><span class="chevron" aria-hidden="true">⌄</span></button><div class="suggestions" id="suggestions-C" hidden></div>
+      <button class="pace-row" type="button" data-key="E" aria-expanded="false"><span class="letter letter-e">E</span><span class="row-copy"><strong>Echo</strong><span>Resonanz · Ich ermögliche etwas, das nachhallt.</span><small data-chosen="E">Vorschläge anzeigen</small></span><span class="chevron" aria-hidden="true">⌄</span></button><div class="suggestions" id="suggestions-E" hidden></div>
+    </section>
+
+    <section class="evening-card" aria-labelledby="eveningTitle"><div><p class="micro">ABENDS</p><h2 id="eveningTitle">Den Tag schließen</h2><p class="hint">Drei Fragen. Keine Note.</p></div><button id="eveningButton" class="primary-button" type="button">Abendabschluss öffnen</button><p id="eveningStatus" class="subtle"></p></section>
+    <footer><p>Nicht alles. Sondern das Richtige.</p><strong>Und genug übrig für morgen.</strong></footer>
+  </main>
+
+  <dialog id="choiceDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><div id="choiceDialogContent"></div></dialog>
+  <dialog id="stuckDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><div><p class="micro">FESTSTECKEN IST EIN SIGNAL</p><h2>Was bringt wieder Bewegung hinein?</h2><p class="hint">Nicht lösen müssen. Nur die Schleife unterbrechen.</p><div id="stuckChoices" class="dialog-list"></div></div></dialog>
+  <dialog id="eveningDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><form id="eveningForm" class="evening-form"><p class="micro">ABENDABSCHLUSS</p><h2>Was darf von heute bleiben?</h2><label><span>Was ist weiter als heute Morgen?</span><textarea id="eveningProgress" rows="3" maxlength="1000"></textarea></label><label><span>Was war heute lebendig oder gut?</span><textarea id="eveningResonance" rows="3" maxlength="1000"></textarea></label><label><span>Was habe ich mir heute erspart?</span><textarea id="eveningReserve" rows="3" maxlength="1000"></textarea></label><button class="primary-button" type="submit">Tag schließen</button></form></dialog>
+
+  <dialog id="settingsDialog" class="dialog settings-dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div><p class="micro">BACKEND & PWA</p><h2>Google Sheets</h2><p class="hint">PACE funktioniert immer lokal. Google Sheets ist optional und synchronisiert Vorschläge und Tagesdaten.</p>
+      <label class="field-label"><span>OAuth Client-ID</span><input id="clientIdInput" type="text" inputmode="text" autocomplete="off" placeholder="…apps.googleusercontent.com"></label>
+      <label class="field-label"><span>Spreadsheet-ID <small>(optional – kann die App anlegen)</small></span><input id="sheetIdInput" type="text" inputmode="text" autocomplete="off" placeholder="ID aus der Sheets-URL"></label>
+      <div class="settings-actions"><button id="saveGoogleConfig" class="secondary-button" type="button">Einstellungen speichern</button><button id="googleConnect" class="primary-button" type="button">Mit Google verbinden</button><button id="createSheet" class="secondary-button" type="button" disabled>Neues PACE-Sheet anlegen</button><button id="setupSheet" class="secondary-button" type="button" disabled>Sheet einrichten / prüfen</button><button id="syncNow" class="secondary-button" type="button" disabled>Jetzt synchronisieren</button></div>
+      <p id="googleStatus" class="status-box" aria-live="polite">Nicht verbunden. Lokale Speicherung ist aktiv.</p><a id="sheetLink" class="sheet-link" href="#" target="_blank" rel="noopener" hidden>Sheet öffnen ↗</a>
+      <details class="setup-help"><summary>Einmalige Google-Einrichtung</summary><ol><li>In Google Cloud die <strong>Google Sheets API</strong> aktivieren.</li><li>Einen OAuth-Client vom Typ <strong>Web application</strong> anlegen.</li><li>Als autorisierten JavaScript-Ursprung <code>https://david-bassler.github.io</code> eintragen.</li><li>Für lokales Testen zusätzlich z. B. <code>http://localhost:8000</code>.</li><li>Die Client-ID oben eintragen. Kein Client Secret in diese App kopieren.</li></ol></details>
+      <div class="install-area"><h3>Installation</h3><p class="hint">Auf Android kann PACE als App zum Startbildschirm hinzugefügt werden.</p><button id="installButton" class="secondary-button" type="button" hidden>PACE installieren</button></div>
+    </div>
+  </dialog>
+  <script src="https://accounts.google.com/gsi/client" async defer></script><script src="./app.js" defer></script>
+</body></html>
