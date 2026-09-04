@@ -39,6 +39,11 @@
       <div id="todaySummary" class="today-summary" aria-live="polite"></div>
     </section>
 
+    <section class="feature-card progress-home" aria-labelledby="progressHomeTitle">
+      <div><p class="micro">ECHTER FORTSCHRITT</p><h2 id="progressHomeTitle">Persönliche Verfassung</h2><p id="progressOverview" class="hint">Die Lebenslandkarte wird privat gespeichert.</p></div>
+      <button id="openProgress" class="primary-button" type="button">Lebenslandkarte öffnen</button>
+    </section>
+
     <button id="stuckButton" class="stuck-button" type="button"><span aria-hidden="true">↯</span><span><strong>Ich stecke fest</strong><small>Raus aus der Schleife, rein in den nächsten Schritt</small></span></button>
     <div id="rescueCurrent" class="rescue-current" hidden aria-live="polite"></div>
 
@@ -56,6 +61,39 @@
   <dialog id="choiceDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><div><p id="choiceMicro" class="micro"></p><h2 id="choiceTitle"></h2><p id="choiceHint" class="hint"></p><div class="choice-actions"><button id="choiceUse" class="primary-button" type="button">Für heute auswählen</button><button id="choiceAnother" class="secondary-button" type="button">Anderen Vorschlag</button></div></div></dialog>
   <dialog id="stuckDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><div><p class="micro">FESTSTECKEN IST EIN SIGNAL</p><h2>Was bringt wieder Bewegung hinein?</h2><p class="hint">Nicht lösen müssen. Nur die Schleife unterbrechen.</p><div id="stuckChoices" class="dialog-list"></div></div></dialog>
   <dialog id="eveningDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><form id="eveningForm" class="evening-form"><p class="micro">ABENDABSCHLUSS</p><h2>Was darf von heute bleiben?</h2><label><span>Was ist weiter als heute Morgen?</span><textarea id="eveningProgress" rows="3" maxlength="1000"></textarea></label><label><span>Was war heute lebendig oder gut?</span><textarea id="eveningResonance" rows="3" maxlength="1000"></textarea></label><label><span>Was habe ich mir heute erspart?</span><textarea id="eveningReserve" rows="3" maxlength="1000"></textarea></label><button class="primary-button" type="submit">Tag schließen</button></form></dialog>
+
+  <dialog id="progressDialog" class="dialog wide-dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div><p class="micro">FORTSCHRITT IM HINTERGRUND</p><h2>Persönliche Verfassung</h2>
+      <p class="hint">Zielbereiche geben wichtigen Lebensgütern einen eigenen Sitz am Tisch. Die Struktur darunter ist optional: Ziel, Meilenstein, Aufgabe und Anweisung dürfen ausgelassen oder mehrfach zugeordnet werden.</p>
+
+      <section class="dialog-section">
+        <h3>Zielbereiche</h3>
+        <div id="areaList" class="map-list"></div>
+        <form id="areaForm" class="stack-form">
+          <label><span>Name</span><input id="areaName" maxlength="160" required></label>
+          <label><span>Warum gehört das in meine Verfassung?</span><textarea id="areaWhy" rows="2" maxlength="1200"></textarea></label>
+          <label><span>Gewünschter langfristiger Zustand</span><textarea id="areaDesired" rows="2" maxlength="1200"></textarea></label>
+          <label><span>Ist-Stand <small>(optional)</small></span><textarea id="areaCurrent" rows="2" maxlength="1200"></textarea></label>
+          <label><span>Welche Ressourcen darf der Bereich beanspruchen?</span><input id="areaResources" maxlength="500" placeholder="z. B. Zeit, Geld, Aufmerksamkeit"></label>
+          <div class="form-actions"><button id="areaSubmit" class="primary-button" type="submit">Zielbereich anlegen</button><button id="areaCancel" class="secondary-button" type="button" hidden>Abbrechen</button></div>
+        </form>
+      </section>
+
+      <section class="dialog-section">
+        <h3>Struktur darunter <small>– nur soweit hilfreich</small></h3>
+        <div id="progressItemList" class="progress-list"></div>
+        <form id="itemForm" class="stack-form">
+          <label><span>Typ</span><select id="itemType"><option>Ziel</option><option>Meilenstein</option><option>Aufgabe</option><option>Anweisung</option></select></label>
+          <label><span>Text</span><input id="itemText" maxlength="300" required></label>
+          <label><span>Details <small>(optional)</small></span><textarea id="itemDetails" rows="2" maxlength="1500"></textarea></label>
+          <fieldset><legend>Zielbereiche <small>– mehrere möglich</small></legend><div id="itemAreas" class="check-chip-row"></div></fieldset>
+          <label><span>Gehört unter <small>(optional, mehrere möglich)</small></span><select id="itemParents" multiple size="4"></select></label>
+          <div class="form-actions"><button id="itemSubmit" class="primary-button" type="submit">Element anlegen</button><button id="itemCancel" class="secondary-button" type="button" hidden>Abbrechen</button></div>
+        </form>
+      </section>
+    </div>
+  </dialog>
 
   <dialog id="settingsDialog" class="dialog settings-dialog">
     <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
