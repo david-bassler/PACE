@@ -1,6 +1,7 @@
 import { loadJSON, nowIso, saveJSON, uid, dateKey } from '../core/storage.js';
 import { $, announce, emptyMessage, openDialog, option } from '../core/ui.js';
-import { isConnected, loadTable, replaceTable } from '../core/google.js';
+import { loadTables, replaceTables } from '../core/google.js';
+import { markDirty, registerSync } from '../core/sync.js';
 import { addProgressSelection } from './day.js';
 
 const KEY = 'pace-progress-v1';
@@ -20,7 +21,6 @@ data.areas ||= []; data.items ||= []; data.events ||= [];
 let editingAreaId = '';
 let editingItemId = '';
 let editingEventId = '';
-let syncTimer = null;
 let actionOffset = 0;
 
 function splitIds(value) { return String(value || '').split(';').map(v => v.trim()).filter(Boolean); }
@@ -45,29 +45,22 @@ function mergeById(local, remote) {
 function persist(sync = true) {
   saveJSON(KEY, data);
   renderProgress();
-  if (sync) scheduleSync();
-}
-
-function scheduleSync() {
-  clearTimeout(syncTimer);
-  if (isConnected()) syncTimer = setTimeout(() => pushProgress().catch(error => announce(error.message, 'bad')), 800);
+  if (sync) markDirty('progress');
 }
 
 async function pushProgress() {
-  await Promise.all([
-    replaceTable('Zielbereiche', AREA_HEADERS, data.areas.map(areaToRow)),
-    replaceTable('Fortschritt', ITEM_HEADERS, data.items.map(itemToRow)),
-    replaceTable('FortschrittEreignisse', EVENT_HEADERS, data.events.map(eventToRow))
-  ]);
+  await replaceTables({
+    Zielbereiche: { headers: AREA_HEADERS, rows: data.areas.map(areaToRow) },
+    Fortschritt: { headers: ITEM_HEADERS, rows: data.items.map(itemToRow) },
+    FortschrittEreignisse: { headers: EVENT_HEADERS, rows: data.events.map(eventToRow) }
+  });
 }
 
 export async function syncProgress() {
-  if (!isConnected()) return;
-  const [areaRows, itemRows, eventRows] = await Promise.all([
-    loadTable('Zielbereiche', AREA_HEADERS),
-    loadTable('Fortschritt', ITEM_HEADERS),
-    loadTable('FortschrittEreignisse', EVENT_HEADERS)
-  ]);
+  const tables = await loadTables(progressSheetSpecs);
+  const areaRows = tables.Zielbereiche || [];
+  const itemRows = tables.Fortschritt || [];
+  const eventRows = tables.FortschrittEreignisse || [];
   data = {
     areas: mergeById(data.areas, areaRows.map(areaFromRow)),
     items: mergeById(data.items, itemRows.map(itemFromRow)),
@@ -242,6 +235,7 @@ function renderNextActions() {
 }
 
 export function initProgressFeature() {
+  registerSync('progress', { push: pushProgress, full: syncProgress });
   renderProgress();
   $('openProgress').addEventListener('click', () => { renderProgress(); openDialog('progressDialog'); });
   $('quickProgressEvent').addEventListener('click', () => openEvent());

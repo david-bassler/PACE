@@ -1,6 +1,7 @@
 import { loadJSON, nowIso, saveJSON, uid, dateKey } from '../core/storage.js';
 import { $, announce, emptyMessage, openDialog } from '../core/ui.js';
-import { isConnected, loadTable, replaceTable } from '../core/google.js';
+import { isConnected, loadTables, replaceTables } from '../core/google.js';
+import { markDirty, registerSync } from '../core/sync.js';
 import { getDayState, setSmallDay } from './day.js';
 
 const KEY = 'pace-space-v1';
@@ -14,7 +15,6 @@ export const spaceSheetSpecs = {
 
 let data = { parked: [], keeps: [], ...loadJSON(KEY, { parked: [], keeps: [] }) };
 data.parked ||= []; data.keeps ||= [];
-let syncTimer = null;
 
 function parkedFromRow(row) { return { id: row[0] || uid('park'), createdAt: row[1] || nowIso(), text: row[2] || '', next: row[3] || '', resume: row[4] || '', status: row[5] || 'open', updatedAt: row[6] || nowIso() }; }
 function parkedToRow(item) { return [item.id, item.createdAt, item.text, item.next, item.resume, item.status, item.updatedAt]; }
@@ -33,24 +33,19 @@ function mergeById(local, remote) {
 function persist(sync = true) {
   saveJSON(KEY, data);
   renderParked(); renderKeeps(); renderEveningKeeps();
-  if (sync) scheduleSync();
+  if (sync) markDirty('space');
 }
-function scheduleSync() { clearTimeout(syncTimer); if (isConnected()) syncTimer = setTimeout(() => push().catch(error => announce(error.message, 'bad')), 800); }
 async function push() {
-  await Promise.all([
-    replaceTable('Geparkt', PARK_HEADERS, data.parked.map(parkedToRow)),
-    replaceTable('Behalten', KEEP_HEADERS, data.keeps.map(keepToRow))
-  ]);
+  await replaceTables({
+    Geparkt: { headers: PARK_HEADERS, rows: data.parked.map(parkedToRow) },
+    Behalten: { headers: KEEP_HEADERS, rows: data.keeps.map(keepToRow) }
+  });
 }
 
 export async function syncSpace() {
-  if (!isConnected()) return;
-  const [parked, keeps] = await Promise.all([
-    loadTable('Geparkt', PARK_HEADERS),
-    loadTable('Behalten', KEEP_HEADERS)
-  ]);
-  data.parked = mergeById(data.parked, parked.map(parkedFromRow));
-  data.keeps = mergeById(data.keeps, keeps.map(keepFromRow));
+  const tables = await loadTables(spaceSheetSpecs);
+  data.parked = mergeById(data.parked, (tables.Geparkt || []).map(parkedFromRow));
+  data.keeps = mergeById(data.keeps, (tables.Behalten || []).map(keepFromRow));
   saveJSON(KEY, data);
   await push();
   renderParked(); renderKeeps(); renderEveningKeeps();
@@ -120,6 +115,7 @@ function saveShrink(event) {
 }
 
 export function initSpaceFeature() {
+  registerSync('space', { push, full: syncSpace });
   renderParked(); renderKeeps(); renderEveningKeeps();
   $('openParking').addEventListener('click', () => { renderParked(); openDialog('parkingDialog'); });
   $('openKeep').addEventListener('click', () => { renderKeeps(); openDialog('keepDialog'); });

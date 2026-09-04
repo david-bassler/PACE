@@ -1,6 +1,7 @@
 import { KEYS, dateKey, loadJSON, nowIso, saveJSON } from '../core/storage.js';
 import { $, $$, announce, emptyMessage, openDialog } from '../core/ui.js';
-import { isConnected, loadTable, replaceTable, upsertRow } from '../core/google.js';
+import { loadTables, replaceTables, upsertRow } from '../core/google.js';
+import { markDirty, registerSync } from '../core/sync.js';
 
 export const META = {
   P: { title: 'Proficiency · Kompetenz', intro: 'Schaffe oder bemerke Gelegenheiten, in denen du dein eigenes Können spürst.' },
@@ -15,7 +16,6 @@ let content = loadJSON(KEYS.content, null) || loadJSON(KEYS.legacyContent, CONTE
 saveJSON(KEYS.content, content);
 let energy = localStorage.getItem(KEYS.energy) || localStorage.getItem(KEYS.legacyEnergy) || 'normal';
 localStorage.setItem(KEYS.energy, energy);
-let syncTimer = null;
 
 function blankDay() {
   return { date: dateKey(), selections: {}, done: {}, stuckCount: 0, rescue: '', smallDay: { active: false, focus: '', release: '' }, evening: { progress: '', resonance: '', reserve: '', closedAt: '' }, updatedAt: nowIso() };
@@ -36,12 +36,7 @@ function visible(key) {
 function saveDay(sync = true) {
   state.updatedAt = nowIso();
   saveJSON(KEYS.day, state);
-  if (sync) scheduleSync();
-}
-
-function scheduleSync() {
-  clearTimeout(syncTimer);
-  if (isConnected()) syncTimer = setTimeout(syncDay, 700);
+  if (sync) markDirty('day');
 }
 
 function dayRow() {
@@ -58,22 +53,17 @@ function dayRow() {
 }
 
 export async function syncDay() {
-  if (!isConnected()) return;
-  try {
-    await upsertRow('Tage', DAY_HEADERS, 0, state.date, dayRow());
-    setSyncState('synced');
-  } catch (error) {
-    setSyncState('error');
-    announce(error.message, 'bad');
-  }
+  await upsertRow('Tage', DAY_HEADERS, 0, state.date, dayRow());
 }
 
 export async function loadPrivateSuggestions() {
   if (!isConnected()) return;
-  const [proposalRows, stuckRows] = await Promise.all([
-    loadTable('Vorschlaege', ['Bereich', 'Vorschlag']),
-    loadTable('Feststecken', ['Vorschlag'])
-  ]);
+  const tables = await loadTables({
+    Vorschlaege: ['Bereich', 'Vorschlag'],
+    Feststecken: ['Vorschlag']
+  });
+  const proposalRows = tables.Vorschlaege || [];
+  const stuckRows = tables.Feststecken || [];
   const lists = { P: [], A: [], C: [], E: [] };
   for (const row of proposalRows) {
     const key = String(row[0] || '').trim().toUpperCase();
@@ -108,8 +98,10 @@ export async function importPrivateTSV(file) {
     if (type === 'VORSCHLAG' && ['P','A','C','E'].includes(area)) proposals.push([area, text]);
     if (type === 'FESTSTECKEN') stuck.push([text]);
   }
-  await replaceTable('Vorschlaege', ['Bereich', 'Vorschlag'], proposals);
-  await replaceTable('Feststecken', ['Vorschlag'], stuck);
+  await replaceTables({
+    Vorschlaege: { headers: ['Bereich', 'Vorschlag'], rows: proposals },
+    Feststecken: { headers: ['Vorschlag'], rows: stuck }
+  });
   await loadPrivateSuggestions();
   return { proposals: proposals.length, stuck: stuck.length };
 }
@@ -277,12 +269,8 @@ function resetDay() {
   renderAll();
 }
 
-function setSyncState(kind) {
-  const dot = $('syncDot');
-  dot.className = `sync-dot${kind === 'synced' ? ' synced' : kind === 'error' ? ' error' : kind === 'pending' ? ' pending' : ''}`;
-}
-
 export function initDayFeature() {
+  registerSync('day', { push: syncDay, full: googleConnectedDay });
   renderAll();
   $$('[data-energy]').forEach(button => button.addEventListener('click', () => {
     energy = button.dataset.energy;
@@ -343,7 +331,6 @@ export function initDayFeature() {
 }
 
 export function googleConnectedDay() {
-  setSyncState('pending');
   return loadPrivateSuggestions().then(syncDay);
 }
 

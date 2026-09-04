@@ -1,9 +1,9 @@
 import { $, openDialog } from '../core/ui.js';
-import { connectGoogle, createSpreadsheet, getConfig, isConnected, onGoogleConnection, onGoogleStatus, setConfig, sheetUrl } from '../core/google.js';
-import { googleConnectedDay, importPrivateTSV } from './day.js';
+import { connectGoogle, createSpreadsheet, ensureSheets, getConfig, isConnected, onGoogleConnection, onGoogleStatus, setConfig, sheetUrl } from '../core/google.js';
+import { onSyncState, refreshSyncState, syncAll } from '../core/sync.js';
+import { importPrivateTSV } from './day.js';
 
 let extraSheetsProvider = () => ({});
-let onConnected = async () => {};
 let installPrompt = null;
 
 function renderConnection() {
@@ -25,18 +25,32 @@ function status(text, kind = '') {
 }
 
 export function setExtraSheetsProvider(provider) { extraSheetsProvider = provider || (() => ({})); }
-export function setConnectedHandler(handler) { onConnected = handler || (async () => {}); }
+
+async function fullSync() {
+  await ensureSheets(extraSheetsProvider());
+  await syncAll();
+}
 
 export function initSettings() {
   onGoogleStatus(status);
+  onSyncState(({ state, error, connected }) => {
+    const dot = $('syncDot');
+    dot.className = `sync-dot${state === 'synced' ? ' synced' : state === 'error' ? ' error' : ['pending','syncing'].includes(state) ? ' pending' : ''}`;
+    dot.title = state === 'synced'
+      ? 'Mit Google Sheets synchronisiert'
+      : state === 'syncing'
+        ? 'Synchronisierung läuft'
+        : state === 'pending'
+          ? (connected ? 'Lokal gespeichert · Synchronisierung steht aus' : 'Lokal gespeichert · wartet auf Google')
+          : state === 'error'
+            ? 'Synchronisierung fehlgeschlagen'
+            : 'Nur lokal gespeichert';
+    if (state === 'error' && error) status(error.message, 'bad');
+  });
   onGoogleConnection(connected => {
     renderConnection();
-    if (connected) {
-      Promise.resolve()
-        .then(() => googleConnectedDay())
-        .then(() => onConnected())
-        .catch(error => status(error.message, 'bad'));
-    }
+    refreshSyncState();
+    if (connected) fullSync().catch(error => status(error.message, 'bad'));
   });
 
   const config = getConfig();
@@ -74,22 +88,20 @@ export function initSettings() {
       $('sheetIdInput').value = created.sheetId;
       renderConnection();
       status('Neues privates PACE-Sheet angelegt.', 'good');
-      await onConnected();
+      await fullSync();
     } catch (error) { status(error.message, 'bad'); }
   });
 
   $('setupSheet').addEventListener('click', async () => {
     try {
-      await onConnected();
-      await googleConnectedDay();
+      await fullSync();
       status('Sheet eingerichtet und geladen.', 'good');
     } catch (error) { status(error.message, 'bad'); }
   });
 
   $('syncNow').addEventListener('click', async () => {
     try {
-      await googleConnectedDay();
-      await onConnected();
+      await fullSync();
       status('Synchronisiert.', 'good');
     } catch (error) { status(error.message, 'bad'); }
   });

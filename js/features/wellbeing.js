@@ -1,6 +1,7 @@
 import { loadJSON, nowIso, saveJSON, uid, dateKey } from '../core/storage.js';
 import { $, announce, emptyMessage, openDialog } from '../core/ui.js';
-import { isConnected, loadTable, replaceTable } from '../core/google.js';
+import { loadTables, replaceTables } from '../core/google.js';
+import { markDirty, registerSync } from '../core/sync.js';
 import { getActionableItems, getProgressData } from './progress.js';
 import { getSuggestions } from './day.js';
 
@@ -42,7 +43,6 @@ const EXPLANATIONS = {
 
 let data = { examples: [], chances: [], ...loadJSON(KEY, { examples: [], chances: [] }) };
 data.examples ||= []; data.chances ||= [];
-let syncTimer = null;
 let mehMode = '';
 
 function exampleFromRow(row) { return { id: row[0] || uid('example'), area: row[1] || 'E', date: row[2] || dateKey(), title: row[3] || '', text: row[4] || '', updatedAt: row[5] || nowIso() }; }
@@ -62,24 +62,19 @@ function mergeById(local, remote) {
 function persist(sync = true) {
   saveJSON(KEY, data);
   renderLibrary();
-  if (sync) scheduleSync();
+  if (sync) markDirty('wellbeing');
 }
-function scheduleSync() { clearTimeout(syncTimer); if (isConnected()) syncTimer = setTimeout(() => push().catch(error => announce(error.message, 'bad')), 800); }
 async function push() {
-  await Promise.all([
-    replaceTable('Beispiele', EXAMPLE_HEADERS, data.examples.map(exampleToRow)),
-    replaceTable('Resonanzchancen', CHANCE_HEADERS, data.chances.map(chanceToRow))
-  ]);
+  await replaceTables({
+    Beispiele: { headers: EXAMPLE_HEADERS, rows: data.examples.map(exampleToRow) },
+    Resonanzchancen: { headers: CHANCE_HEADERS, rows: data.chances.map(chanceToRow) }
+  });
 }
 
 export async function syncWellbeing() {
-  if (!isConnected()) return;
-  const [examples, chances] = await Promise.all([
-    loadTable('Beispiele', EXAMPLE_HEADERS),
-    loadTable('Resonanzchancen', CHANCE_HEADERS)
-  ]);
-  data.examples = mergeById(data.examples, examples.map(exampleFromRow));
-  data.chances = mergeById(data.chances, chances.map(chanceFromRow));
+  const tables = await loadTables(wellbeingSheetSpecs);
+  data.examples = mergeById(data.examples, (tables.Beispiele || []).map(exampleFromRow));
+  data.chances = mergeById(data.chances, (tables.Resonanzchancen || []).map(chanceFromRow));
   saveJSON(KEY, data);
   await push();
   renderLibrary();
@@ -180,6 +175,7 @@ function addChance(event) {
 }
 
 export function initWellbeingFeature() {
+  registerSync('wellbeing', { push, full: syncWellbeing });
   renderLibrary(); renderExplanations();
   $('openMeh').addEventListener('click', () => { $('mehResult').innerHTML = '<p class="summary-empty">Wähle nur eine Richtung. Es geht nicht darum, alle vier zu bedienen.</p>'; openDialog('mehDialog'); });
   document.querySelectorAll('[data-meh]').forEach(button => button.addEventListener('click', () => showMeh(button.dataset.meh)));
