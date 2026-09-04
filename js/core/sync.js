@@ -7,7 +7,7 @@ const listeners = new Set();
 let version = 0;
 let timer = null;
 let running = null;
-let rerunAll = false;
+let requestedFull = false;
 let currentState = 'local';
 let currentError = null;
 
@@ -43,55 +43,52 @@ export function markDirty(name) {
   }
 }
 
+async function performPass(full) {
+  emit('syncing');
+  const names = full ? [...handlers.keys()] : [...dirtyVersions.keys()];
+
+  for (const name of names) {
+    const handler = handlers.get(name);
+    if (!handler) continue;
+    const capturedVersion = dirtyVersions.get(name);
+    await (full ? handler.full : handler.push)();
+
+    // Do not erase a newer local edit that happened while this feature was
+    // being written. It will be handled by the next pass in the same queue.
+    if (dirtyVersions.get(name) === capturedVersion) dirtyVersions.delete(name);
+  }
+}
+
 async function run(full) {
   if (!isConnected()) {
     emit(dirtyVersions.size ? 'pending' : 'local');
     return;
   }
 
-  if (running) {
-    rerunAll = rerunAll || full;
-    return running;
-  }
+  requestedFull = requestedFull || full;
+  if (running) return running;
 
   running = (async () => {
-    emit('syncing');
-    const names = full ? [...handlers.keys()] : [...dirtyVersions.keys()];
+    try {
+      do {
+        const doFull = requestedFull;
+        requestedFull = false;
+        await performPass(doFull);
 
-    for (const name of names) {
-      const handler = handlers.get(name);
-      if (!handler) continue;
-      const capturedVersion = dirtyVersions.get(name);
-      await (full ? handler.full : handler.push)();
+        // If data changed during the pass, immediately flush the remaining
+        // dirty features instead of starting a parallel or overlapping sync.
+      } while (requestedFull || dirtyVersions.size);
 
-      // Only clear the dirty flag if nothing changed while this feature was
-      // being written. A newer local edit remains queued for another pass.
-      if (dirtyVersions.get(name) === capturedVersion || full) {
-        dirtyVersions.delete(name);
-      }
+      emit('synced');
+    } catch (error) {
+      emit('error', error);
+      throw error;
+    } finally {
+      running = null;
     }
-
-    emit(dirtyVersions.size ? 'pending' : 'synced');
   })();
 
-  try {
-    await running;
-  } catch (error) {
-    emit('error', error);
-    throw error;
-  } finally {
-    running = null;
-    if (rerunAll || dirtyVersions.size) {
-      const shouldRunAll = rerunAll;
-      rerunAll = false;
-      clearTimeout(timer);
-      if (isConnected()) {
-        timer = setTimeout(() => {
-          (shouldRunAll ? syncAll() : syncPending()).catch(() => {});
-        }, 900);
-      }
-    }
-  }
+  return running;
 }
 
 export function syncPending() {

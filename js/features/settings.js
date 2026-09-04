@@ -45,6 +45,10 @@ export function initSettings() {
           : state === 'error'
             ? 'Synchronisierung fehlgeschlagen'
             : 'Nur lokal gespeichert';
+    if (state === 'syncing') status('Synchronisiere …');
+    if (state === 'pending') status(connected ? 'Lokal gespeichert · Synchronisierung steht aus.' : 'Lokal gespeichert · wartet auf Google.');
+    if (state === 'synced') status('Synchronisiert.', 'good');
+    if (state === 'local') status('Nur lokal gespeichert. Für Google-Sync bitte verbinden.');
     if (state === 'error' && error) status(error.message, 'bad');
   });
   onGoogleConnection(connected => {

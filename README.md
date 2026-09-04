@@ -23,7 +23,8 @@ Die App ist bewusst in kleine ES-Module getrennt:
 
 - `js/core/storage.js` – lokale Speicherung, IDs, Datumshelfer
 - `js/core/ui.js` – kleine gemeinsame UI-Helfer
-- `js/core/google.js` – OAuth und generischer Google-Sheets-Zugriff
+- `js/core/google.js` – OAuth, serialisierte API-Queue, Batch-Zugriffe und 429-Retry
+- `js/core/sync.js` – zentrale Synchronisationsqueue und Status (`lokal`, `wartet`, `syncing`, `synced`)
 - `js/features/day.js` – Tagesform, P/A/C/E-Auswahl, Feststecken, Abendabschluss
 - `js/features/settings.js` – Google-Konfiguration, Verbindung, TSV-Import, Installation
 - `js/features/progress.js` – persönliche Verfassung, Zielnetz, Fortschritts-Inbox, nächste Schritte
@@ -108,6 +109,9 @@ Die Git-Historie ist absichtlich featureweise aufgebaut:
 4. `feat(meh): add explanations, private examples and resonance chances`
 5. `feat(space): add parking, smaller-day mode and savour markers`
 6. `fix: migrate existing local PACE data into modular app`
+7. `fix(google): serialize requests and retry rate limits`
+8. `refactor(sync): centralize feature sync and batch sheet traffic`
+9. `feat(sync): surface local/pending/synced state clearly`
 
 Dadurch lassen sich einzelne Ideen später leichter verändern oder zurücknehmen.
 
@@ -125,3 +129,17 @@ URL:
 ## Offline
 
 Das App-Shell funktioniert offline. Bereits geladene private Inhalte bleiben im lokalen Browser-Cache verfügbar. Änderungen werden lokal gespeichert und bei bestehender Google-Verbindung wieder synchronisiert.
+
+
+## Synchronisierung und Rate Limits
+
+PACE bündelt Google-Sheets-Zugriffe inzwischen zentral:
+
+- API-Anfragen laufen seriell statt parallel.
+- Wiederholte Sheet-/Header-Prüfungen werden pro Sitzung gecacht.
+- Mehrere Tabellen werden per Batch gelesen und geschrieben.
+- HTTP 429 sowie vorübergehende 5xx-Fehler werden mit exponentiellem Backoff erneut versucht.
+- Lokale Änderungen werden zuerst im Browser gespeichert und anschließend über eine gemeinsame Sync-Queue übertragen.
+- Das UI unterscheidet sichtbar zwischen lokal gespeichert, wartend, synchronisierend und synchronisiert.
+
+Dadurch bleibt die lokale App auch dann benutzbar, wenn Google vorübergehend limitiert.

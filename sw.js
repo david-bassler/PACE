@@ -1,7 +1,7 @@
-const CACHE = 'pace-v15';
+const CACHE = 'pace-v16';
 const ASSETS = [
   './', './index.html', './style.css', './manifest.webmanifest', './icon.svg', './icon-maskable.svg',
-  './js/main.js', './js/core/storage.js', './js/core/ui.js', './js/core/google.js',
+  './js/main.js', './js/core/storage.js', './js/core/ui.js', './js/core/google.js', './js/core/sync.js',
   './js/features/day.js', './js/features/settings.js', './js/features/progress.js', './js/features/wellbeing.js', './js/features/space.js'
 ];
 

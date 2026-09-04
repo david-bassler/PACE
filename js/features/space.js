@@ -92,13 +92,17 @@ function renderEveningKeeps() {
 function addPark(event) {
   event.preventDefault(); const text = $('parkText').value.trim(); if (!text) return;
   data.parked.push({ id: uid('park'), createdAt: nowIso(), text, next: $('parkNext').value.trim(), resume: $('parkResume').value.trim(), status: 'open', updatedAt: nowIso() });
-  $('parkForm').reset(); persist(); announce('Für jetzt geparkt.', 'good');
+  $('parkForm').reset();
+  persist();
+  announce(isConnected() ? 'Lokal geparkt · wird mit Google synchronisiert.' : 'Lokal geparkt · wartet auf Google.', 'good');
 }
 
 function addKeep(event) {
   event.preventDefault(); const text = $('keepText').value.trim(); if (!text) return;
   data.keeps.push({ id: uid('keep'), date: dateKey(), text, updatedAt: nowIso() });
-  $('keepForm').reset(); persist(); announce('Für heute behalten.', 'good');
+  $('keepForm').reset();
+  persist();
+  announce(isConnected() ? 'Lokal gespeichert · wird mit Google synchronisiert.' : 'Lokal gespeichert · wartet auf Google.', 'good');
 }
 
 function openShrink() {
