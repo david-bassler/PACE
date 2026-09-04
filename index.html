@@ -41,7 +41,11 @@
 
     <section class="feature-card progress-home" aria-labelledby="progressHomeTitle">
       <div><p class="micro">ECHTER FORTSCHRITT</p><h2 id="progressHomeTitle">Persönliche Verfassung</h2><p id="progressOverview" class="hint">Die Lebenslandkarte wird privat gespeichert.</p></div>
-      <button id="openProgress" class="primary-button" type="button">Lebenslandkarte öffnen</button>
+      <div class="feature-actions">
+        <button id="quickProgressEvent" class="primary-button" type="button">Etwas ist weiter</button>
+        <button id="nextProgressAction" class="secondary-button" type="button">Was könnte ich tun?</button>
+        <button id="openProgress" class="secondary-button" type="button">Lebenslandkarte</button>
+      </div>
     </section>
 
     <button id="stuckButton" class="stuck-button" type="button"><span aria-hidden="true">↯</span><span><strong>Ich stecke fest</strong><small>Raus aus der Schleife, rein in den nächsten Schritt</small></span></button>
@@ -81,6 +85,12 @@
       </section>
 
       <section class="dialog-section">
+        <h3>Archivierter Fortschritt</h3>
+        <p class="hint">Fortschritt darf zuerst passieren und erst später einem Ziel zugeordnet werden.</p>
+        <div id="progressEventList" class="progress-list"></div>
+      </section>
+
+      <section class="dialog-section">
         <h3>Struktur darunter <small>– nur soweit hilfreich</small></h3>
         <div id="progressItemList" class="progress-list"></div>
         <form id="itemForm" class="stack-form">
@@ -92,6 +102,27 @@
           <div class="form-actions"><button id="itemSubmit" class="primary-button" type="submit">Element anlegen</button><button id="itemCancel" class="secondary-button" type="button" hidden>Abbrechen</button></div>
         </form>
       </section>
+    </div>
+  </dialog>
+
+  <dialog id="progressEventDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <form id="progressEventForm" class="stack-form dialog-form-clear">
+      <p class="micro">FORTSCHRITTS-INBOX</p><h2>Etwas ist weiter.</h2>
+      <p class="hint">Es muss vorher weder Aufgabe noch Meilenstein noch Ziel gegeben haben.</p>
+      <label><span>Was ist konkret anders als vorher?</span><textarea id="progressEventText" rows="3" maxlength="1200" required></textarea></label>
+      <fieldset><legend>Zielbereiche <small>– optional, mehrere möglich</small></legend><div id="progressEventAreas" class="check-chip-row"></div></fieldset>
+      <label><span>Bezug zu Ziel / Meilenstein / Aufgabe <small>(optional)</small></span><select id="progressEventRefs" multiple size="5"></select></label>
+      <button id="progressEventSubmit" class="primary-button" type="submit">Als Fortschritt archivieren</button>
+    </form>
+  </dialog>
+
+  <dialog id="nextActionDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div><p class="micro">ECHTER FORTSCHRITT</p><h2>Was könnte ich jetzt tun?</h2>
+      <p class="hint">Nur Möglichkeiten aus deiner eigenen Lebenslandkarte. Keine davon ist heute Pflicht.</p>
+      <div id="nextActionChoices" class="action-list"></div>
+      <div class="choice-actions"><button id="nextActionMore" class="secondary-button" type="button">Andere Möglichkeiten</button><form method="dialog"><button class="quiet-button" value="close">Heute nichts davon</button></form></div>
     </div>
   </dialog>
 
