@@ -46,28 +46,103 @@ Die Texte sollten:
 - nicht belehrend klingen
 - keine Bewertung des aktuellen Tages enthalten
 
-## 2. Fortschritt: Lebenslandkarte im Hintergrund
+## 2. Fortschritt: persönliche Verfassung und Lebenslandkarte
 
 Fortschritt meint **echten Fortschritt**, nicht nur das Gefühl, produktiv gewesen zu sein.
 
-Dafür braucht es langfristig eine zweite Ebene unter PACE:
+Damit die App überhaupt sinnvoll sagen kann, was „weiter“ bedeutet, braucht Fortschritt eine stabile, aber veränderbare Lebenslandkarte im Hintergrund.
 
-**Lebensrichtung → Ist-Stand → mittelfristiges Vorhaben → nächster realer Zustandswechsel → möglicher heutiger Schritt**
+Die Zielbereiche funktionieren dabei wie eine kleine **persönliche Verfassung**: Sie geben wichtigen Lebensgütern einen eigenen legitimen Status. Ein Bereich muss sich dann nicht jedes Mal gegenüber Produktivität, Sparsamkeit oder anderen Zielen neu rechtfertigen.
 
-Beispiele für Lebensbereiche:
-- Altersvorsorge / Finanzen
-- Gesundheit
-- Impressionmanagement, z. B. Kleidung und äußere Ordnung
-- Beruf / berufliche Entwicklung
-- Haushalt / Infrastruktur
-- Beziehungen und soziale Themen
-- andere individuell wichtige Bereiche
+Ein Zielbereich kann gerade deshalb wichtig sein, weil er ohne ausdrücklichen Schutz systematisch zu kurz kommen würde.
+
+### Zielhierarchie
+
+Die Fortschrittsstruktur soll grundsätzlich so aufgebaut sein:
+
+**Zielbereich → Ziel → Meilenstein → Aufgabe → klare Handlungsanweisung**
+
+Zusätzlich braucht die Struktur einen **Ist-Stand**, damit echter Fortschritt überhaupt bestimmbar ist.
+
+- **Zielbereich:** langfristig wichtiger Lebensbereich bzw. Gut
+- **Ziel:** ein gewünschter konkreterer Zustand innerhalb dieses Bereichs
+- **Meilenstein:** erkennbarer Zwischenzustand auf dem Weg zum Ziel
+- **Aufgabe:** eine begrenzte Handlung, die einen Meilenstein tatsächlich näherbringt
+- **klare Handlungsanweisung:** so konkret, dass in einer unentschlossenen Situation klar ist, was als Nächstes zu tun wäre
+- **Ist-Stand:** wo der betreffende Bereich / das Ziel tatsächlich gerade steht
+
+Die Kette kann damit auch so gelesen werden:
+
+**persönliche Verfassung → gewünschter Zustand → Ist-Stand → Zwischenzustand → reale Zustandsänderung → nächster konkreter Schritt**
+
+### Zielbereiche müssen vom User bestimmbar sein
+
+Die App darf keine feste universelle Liste von Lebenszielen vorgeben.
+
+Der User soll Zielbereiche:
+- selbst anlegen
+- benennen und umbenennen
+- beschreiben
+- priorisieren, ohne daraus tägliche Ranglisten zu machen
+- pausieren oder archivieren
+- später verändern oder ersetzen können
+
+Zu jedem Zielbereich sollte festgehalten werden können:
+- Warum gehört dieser Bereich ausdrücklich in meine persönliche Verfassung?
+- Was bedeutet ein guter langfristiger Zustand hier?
+- Was passiert wahrscheinlich, wenn ich ihn dauerhaft vernachlässige?
+- Welche Ressourcen darf dieser Bereich legitimerweise beanspruchen, z. B. Zeit, Geld oder Aufmerksamkeit?
+
+Damit kann ein Zielbereich bei realen Entscheidungen als legitimer Grund auftreten und muss nicht jedes Mal über ein anderes Ziel gerechtfertigt werden.
+
+### Ziele, Meilensteine, Aufgaben und Anweisungen
+
+Zu jedem Zielbereich sollen mehrere Ziele angelegt werden können.
+
+Zu jedem Ziel:
+- Ist-Stand
+- gewünschter Zustand
+- optionale Begründung
+- Meilensteine
+
+Zu jedem Meilenstein:
+- erkennbare Abschlussbedingung
+- Aufgaben
+
+Zu jeder Aufgabe:
+- konkrete nächste Handlung
+- bei Bedarf eine noch kleinere, klare Handlungsanweisung
+- optional notwendige Voraussetzungen oder Informationen
+
+Die unterste Ebene soll besonders dann helfen, wenn die Frage lautet:
+
+**„Ich will echten Fortschritt, aber was könnte ich jetzt konkret tun?“**
+
+Die App soll dann nicht aus dem Nichts generische Produktivitätsvorschläge erzeugen, sondern aus der persönlichen Lebenslandkarte **reale nächste Schritte** anbieten.
+
+### Fortschritt ist trotzdem keine tägliche Pflicht
+
+Diese Struktur ist Infrastruktur, keine tägliche Soll-Liste.
 
 Wichtig:
-- Die Lebenslandkarte ist eine Referenz, keine tägliche To-do-Liste.
-- Nicht jeder Lebensbereich braucht jeden Tag Fortschritt.
+- Nicht jeder Zielbereich braucht jeden Tag Fortschritt.
+- Nicht jedes Ziel muss ständig aktiv sein.
 - Ein einziger realer Zustandswechsel kann für einen Tag völlig genügen.
-- Stabilisierung, Prävention, Risikoreduktion oder das dauerhafte Beseitigen eines Problems können ebenfalls echter Fortschritt sein.
+- Aufgaben dürfen lange liegen, ohne als Versagen markiert zu werden.
+- Keine automatischen Schuldhinweise wegen „überfälliger“ Lebensziele.
+- Keine Prozentanzeige für das eigene Leben.
+- Kein Zwang, täglich einen Fortschrittsschritt auszuwählen.
+- Die App darf einen möglichen Schritt anbieten und ebenso leicht die Antwort **„heute nicht“** akzeptieren.
+
+Stabilisierung, Prävention, Risikoreduktion oder das dauerhafte Beseitigen eines Problems können ebenfalls echter Fortschritt sein.
+
+### Zielkonflikte sind normal
+
+Zielbereiche müssen nicht harmonieren.
+
+Zeit, Geld, Aufmerksamkeit und Energie können zwischen mehreren legitimen Lebenszielen konkurrieren. Die Lebenslandkarte soll solche Konflikte **sichtbar und abwägbar** machen, nicht mathematisch „optimal“ auflösen.
+
+Die persönliche Verfassung soll also nicht alles maximieren, sondern verhindern, dass wichtige Güter dauerhaft auf null fallen.
 
 ## 3. Resonanz: Wahrscheinlichkeit erhöhen, nicht erzwingen
 
