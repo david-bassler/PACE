@@ -107,6 +107,7 @@ Die Git-Historie ist absichtlich featureweise aufgebaut:
 3. `feat(progress): add bottom-up progress inbox and next-step chooser`
 4. `feat(meh): add explanations, private examples and resonance chances`
 5. `feat(space): add parking, smaller-day mode and savour markers`
+6. `fix: migrate existing local PACE data into modular app`
 
 Dadurch lassen sich einzelne Ideen später leichter verändern oder zurücknehmen.
 

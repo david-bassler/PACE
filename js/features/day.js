@@ -11,8 +11,10 @@ export const META = {
 
 const DAY_HEADERS = ['Datum','Tagesform','Kompetenz','Kompetenz_erledigt','Fortschritt','Fortschritt_erledigt','Reserve','Reserve_erledigt','Resonanz','Resonanz_erledigt','Feststecken_Anzahl','Abend_Fortschritt','Abend_Resonanz','Abend_Reserve','Abgeschlossen_um','Aktualisiert_um'];
 const CONTENT_DEFAULT = { lists: { P: [], A: [], C: [], E: [] }, stuck: [], loadedAt: '' };
-let content = loadJSON(KEYS.content, CONTENT_DEFAULT);
-let energy = localStorage.getItem(KEYS.energy) || 'normal';
+let content = loadJSON(KEYS.content, null) || loadJSON(KEYS.legacyContent, CONTENT_DEFAULT);
+saveJSON(KEYS.content, content);
+let energy = localStorage.getItem(KEYS.energy) || localStorage.getItem(KEYS.legacyEnergy) || 'normal';
+localStorage.setItem(KEYS.energy, energy);
 let syncTimer = null;
 
 function blankDay() {
@@ -20,8 +22,10 @@ function blankDay() {
 }
 
 let state = (() => {
-  const stored = loadJSON(KEYS.day, null);
-  return stored?.date === dateKey() ? { ...blankDay(), ...stored } : blankDay();
+  const stored = loadJSON(KEYS.day, null) || loadJSON(KEYS.legacyDay, null);
+  const current = stored?.date === dateKey() ? { ...blankDay(), ...stored } : blankDay();
+  saveJSON(KEYS.day, current);
+  return current;
 })();
 
 function visible(key) {

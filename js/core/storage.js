@@ -2,8 +2,11 @@ export const KEYS = {
   config: 'pace-google-config',
   legacyConfig: ['pace-google-config-v2', 'pace-google-config-v1'],
   day: 'pace-day-v5',
+  legacyDay: 'pace-day-v4',
   energy: 'pace-energy-v5',
-  content: 'pace-private-content-v2'
+  legacyEnergy: 'pace-energy-v4',
+  content: 'pace-private-content-v2',
+  legacyContent: 'pace-private-content-v1'
 };
 
 export function loadJSON(key, fallback) {
