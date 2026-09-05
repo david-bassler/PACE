@@ -580,6 +580,31 @@ Dabei sollen unpassende Werkzeuge nicht zwingend hart verschwinden. Sinnvoller i
 
 So kann PACE später zuhause und auf der Arbeit unterschiedliche Hilfen priorisieren, ohne heute bereits festlegen zu müssen, welche Werkzeuge das konkret sein werden.
 
+## 7c. Minimaler Atem-Pacer
+
+Für Feststecken, innere Unruhe oder Dysregulation soll PACE eine **sehr niedrigschwellige Atemhilfe** anbieten.
+
+Sie ist bewusst **kein Biofeedback** und ersetzt keine Sitzung mit Sensor / Brustgurt. Der Nutzen ist ein anderer: Wenn eine vollständige Biofeedback-Sitzung gerade zu aufwendig wäre, reicht ein visueller Taktgeber unmittelbar in PACE.
+
+Die erste Umsetzung ist absichtlich minimal:
+
+- ein Kreis wird während des Einatmens größer
+- während des Ausatmens wird er kleiner
+- Start / Stopp
+- läuft ohne vorgegebene Sitzungsdauer, bis der Nutzer stoppt
+- Einatem- und Ausatemdauer sind anpassbar
+- keine Messung
+- keine Bewertung
+- keine Sitzungsstatistik
+- kein Streak
+- keine Pflicht-Rückmeldung danach
+
+Grundprinzip:
+
+**Wenn nur die Atemführung gebraucht wird, soll PACE nicht verlangen, daraus eine Mess-Sitzung zu machen.**
+
+Als erste Platzierung ist der Atemkreis direkt beim Feststecken-Bereich erreichbar und zusätzlich als feste Möglichkeit im Feststecken-Dialog. Wo er später noch kontextabhängig angeboten wird, kann mit dem Zustands- und Orts-Routing entschieden werden.
+
 ## 8. Tagesbegleitung – vorläufige Idee
 
 Nicht als starre Abfolge, sondern als mögliche Begleitung:
