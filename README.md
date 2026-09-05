@@ -30,6 +30,7 @@ Die App ist bewusst in kleine ES-Module getrennt:
 - `js/features/progress.js` – persönliche Verfassung, Zielnetz, Fortschritts-Inbox, nächste Schritte
 - `js/features/wellbeing.js` – Meh-Modus, Erklärungstexte, private Beispiele, Resonanzchancen
 - `js/features/space.js` – Parken, Tag verkleinern, „Das behalten“ / Savour-Marker
+- `js/features/tracking.js` – konfigurierbare Tabellen-Erfassung, Gruppen/Felder und Schreibplan-Vorschau
 
 Neue Funktionen sollen möglichst als eigenes Feature-Modul ergänzt werden statt die Tageslogik weiter aufzublähen.
 
@@ -63,6 +64,7 @@ PACE verwendet aktuell:
 - `Resonanzchancen` – Situationen, die Resonanz wahrscheinlicher machen können
 - `Geparkt` – offene Schleifen mit nächstem Schritt / Wiederaufnahme
 - `Behalten` – kurze Savour-Marker
+- `ErfassungKonfig` – private Konfiguration der flexiblen Erfassungsfelder und Gruppen
 
 Die App legt fehlende Tabs bei bestehender Google-Verbindung selbst an.
 
@@ -83,6 +85,20 @@ Es wird **kein Client Secret** verwendet. Die Client-ID und Spreadsheet-ID werde
 5. Client-ID in PACE eintragen.
 6. Mit Google verbinden.
 7. Ein neues PACE-Sheet anlegen oder die vorhandene Spreadsheet-ID verwenden.
+
+## Flexible Tabellen-Erfassung – erster Umsetzungsstand
+
+PACE kann bereits eine private, geräteübergreifend synchronisierbare Erfassungskonfiguration verwalten:
+
+- Gruppen mit Titel, Icon und Reihenfolge
+- einzelne Felder mit optionaler Gruppenzuordnung
+- Ziel über **Tabellenblatt + stabile Spalten-ID** statt Spaltenbuchstaben
+- vorläufige Eingabetypen wie Text, Uhrzeit + Text, Uhrzeit, Zahl und Ja/Nein
+- Schreibmodus „mit Zeilenumbruch anhängen“ oder „ersetzen“
+- dynamische Schnell-Erfassungsoberfläche aus dieser Konfiguration
+- Schreibplan-Vorschau, damit Ziel und Format getestet werden können
+
+Noch **nicht** implementiert ist der Zugriff auf die bestehende Tracking-Tabelle. Dafür wird später wie vereinbart der **Google Picker** ergänzt. Bis dahin verändert die neue Erfassungsoberfläche die bestehende Tracking-Tabelle nicht.
 
 ## Bestehende private TSV importieren
 
