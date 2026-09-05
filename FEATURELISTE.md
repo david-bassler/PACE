@@ -395,6 +395,86 @@ Dieser Modus ist für:
 
 Er sollte funktional und kurz bleiben und nicht mit den erklärenden „Meh“-Texten vermischt werden.
 
+## 7a. Zeitbox / Timer als Einstiegshilfe
+
+PACE soll einen einfachen **Timer für begrenzte Zeitblöcke** anbieten können.
+
+Der Anwendungsfall ist ausdrücklich nicht nur Produktivität, sondern Situationen wie:
+
+> „Ich weiß gerade nicht, was ich tun soll. Irgendwie ist alles zu viel.“
+
+Eine hilfreiche Taktik kann dann sein, eine Tätigkeit zeitlich zu begrenzen, z. B.:
+
+> **1 Stunde aufräumen**
+
+Die Begrenzung verändert die Aufgabe: Es muss nicht „alles aufgeräumt“ werden. Für die gewählte Zeit wird einfach nur aufgeräumt.
+
+### Grundfunktion
+
+Ein Timer braucht zunächst nur:
+
+- Tätigkeit / kurzer Titel, z. B. „Aufräumen“
+- geplante Dauer
+- Start
+- Pause / Fortsetzen
+- vorzeitig beenden
+- regulär ablaufen lassen
+
+Die Oberfläche soll deutlich machen:
+
+**Die Zeitbox ist die Aufgabe – nicht das vollständige Ergebnis.**
+
+Das Ende des Timers darf deshalb kein „nicht geschafft“ erzeugen, wenn die Tätigkeit noch nicht abgeschlossen ist.
+
+### Automatische, private Erfassung
+
+Timer-Nutzung soll automatisch als privates Ereignis gespeichert werden, damit später untersucht werden kann, **wann diese Methode tatsächlich hilfreich ist**.
+
+Mindestens sinnvoll zu speichern:
+
+- Startzeitpunkt
+- geplanter Endzeitpunkt / geplante Dauer
+- tatsächlicher Endzeitpunkt / tatsächliche Dauer
+- Tätigkeit / Titel
+- regulär beendet oder vorzeitig beendet
+- optional der Kontext, aus dem der Timer gestartet wurde, z. B. Meh-Modus oder direkte Schnellaktion
+
+Die Daten sollen geräteübergreifend im privaten Backend verfügbar sein und nicht im öffentlichen Repository landen.
+
+### Sehr kurze freiwillige Rückmeldung
+
+Um später nicht nur zu wissen, **dass** ein Timer benutzt wurde, sondern ob die Methode geholfen hat, kann nach dem Ende optional eine sehr kleine Rückmeldung erscheinen:
+
+> **Hat die Zeitbox geholfen, ins Tun zu kommen?**
+
+mit z. B.:
+
+- ja
+- etwas
+- nein
+- keine Angabe
+
+Das darf kein Pflichtabschluss werden. Wird die Rückmeldung ignoriert, ist der Timer trotzdem vollständig beendet.
+
+Zusammen mit bereits vorhandenen Tagesdaten kann später untersucht werden, unter welchen Bedingungen Zeitboxen besonders gut funktionieren, ohne vor jedem Timer zusätzliche Zustandsfragen zu verlangen.
+
+### Einordnung in PACE
+
+Der Timer ist ein **praktisches Interventionswerkzeug**, kein Produktivitäts-Tracker.
+
+Deshalb:
+
+- keine Streaks
+- keine Wochenziele für „fokussierte Minuten“
+- keine Belohnung für lange Timer
+- keine Bewertung, wie viel in der Zeit geschafft wurde
+- keine Pflicht, einen Timer bis zum Ende laufen zu lassen
+- vorzeitiges Beenden ist ein normaler Zustand, kein Misserfolg
+
+Er soll besonders aus „Meh“, Überforderungs-/Unklarheitsmomenten oder als direkte Schnellaktion erreichbar sein.
+
+Auch wenn PACE seine reflektierende Oberfläche wegen hoher Nutzung reduziert, kann ein solcher **konkreter Nutzwert** weiterhin direkt erreichbar bleiben, ähnlich der einfachen Tabellenerfassung.
+
 ## 8. Tagesbegleitung – vorläufige Idee
 
 Nicht als starre Abfolge, sondern als mögliche Begleitung:
