@@ -475,6 +475,68 @@ Wichtig:
 
 Diese Idee gehört zur Anti-Druck- und Anti-Externalisierungs-Architektur von PACE, nicht zu Gamification oder Habit-Building.
 
+### Zentrale Schutzfunktion: PACE beobachtet seine eigene Nutzung
+
+Ein weiterer besonders wichtiger Schutzmechanismus soll die **Nutzung von PACE selbst** betreffen.
+
+Grundsatz:
+
+> **PACE beobachtet seine eigene Nutzung nur, um sich gegebenenfalls selbst weniger wichtig zu machen.**
+
+Klassische Apps behandeln häufige Nutzung als Erfolg. Für PACE kann häufige Nutzung dagegen ein Hinweis sein, dass die App gerade zu viel Raum bekommt oder dass Beobachten und Verwalten das unmittelbare Erleben zu ersetzen beginnen.
+
+Deshalb soll PACE intern erfassen, wie oft es an einem Tag **wirklich wieder aufgesucht** wird.
+
+Dabei gilt:
+
+- Nicht jeder Klick zählt.
+- Nicht jeder technische Reload zählt.
+- Gemeint ist eine sinnvolle **Rückkehr zur App** nach zwischenzeitlicher Abwesenheit.
+- Der konkrete Schwellenwert soll später praktisch erprobt und nicht willkürlich als Leistungslimit gesetzt werden.
+
+Da PACE voraussichtlich auf **mehreren Geräten** genutzt wird, insbesondere Handy und Laptop, darf dieser Nutzungszähler **im privaten Google Sheet synchronisiert** werden. Nur so kann die Schutzfunktion die tatsächliche Gesamtnutzung über Geräte hinweg berücksichtigen.
+
+Trotz Speicherung im Sheet ist der Nutzungswert **kein Lebens- oder Trackingdatum zur Auswertung**:
+
+- keine sichtbare Tageszahl
+- kein Diagramm zur App-Nutzung
+- keine Streaks
+- kein Vergleich mit anderen Tagen
+- keine Bewertung wie „zu viel benutzt“
+- keine Ableitung von Identitätsaussagen
+- keine langfristige Analyse, sofern sie für die Schutzfunktion nicht nötig ist
+
+Die Speicherung dient ausschließlich der Frage:
+
+**Soll PACE heute selbst etwas mehr aus dem Weg gehen?**
+
+Mögliche Reaktion bei auffällig häufiger Nutzung:
+
+> **PACE hatte heute schon ziemlich viel Raum.**  
+> Vielleicht reicht es für jetzt.
+
+Bei noch häufigerer Rückkehr kann zunächst eine reduzierte Ansicht erscheinen, ähnlich dem „Heute einfach sein“-Tag:
+
+> **Vielleicht wieder raus ins Leben.**  
+> Was du hier brauchst, darf bleiben. Aber du musst nicht weiter beobachten.
+
+Darunter immer unaufdringlich:
+
+> **PACE trotzdem öffnen**
+
+Wichtig:
+
+- keine harte Sperre
+- keine Schuld- oder Warnsprache
+- kein Versuch, die Nutzung zu „optimieren“
+- die Zahl selbst bleibt unsichtbar
+- eine Entscheidung für „trotzdem öffnen“ wird nicht als Versagen behandelt
+- PACE soll seine Präsenz reduzieren, nicht den Nutzer kontrollieren
+
+Für eine mögliche spätere Verfeinerung kann ein **kurzer rollierender Zeitraum** sinnvoll sein, damit nicht ein einzelner ungewöhnlicher Tag überbewertet wird. Solche Nutzungsdaten sollen dann automatisch wieder verschwinden, sobald sie für die Schutzfunktion nicht mehr gebraucht werden.
+
+Diese Funktion ist bewusst ein **Gegenmetrikinstrument**: Die App misst etwas über sich selbst, nicht um Engagement zu steigern, sondern um bei Bedarf Engagement zu verringern.
+
 ## Leitfrage für jedes neue Feature
 
 **Erhöht dieses Feature die Wahrscheinlichkeit eines guten Tages – oder erhöht es vor allem den Druck, einen guten Tag produzieren zu müssen?**
