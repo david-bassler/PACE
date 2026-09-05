@@ -658,8 +658,11 @@ Geplanter Weg:
 - den bisherigen engen Zugriff möglichst beibehalten
 - die bestehende Tracking-Tabelle einmal bewusst über den **Google Picker** auswählen
 - PACE erhält damit gezielt Zugriff auf genau diese ausgewählte Datei
-- anschließend wird nur die Spreadsheet-ID der verbundenen Tracking-Tabelle gespeichert
-- in den Einstellungen soll klar sichtbar sein, welche Tabelle als **PACE-Daten** und welche als **Tracking-Tabelle** verbunden ist
+- anschließend wird die Spreadsheet-ID der verbundenen Tracking-Tabelle gespeichert
+- zusätzlich muss innerhalb dieser Google-Sheets-Datei das konkrete **Tabellenblatt / Sheet-Tab** ausgewählt und gespeichert werden, in das PACE lesen bzw. schreiben soll
+- die Konfiguration eines Feldes bezieht sich deshalb nicht nur auf eine Spalten-ID, sondern mindestens auf **Spreadsheet + Sheet-Tab + stabile Spalten-ID**
+- wenn mehrere Tabellenblätter relevant werden, soll die Zuordnung pro Erfassungsfeld oder Erfassungsgruppe flexibel konfigurierbar sein
+- in den Einstellungen soll klar sichtbar sein, welche Tabelle als **PACE-Daten** und welche als **Tracking-Tabelle** verbunden ist und welches Tabellenblatt verwendet wird
 
 **Umsetzungshinweis:** Beim Beginn der Implementierung dieses Features den Nutzer ausdrücklich daran erinnern, dass hierfür die **Picker-Variante** vereinbart wurde, bevor OAuth-/Berechtigungslogik geändert wird.
 
