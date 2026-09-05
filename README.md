@@ -44,6 +44,10 @@ Keine Ebene ist verpflichtend. Ein Fortschritt kann auch zuerst passieren und sp
 
 Ziele, Meilensteine, Aufgaben und Ereignisse dürfen mehreren Zielbereichen gleichzeitig zugeordnet sein. Die App behandelt die Lebenslandkarte deshalb als Netz und nicht als strengen Baum.
 
+## Zugehörige Companion-App
+
+Im selben Repository ist eine separate Node-App zur Übernahme von Fitbit-/Google-Health-Rohdaten vorgesehen. Das Konzept und die Schlafberechnungsregeln stehen in [FITBIT_BRIDGE.md](FITBIT_BRIDGE.md).
+
 ## Datenschutz-Architektur
 
 Das öffentliche GitHub-Repository enthält **nur App-Logik, UI, generische Erklärungstexte und PWA-Dateien**.
