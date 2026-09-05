@@ -225,6 +225,70 @@
     </div>
   </dialog>
 
+  <dialog id="clarificationDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div>
+      <p class="micro">ERST KLÄREN</p>
+      <h2 id="clarificationTaskTitle">Aufgabe</h2>
+      <p class="hint">Nicht alle Bedenken gleichzeitig lösen. Nur die aktuell wichtige Frage – mit so vielen kleinen Klärungsschritten, wie diese Frage tatsächlich braucht.</p>
+
+      <section id="clarificationCreate">
+        <form id="clarificationForm" class="stack-form">
+          <label><span>Was ist die eine Frage, die die Aufgabe gerade noch nicht ausführungsreif macht?</span><textarea id="clarificationQuestion" rows="3" maxlength="1200" required></textarea></label>
+          <label><span>Welche Handlungen helfen, diese Frage zu beantworten?</span><textarea id="clarificationActions" rows="4" maxlength="2200" placeholder="Eine Handlung pro Zeile" required></textarea></label>
+          <p class="hint">Eine Frage darf mehrere Handlungen brauchen. Die Handlungen können später einzeln unter „Was könnte ich tun?“ auftauchen.</p>
+          <button class="primary-button" type="submit">Klärung beginnen</button>
+        </form>
+      </section>
+
+      <section id="clarificationCurrent" class="clarification-current" hidden>
+        <div class="clarification-question-box">
+          <p class="micro">AKTUELLE FRAGE</p>
+          <strong id="clarificationCurrentQuestion"></strong>
+        </div>
+        <div id="clarificationActionList" class="clarification-step-list"></div>
+        <form id="clarificationAddActionForm" class="inline-add-form">
+          <label><span>Weiterer Schritt für dieselbe Frage <small>(optional)</small></span><input id="clarificationAddAction" maxlength="500"></label>
+          <button class="secondary-button" type="submit">Hinzufügen</button>
+        </form>
+        <button id="clarificationReviewButton" class="primary-button clarification-review-button" type="button" hidden>Ist die Aufgabe jetzt ausführungsreif?</button>
+      </section>
+
+      <section id="clarificationHistory" class="clarification-history" hidden></section>
+    </div>
+  </dialog>
+
+  <dialog id="clarificationActionDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <form id="clarificationActionForm" class="stack-form dialog-form-clear">
+      <p class="micro">KLÄRUNGSSCHRITT</p>
+      <h2 id="clarificationActionTitle">Schritt</h2>
+      <p id="clarificationActionQuestion" class="clarification-question"></p>
+      <label><span>Was hat sich dadurch geklärt? <small>(optional)</small></span><textarea id="clarificationActionResult" rows="3" maxlength="1200"></textarea></label>
+      <button class="primary-button" type="submit">Als erledigt festhalten</button>
+    </form>
+  </dialog>
+
+  <dialog id="clarificationReviewDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div>
+      <p class="micro">KLÄRUNG AUSWERTEN</p>
+      <h2 id="clarificationReviewTask">Aufgabe</h2>
+      <p class="hint">Die Klärung muss nicht zur ursprünglichen Lösung führen. Auch „anders machen“ ist ein gutes Ergebnis.</p>
+      <div class="clarification-question-box">
+        <p class="micro">FRAGE</p>
+        <strong id="clarificationReviewQuestion"></strong>
+      </div>
+      <div id="clarificationReviewResults" class="clarification-review-results"></div>
+      <p class="clarification-ready-question"><strong>Ist die Aufgabe jetzt ausführungsreif?</strong></p>
+      <div class="choice-actions">
+        <button id="clarificationReady" class="primary-button" type="button">Ja, ausführungsreif</button>
+        <button id="clarificationMore" class="secondary-button" type="button">Noch nicht – nächste Frage</button>
+        <button id="clarificationChange" class="quiet-button" type="button">Aufgabe / Lösung ändern</button>
+      </div>
+    </div>
+  </dialog>
+
   <dialog id="trackingConfigDialog" class="dialog wide-dialog">
     <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
     <div>
