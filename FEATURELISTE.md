@@ -73,15 +73,53 @@ Jede Ebene ist optional:
 
 Zusätzlich kann ein **Ist-Stand** hinterlegt werden, wo er für echten Fortschritt hilfreich ist.
 
-- **Zielbereich:** langfristig wichtiger Lebensbereich bzw. Gut
-- **Ziel:** gewünschter konkreterer Zustand
-- **Meilenstein:** erkennbarer Zwischenzustand
-- **Aufgabe:** begrenzte Handlung
-- **klare Handlungsanweisung:** so konkret, dass unmittelbar klar ist, was getan werden kann
-- **Fortschrittsereignis:** etwas, das tatsächlich geschehen ist und einen Zustand verändert hat
-- **Ist-Stand:** wo ein Bereich oder Ziel tatsächlich gerade steht
+### Begriffe klar trennen: Zustand, Zwischenzustand, Arbeit, nächster Schritt
+
+Die Begriffe sollen **nicht bloß verschiedene Größen von „Unteraufgabe“** sein. Sie beschreiben unterschiedliche Arten von Dingen:
+
+- **Zielbereich:** ein langfristig wichtiges Lebensgut. Kernfrage: **Warum soll diese Richtung in meinem Leben dauerhaft einen eigenen Platz haben?**
+- **Ziel:** ein gewünschter Zustand der Realität. Kernfrage: **Wie soll es konkret sein?** Ein Ziel ist nicht direkt ausführbar; prinzipiell sollte erkennbar sein, wann der Zustand erreicht ist.
+- **Meilenstein:** ein bedeutender Zwischenzustand. Kernfrage: **Welcher erreichte Zwischenstand würde bedeuten, dass die Ausgangslage wesentlich anders ist als vorher?** Ein Meilenstein ist kein bloß „großer Task“, sondern verändert den Stand des Problems oder eröffnet neue Möglichkeiten.
+- **Aufgabe:** ein begrenztes Arbeitspaket. Kernfrage: **Was muss dafür erledigt werden?** Eine Aufgabe darf mehrere einzelne Handlungen, Entscheidungen oder Rechercheschritte enthalten, hat aber ein sinnvolles Ende.
+- **klare Handlungsanweisung:** ein unmittelbar startbarer nächster Schritt. Kernfrage: **Was tue ich jetzt konkret?** Idealerweise ist keine weitere Planung nötig, um anzufangen.
+- **Fortschrittsereignis:** eine tatsächlich eingetretene relevante Zustandsänderung. Kernfrage: **Was ist in der Realität jetzt anders als vorher?**
+- **Ist-Stand:** der aktuelle reale Zustand, an dem Fortschritt beurteilt werden kann.
+
+Als Kurzform:
+
+| Ebene | Kernfrage |
+| --- | --- |
+| Zielbereich | Warum gehört diese Richtung dauerhaft an den Tisch? |
+| Ziel | Wie soll die Realität sein? |
+| Meilenstein | Welcher Zwischenzustand bedeutet: wesentlich weiter? |
+| Aufgabe | Was muss dafür erledigt werden? |
+| Handlungsanweisung | Was tue ich jetzt konkret als Nächstes? |
+| Fortschrittsereignis | Was hat sich tatsächlich verändert? |
 
 Wichtig: Ein Fortschrittsereignis muss **nicht vorher geplant** gewesen sein, um als echter Fortschritt zu zählen.
+
+### Erledigte Handlung ist nicht automatisch Fortschritt
+
+PACE soll **Handlung und Wirkung getrennt behandeln**.
+
+Eine Aufgabe oder Anweisung kann erledigt sein, ohne dass dadurch bereits echter Fortschritt entstanden ist. Deshalb darf ein Häkchen bei einer Handlung **nicht automatisch ein Fortschrittsereignis erzeugen**.
+
+Sinnvolle Trennung:
+
+- **Handlung erledigt:** etwas wurde tatsächlich getan.
+- **Informationsgewinn / Klärung:** danach ist mehr bekannt oder Unsicherheit wurde reduziert.
+- **Fortschritt:** der für ein Ziel relevante Zustand hat sich tatsächlich verändert.
+- **keine relevante Veränderung:** die Handlung war erledigt, hat aber weder Zustand noch Informationslage wesentlich verändert.
+
+Beispielhaft kann ein Kontaktversuch lediglich ergeben, dass eine andere Stelle zuständig ist. Das kann nützliche Klärung sein, ist aber nicht automatisch schon Fortschritt.
+
+Nach einer erledigten Aufgabe oder Anweisung kann PACE deshalb optional fragen:
+
+**„Was hat sich dadurch verändert?“**
+
+Die Antwort dient nicht der Bewertung, sondern der semantischen Trennung von Aktivität, Informationsgewinn und echtem Advancement.
+
+Möglicher späterer Sonderfall: **Stabilisierung / Prävention / Problem verhindert**. Das sollte nur als eigene Wirkungskategorie eingeführt werden, wenn es sich in der Praxis als nützlich erweist.
 
 ### Zielbereiche müssen vom User bestimmbar sein
 
@@ -183,13 +221,64 @@ Persönliche Möglichkeiten, bei denen Resonanz wahrscheinlicher wird, z. B.:
 - kleine Ausflüge
 - ästhetische oder sinnliche Eindrücke
 
-### Resonanzbereitschaft
-Resonanz braucht oft innere freie Fläche. Sie wird unwahrscheinlicher, wenn der Kopf komplett durch ungelöste Arbeitsthemen, Sorgen, Grübeln, Zeitdruck oder Überforderung besetzt ist.
+### Vier verschiedene Resonanzbegriffe
 
-Die App sollte deshalb nicht nur Resonanzmöglichkeiten anbieten, sondern auch helfen zu bemerken:
-- Ist gerade überhaupt Platz dafür?
-- Was besetzt meine Aufmerksamkeit?
-- Muss zuerst etwas geparkt, abgeschlossen, verkleinert oder losgelassen werden?
+PACE soll vier Dinge klar auseinanderhalten:
+
+1. **Resonanzchance**  
+   Eine Situation, ein Ort, eine Tätigkeit oder ein Kontakt, bei dem Resonanz prinzipiell entstehen könnte. Eine Chance ist **kein Versprechen**; dieselbe Situation kann an einem Tag wirken und an einem anderen völlig flach bleiben.
+
+2. **Resonanzbereitschaft**  
+   Der innere Zustand, in dem überhaupt etwas „landen“ kann. Dazu gehören freie Aufmerksamkeit, etwas mentale Beweglichkeit und genug Abstand vom reinen Problem- oder Abarbeitungsmodus.
+
+3. **Resonanzerlebnis**  
+   Das eigentliche Geschehen: etwas berührt, belebt, überrascht, macht lachen, bleibt hängen oder erzeugt spontan den Wunsch, es jemandem zu erzählen oder später noch einmal innerlich anzusehen. Dieser Teil ist **nicht produzierbar**.
+
+4. **Resonanzhindernisse**  
+   Dinge, die zwischen Chance und Erlebnis stehen können: starke mentale Besetzung, ungelöste Schleifen, Zeitdruck, Überforderung, Erschöpfung, dauernde Problemorientierung oder auch der Druck, dass „jetzt etwas Schönes passieren muss“.
+
+Als Modell:
+
+**Resonanzchance × Resonanzbereitschaft – Resonanzhindernisse → Wahrscheinlichkeit eines Resonanzerlebnisses**
+
+Das ist kein mathematisches Messmodell, sondern eine funktionale Orientierung für die App.
+
+### App-Verhalten daraus ableiten
+
+PACE sollte Resonanz deshalb nicht als einen einzigen Vorschlagsknopf behandeln.
+
+Ein sinnvoller Einstieg wäre:
+
+**„Brauche ich gerade eher eine Gelegenheit – oder erst Platz?“**
+
+Bei **Gelegenheit**:
+- eine oder wenige persönliche Resonanzchancen zeigen
+- keine lange Liste
+- keine Formulierung als Pflicht
+- deutlich machen, dass dabei nichts passieren muss
+
+Bei **Platz**:
+- nach Resonanzhindernissen suchen, ohne daraus eine Diagnose zu machen
+- offene Schleife parken
+- Tag verkleinern
+- Entscheidung vertagen
+- etwas abschließen
+- Reserve schützen
+- Aufmerksamkeit aus einer Problemspirale lösen
+
+Damit werden Funktionen wie **Parken** oder **Tag verkleinern** auch zu indirekten Resonanzfunktionen.
+
+Wenn tatsächlich ein Resonanzerlebnis entstanden ist:
+- optional **„Das war Resonanz – behalten?“**
+- als persönliches Beispiel archivieren
+- später in „meh“-Momenten wieder zugänglich machen
+
+Und wenn trotz Chance und Bereitschaft nichts passiert:
+- **kein neuer Druck**
+- keine Folge von immer weiteren Resonanzvorschlägen
+- Erinnerung: Resonanz ist unverfügbar und ihr Ausbleiben kein Fehler
+
+Die App selbst darf nicht zum Resonanzhindernis werden, indem sie aus Resonanz eine Aufgabe macht.
 
 ## 4. Reserve
 
