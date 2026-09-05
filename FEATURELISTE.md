@@ -537,6 +537,27 @@ Für eine mögliche spätere Verfeinerung kann ein **kurzer rollierender Zeitrau
 
 Diese Funktion ist bewusst ein **Gegenmetrikinstrument**: Die App misst etwas über sich selbst, nicht um Engagement zu steigern, sondern um bei Bedarf Engagement zu verringern.
 
+### Grundversorgung bleibt immer erreichbar
+
+Die selbstbegrenzende Nutzung darf **nicht** dazu führen, dass PACE notwendige einfache Erfassung blockiert.
+
+Wenn PACE langfristig Teile der bisherigen Tabelle übernimmt, gibt es Daten, die unabhängig von „Heute einfach sein“, reduzierter Ansicht oder hoher PACE-Nutzung weiterhin schnell eingetragen werden können müssen, z. B.:
+
+- Kaffee
+- Essen
+- andere einfache laufende Tagesdaten
+
+Dafür ist eine klare Trennung sinnvoll:
+
+- **Grundversorgung / Erfassung:** immer erreichbar, schnell, neutral, ohne Reflexionspflicht
+- **PACE-Intervention / Reflexion:** darf sich bei hoher Nutzung oder an PACE-freien Tagen bewusst zurücknehmen
+
+Ein „Heute einfach sein“-Tag bedeutet deshalb nicht: **heute nichts erfassen dürfen**. Er bedeutet nur: PACE soll heute möglichst wenig interpretieren, planen, anregen oder zur Selbstbeobachtung einladen.
+
+Auch bei einer selbstreduzierten Oberfläche muss es einen kleinen, direkten Weg zur notwendigen Datenerfassung geben, ohne die volle PACE-Oberfläche öffnen zu müssen.
+
+Damit bleibt die Funktion der bisherigen Tabelle als **verlässlicher einzelner Ort für Alltagsdaten** erhalten, während die reflektierende PACE-Schicht sich bei Bedarf selbst zurücknimmt.
+
 ## Leitfrage für jedes neue Feature
 
 **Erhöht dieses Feature die Wahrscheinlichkeit eines guten Tages – oder erhöht es vor allem den Druck, einen guten Tag produzieren zu müssen?**
