@@ -3,6 +3,7 @@ import { initSettings, setExtraSheetsProvider } from './features/settings.js';
 import { initProgressFeature, progressSheetSpecs } from './features/progress.js';
 import { initWellbeingFeature, wellbeingSheetSpecs } from './features/wellbeing.js';
 import { initSpaceFeature, spaceSheetSpecs } from './features/space.js';
+import { initShareFeature } from './features/share.js';
 
 function initServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
@@ -24,6 +25,7 @@ initDayFeature();
 initProgressFeature();
 initWellbeingFeature();
 initSpaceFeature();
+initShareFeature();
 setExtraSheetsProvider(() => ({ ...progressSheetSpecs, ...wellbeingSheetSpecs, ...spaceSheetSpecs }));
 initSettings();
 initServiceWorker();
