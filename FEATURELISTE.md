@@ -438,6 +438,43 @@ Nicht als starre Abfolge, sondern als mögliche Begleitung:
 - Produktivität mit Fortschritt verwechseln
 - die App selbst zu einem Test für gute Lebensführung machen
 
+## 10. Eingebaute Abwesenheit: „Heute einfach sein“
+
+PACE soll nicht nur helfen können, sondern auch **absichtlich nicht gebraucht werden**.
+
+Hintergrund ist ein wichtiges Risiko: Erfassung und Verwaltung können Wahrnehmung ersetzen. Ein System kann das Gefühl geben, eine Belastung „im Blick“ zu haben, und dadurch paradoxerweise helfen, einen eigentlich nicht mehr tragbaren Zustand länger weiterzutragen.
+
+Daraus folgt eine Gegenregel:
+
+**Je schlechter oder voller es wird, desto weniger soll PACE verlangen – nicht desto mehr.**
+
+Eine konkrete Schutzidee ist deshalb ein gelegentlicher **soft deaktivierter Tag**:
+
+- ungefähr ein- bis zweimal pro Monat
+- zufällig gewählt
+- lokal vorab bestimmt und gespeichert, damit Neuladen den Tag nicht neu auswürfelt
+- an diesem Tag zeigt PACE zunächst **nicht die normale Oberfläche**
+- stattdessen nur eine kurze Botschaft, z. B.:
+
+> **Heute einfach sein.**  
+> PACE muss heute nichts von dir wissen.  
+> Nichts planen, nichts einordnen, nichts festhalten.
+
+Darunter nur unaufdringlich:
+
+> **PACE trotzdem öffnen**
+
+Wichtig:
+
+- Das ist **keine Sperre**. Wenn PACE an diesem Tag wirklich gebraucht wird, bleibt alles zugänglich.
+- Es gibt **keine Statistik**, ob solche Tage „eingehalten“ wurden.
+- Es wird **nicht erfasst**, ob „PACE trotzdem öffnen“ gewählt wurde.
+- Kein Streak, keine Belohnung, kein „Digital Detox“-Ziel.
+- Die Funktion soll nicht selbst zu einer weiteren Maßnahme werden.
+- Ziel ist eine eingebaute Erinnerung: **Der Tag findet nicht in PACE statt.**
+
+Diese Idee gehört zur Anti-Druck- und Anti-Externalisierungs-Architektur von PACE, nicht zu Gamification oder Habit-Building.
+
 ## Leitfrage für jedes neue Feature
 
 **Erhöht dieses Feature die Wahrscheinlichkeit eines guten Tages – oder erhöht es vor allem den Druck, einen guten Tag produzieren zu müssen?**
