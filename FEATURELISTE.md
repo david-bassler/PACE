@@ -573,9 +573,15 @@ Stattdessen soll PACE die bereits vorhandene Zeile mit den **fortlaufenden Spalt
 Prinzip:
 
 - jede relevante Tabellenspalte hat eine stabile ID
-- PACE liest die ID-Zeile und baut daraus bei Bedarf die aktuelle Zuordnung **ID → tatsächliche Spaltenposition**
+- PACE sucht im ausgewählten Tabellenblatt nach einer Zeile, deren **erste Zelle nach Trim und ohne Beachtung der Groß-/Kleinschreibung exakt `ID`** lautet
+- diese Zeile ist die technische ID-Zeile
+- PACE liest daraus bei Bedarf die aktuelle Zuordnung **ID → tatsächliche Spaltenposition**
+- die Zeilennummer der ID-Zeile wird **nicht fest gespeichert**, damit auch oberhalb eingefügte Zeilen kein Problem sind
 - verschiebt sich eine Spalte, bleibt die Konfiguration gültig
-- fehlt eine konfigurierte ID oder kommt sie doppelt vor, soll PACE nicht stillschweigend in eine falsche Spalte schreiben, sondern die Zuordnung als fehlerhaft markieren
+- IDs müssen innerhalb eines Tabellenblatts eindeutig sein
+- eine einmal vergebene ID soll ihre Bedeutung nicht ändern und nicht später für eine andere Spalte wiederverwendet werden
+- fehlt eine konfigurierte ID oder kommt sie doppelt vor, darf PACE **nicht schreiben**, sondern muss den Konflikt sichtbar machen
+- auch bei einer fehlenden ID darf PACE niemals ersatzweise in eine andere Spalte schreiben
 
 ### Erfassungsfelder über eine Oberfläche konfigurieren
 
