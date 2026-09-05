@@ -121,6 +121,41 @@ Die Antwort dient nicht der Bewertung, sondern der semantischen Trennung von Akt
 
 Möglicher späterer Sonderfall: **Stabilisierung / Prävention / Problem verhindert**. Das sollte nur als eigene Wirkungskategorie eingeführt werden, wenn es sich in der Praxis als nützlich erweist.
 
+### Aufgaben können „noch nicht ausführungsreif“ sein
+
+Eine Aufgabe kann klar benannt sein und trotzdem noch nicht sinnvoll ausführbar sein, weil eine Entscheidung oder Unsicherheit davorsteht.
+
+Dafür braucht PACE **keine neue Hierarchieebene**, sondern einen Aufgabenmodus:
+
+- **ausführungsreif**
+- **erst klären**
+
+Im Modus „erst klären“ steht immer nur **eine aktive Klärungsfrage** im Vordergrund. Diese Frage darf aber mehrere konkrete Klärungshandlungen benötigen.
+
+Prinzip:
+
+**Aufgabe → eine aktive Klärungsfrage → eine oder mehrere Klärungshandlungen → Ergebnis → ist die Aufgabe jetzt ausführungsreif?**
+
+Die einzelnen Klärungshandlungen sollen wie andere nächste Möglichkeiten unter **„Was könnte ich tun?“** erscheinen können, aber semantisch nicht automatisch als Fortschritt gelten.
+
+Nach einer Klärungshandlung kann PACE fragen:
+
+**„Was hat sich dadurch geklärt?“**
+
+Sind alle für die aktuelle Frage vorgesehenen Handlungen erledigt, folgt:
+
+**„Ist die Aufgabe jetzt ausführungsreif?“**
+
+Mögliche Wege:
+
+- **ja** → Aufgabe wird wieder als normale ausführbare Möglichkeit behandelt
+- **noch nicht** → die nächste eine Klärungsfrage wird festgelegt; diese darf erneut mehrere Handlungen benötigen
+- **Aufgabe / Lösung ändern** → die bisherige Lösung darf verändert oder verworfen werden
+
+Wichtig ist die Begrenzung: PACE soll nicht aus allen Bedenken auf einmal eine riesige Prüfliste erzeugen. Die Reduktion entsteht dadurch, dass **nur eine Unsicherheit gleichzeitig aktiv bearbeitet wird**, auch wenn zu ihrer Beantwortung mehrere kleine Schritte nötig sind.
+
+Abgeschlossene Klärungszyklen bleiben privat an der Aufgabe erhalten. Sie sind **Informationsgewinn**, nicht automatisch Fortschrittsereignisse.
+
 ### Zielbereiche müssen vom User bestimmbar sein
 
 Die App darf keine feste universelle Liste von Lebenszielen vorgeben.
