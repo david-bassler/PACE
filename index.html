@@ -246,7 +246,7 @@
         <div id="trackingGroupList" class="tracking-config-list"></div>
         <form id="trackingGroupForm" class="stack-form">
           <label><span>Titel</span><input id="trackingGroupTitle" maxlength="180" required></label>
-          <label><span>Icon <small>(optional)</small></span><input id="trackingGroupIcon" maxlength="16" placeholder="z. B. 🪥"></label>
+          <label><span>Icon <small>(optional)</small></span><span class="emoji-input-row"><input id="trackingGroupIcon" maxlength="16" placeholder="z. B. 🪥"><button class="emoji-picker-open" type="button" data-emoji-target="trackingGroupIcon" aria-label="Emoji für Gruppe auswählen">Emoji wählen</button></span></label>
           <label><span>Reihenfolge</span><input id="trackingGroupOrder" type="number" step="1" value="10"></label>
           <div class="form-actions">
             <button id="trackingGroupSubmit" class="primary-button" type="submit">Gruppe anlegen</button>
@@ -261,7 +261,7 @@
         <div id="trackingFieldList" class="tracking-config-list"></div>
         <form id="trackingFieldForm" class="stack-form">
           <label><span>Titel</span><input id="trackingFieldTitle" maxlength="180" required></label>
-          <label><span>Icon <small>(optional)</small></span><input id="trackingFieldIcon" maxlength="16" placeholder="z. B. ☕"></label>
+          <label><span>Icon <small>(optional)</small></span><span class="emoji-input-row"><input id="trackingFieldIcon" maxlength="16" placeholder="z. B. ☕"><button class="emoji-picker-open" type="button" data-emoji-target="trackingFieldIcon" aria-label="Emoji für Feld auswählen">Emoji wählen</button></span></label>
           <label><span>Gruppe <small>(optional)</small></span><select id="trackingFieldGroup"></select></label>
           <label><span>Tabellenblatt / Sheet-Tab</span><input id="trackingFieldSheetTab" maxlength="180" placeholder="z. B. 2026"></label>
           <label><span>Stabile Spalten-ID</span><input id="trackingFieldColumnId" maxlength="80" inputmode="numeric" placeholder="ID aus der fortlaufenden ID-Zeile"></label>
@@ -300,6 +300,22 @@
       <button class="primary-button" type="submit">Schreibvorschau erzeugen</button>
       <div id="trackingWritePreview" class="tracking-write-preview" hidden></div>
     </form>
+  </dialog>
+
+  <dialog id="emojiPickerDialog" class="dialog emoji-picker-dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div>
+      <p class="micro">ICON AUSWÄHLEN</p>
+      <h2>Emoji</h2>
+      <p class="hint">Ein Klick übernimmt das Emoji direkt. Das Feld kann weiterhin auch von Hand ausgefüllt werden.</p>
+      <div id="emojiRecentSection" class="emoji-recent-section" hidden>
+        <p class="micro">ZULETZT</p>
+        <div id="emojiRecentGrid" class="emoji-grid compact"></div>
+      </div>
+      <div id="emojiCategoryTabs" class="emoji-category-tabs" role="tablist" aria-label="Emoji-Kategorien"></div>
+      <div id="emojiPickerGrid" class="emoji-grid" role="listbox" aria-label="Emojis"></div>
+      <button id="emojiClear" class="quiet-button emoji-clear" type="button">Kein Icon</button>
+    </div>
   </dialog>
 
   <dialog id="settingsDialog" class="dialog settings-dialog">
