@@ -558,6 +558,107 @@ Auch bei einer selbstreduzierten Oberfläche muss es einen kleinen, direkten Weg
 
 Damit bleibt die Funktion der bisherigen Tabelle als **verlässlicher einzelner Ort für Alltagsdaten** erhalten, während die reflektierende PACE-Schicht sich bei Bedarf selbst zurücknimmt.
 
+## 11. Flexible Tabellen-Erfassung ohne Codeänderungen
+
+Wenn PACE laufende Daten in die bestehende Tabelle schreiben soll, darf die Zuordnung **nicht fest im Code verdrahtet** sein.
+
+Ziel ist eine konfigurierbare Erfassungsschicht: Änderungen an der Tabelle sollen möglichst über die App-Konfiguration abbildbar sein, ohne jedes Mal JavaScript anzupassen.
+
+### Stabile Spalten-IDs statt Spaltenbuchstaben
+
+Die technische Zuordnung soll **nicht über Spaltenbuchstaben wie AB oder CX** erfolgen, weil sich diese beim Einfügen oder Verschieben von Spalten ändern.
+
+Stattdessen soll PACE die bereits vorhandene Zeile mit den **fortlaufenden Spaltennummern / IDs** verwenden.
+
+Prinzip:
+
+- jede relevante Tabellenspalte hat eine stabile ID
+- PACE liest die ID-Zeile und baut daraus bei Bedarf die aktuelle Zuordnung **ID → tatsächliche Spaltenposition**
+- verschiebt sich eine Spalte, bleibt die Konfiguration gültig
+- fehlt eine konfigurierte ID oder kommt sie doppelt vor, soll PACE nicht stillschweigend in eine falsche Spalte schreiben, sondern die Zuordnung als fehlerhaft markieren
+
+### Erfassungsfelder über eine Oberfläche konfigurieren
+
+Ein Erfassungsfeld soll nicht als technischer Konfigurationsstring eingegeben werden müssen, sondern über einzelne Felder in einer Einstellungsoberfläche.
+
+Ein einzelnes Erfassungsfeld kann grundsätzlich Eigenschaften haben wie:
+
+- **Titel**, z. B. „Kaffee“
+- **Icon**, z. B. ☕
+- **Ziel-Spalten-ID**
+- **Eingabeformat**
+- **Schreibmodus**, z. B. anhängen oder ersetzen
+- optional weitere Darstellungs- oder Eingaberegeln
+
+Beispielhafte Konfiguration:
+
+**Kaffee**
+- Titel: Kaffee
+- Icon: ☕
+- Ziel: stabile ID der bisherigen Kaffeespalte
+- Format: Uhrzeit + Text
+- Schreibmodus: weitere Einträge mit Zeilenumbruch anhängen
+
+Die genaue Semantik von Formaten wird später festgelegt. Beispielsweise kann **Uhrzeit** standardmäßig die aktuelle Zeit vorschlagen, aber weiterhin änderbar sein. Solche Details sollen als eigene Konfigurationsoptionen modelliert werden und nicht in einem undurchsichtigen Format-String verschwinden.
+
+### Unterschied zwischen Eingabeformat und Schreibmodus
+
+Die Konfiguration sollte zwei Dinge auseinanderhalten:
+
+- **Welche Eingabe braucht die App?**  
+  z. B. Uhrzeit, Freitext, Ja/Nein, Zahl, Auswahl, optionale Uhrzeit + Text
+- **Wie wird der Wert in die Tabellenzelle geschrieben?**  
+  z. B. ersetzen, an vorhandenen Text anhängen, mit Zeilenumbruch anhängen
+
+Damit kann dieselbe grundlegende Eingabeform in unterschiedlichen Tabellenspalten anders verwendet werden.
+
+### Gruppen von Spalten / Erfassungsgruppen
+
+Mehrere zusammengehörige Tabellenspalten sollen als **eine Erfassungsgruppe** erscheinen können.
+
+Beispiel:
+
+**Zähne abends** 🪥
+
+Diese Gruppe kann mehrere einzelne Felder enthalten, z. B.:
+
+- Zähneputzen → eigene Spalten-ID
+- Zahnseide → eigene Spalten-ID
+- Zungenreinigung → eigene Spalten-ID
+
+Die Gruppe ist damit ein gemeinsamer kleiner Eingabedialog oder eine gemeinsame Karte, schreibt aber in mehrere getrennte Tabellenspalten.
+
+Gruppen sollen flexibel konfigurierbar sein:
+
+- Titel
+- Icon
+- Reihenfolge
+- enthaltene Felder
+- pro Feld eigene Ziel-ID und eigenes Eingabeformat
+
+Ein Feld darf auch allein ohne Gruppe existieren.
+
+### Ein Ort für die Konfiguration
+
+Die Konfiguration selbst soll privat gespeichert und über PACE bearbeitbar sein. Sie sollte geräteübergreifend verfügbar sein, also voraussichtlich ebenfalls im privaten Google Sheet liegen.
+
+Wichtig ist dabei die Trennung:
+
+- **öffentlicher App-Code:** generische Erfassungslogik
+- **private Konfiguration:** welche Felder, Gruppen, Icons, Ziel-IDs und Formate konkret verwendet werden
+
+Damit kann sich die bestehende Tabelle weiterentwickeln, ohne dass ihre konkrete Struktur im öffentlichen Repository festgeschrieben wird.
+
+### Grundprinzip
+
+PACE soll nicht versuchen, die bestehende Tabelle durch eine starre neue Datenstruktur zu ersetzen.
+
+Stattdessen soll es zunächst eine **konfigurierbare Eingabeoberfläche vor die bewährte Tabelle setzen**:
+
+**Erfassungsgruppe / Feld → stabile Spalten-ID → aktuelle Spaltenposition → heutige Tabellenzeile**
+
+Die App übernimmt damit Komfort, Gruppierung und Eingabelogik, während die Tabelle vorerst der bestehende verlässliche Datenspeicher bleiben kann.
+
 ## Leitfrage für jedes neue Feature
 
 **Erhöht dieses Feature die Wahrscheinlichkeit eines guten Tages – oder erhöht es vor allem den Druck, einen guten Tag produzieren zu müssen?**
