@@ -475,6 +475,76 @@ Er soll besonders aus „Meh“, Überforderungs-/Unklarheitsmomenten oder als d
 
 Auch wenn PACE seine reflektierende Oberfläche wegen hoher Nutzung reduziert, kann ein solcher **konkreter Nutzwert** weiterhin direkt erreichbar bleiben, ähnlich der einfachen Tabellenerfassung.
 
+## 7b. Zustandsabfrage als Werkzeug-Routing
+
+PACE soll eine **kleine Zustandsabfrage** verwenden können, um nicht nur allgemein Hilfe anzubieten, sondern das gerade passende Werkzeug vorzuschlagen.
+
+Ziel ist ausdrücklich **keine detaillierte Stimmungsmessung**. Die Abfrage dient primär der Frage:
+
+**Welches Werkzeug passt gerade?**
+
+Ein zunächst ausreichendes Modell sind zwei kurze Fragen:
+
+- **Wie viel Energie habe ich gerade?** – wenig / normal / viel
+- **Ist gerade klar, was als Nächstes dran ist?** – ja / ungefähr / nein
+
+Schon diese Kombinationen unterscheiden wichtige Situationen.
+
+Beispiel:
+
+- Energie ist da
+- grundsätzlich besteht Lust, etwas zu tun
+- aber es gibt gleichzeitig sehr viele Dinge, die getan werden müssten oder könnten
+- dadurch fehlt nicht der Antrieb, sondern die **Auswahl und Begrenzung**
+
+PACE sollte in so einem Zustand nicht zusätzlich aktivieren, sondern eher Möglichkeiten reduzieren, z. B.:
+
+- wenige Kandidaten sichtbar machen
+- eine Sache **für jetzt** auswählen
+- den Rest ausdrücklich nicht entscheiden müssen
+- optional direkt eine Zeitbox dafür starten
+
+Ein anderer Zustand wie „nichts zieht richtig und ich weiß nicht, was ich machen soll“ kann dagegen eher zu Meh-/Resonanz-/Reserve-Werkzeugen führen.
+
+### Kein zweites Stimmungstracking
+
+Die Zustandsabfrage soll nicht selbst zu einer neuen umfangreichen Trackingebene werden.
+
+Deshalb:
+
+- möglichst wenige Fragen
+- keine Pflicht, sie bei jeder App-Nutzung zu beantworten
+- keine Scores oder Verlaufsdiagramme als Selbstzweck
+- Zustand feststellen → passendes Werkzeug anbieten → wieder aus PACE heraus
+- wenn für spätere Wirksamkeitsanalyse sinnvoll, nur den groben Ausgangszustand zusammen mit einer Intervention speichern
+
+So kann später beispielsweise untersucht werden, ob eine Zeitbox besonders häufig bei **„Energie vorhanden, aber Auswahlüberlastung“** hilft, ohne vor jeder Intervention lange Zusatzfragen zu stellen.
+
+### Ortskontext als zweite Routing-Dimension
+
+Zusätzlich soll PACE später einen groben Ortskontext verwenden können:
+
+- Zuhause
+- Arbeit
+- Anderswo
+- optional: überall
+
+Die PWA kann beim Öffnen bzw. bei einer konkreten Aktion den Standort abfragen und anhand privat gespeicherter Referenzorte grob zuordnen. Es sollen dabei möglichst **keine Bewegungsprofile** entstehen; für normale Ereignisse reicht die Kategorie wie „Zuhause“ oder „Arbeit“.
+
+Werkzeuge, Vorschläge, Timer-Vorlagen oder Meh-Interventionen können optional einen passenden Ortskontext erhalten.
+
+Grundidee:
+
+**Ort + momentaner Zustand → passende Werkzeuge**
+
+Dabei sollen unpassende Werkzeuge nicht zwingend hart verschwinden. Sinnvoller ist:
+
+- passende Werkzeuge nach vorne
+- unpassende Werkzeuge in den Hintergrund
+- weiterhin manuell erreichbar
+
+So kann PACE später zuhause und auf der Arbeit unterschiedliche Hilfen priorisieren, ohne heute bereits festlegen zu müssen, welche Werkzeuge das konkret sein werden.
+
 ## 8. Tagesbegleitung – vorläufige Idee
 
 Nicht als starre Abfolge, sondern als mögliche Begleitung:
