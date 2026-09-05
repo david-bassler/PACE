@@ -5,6 +5,7 @@ import { initWellbeingFeature, wellbeingSheetSpecs } from './features/wellbeing.
 import { initSpaceFeature, spaceSheetSpecs } from './features/space.js';
 import { initShareFeature } from './features/share.js';
 import { initTrackingFeature, trackingSheetSpecs } from './features/tracking.js';
+import { initBreathFeature } from './features/breath.js';
 
 function initServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
@@ -28,6 +29,7 @@ initWellbeingFeature();
 initSpaceFeature();
 initShareFeature();
 initTrackingFeature();
+initBreathFeature();
 setExtraSheetsProvider(() => ({ ...progressSheetSpecs, ...wellbeingSheetSpecs, ...spaceSheetSpecs, ...trackingSheetSpecs }));
 initSettings();
 initServiceWorker();
