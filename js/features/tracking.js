@@ -23,6 +23,18 @@ const WRITE_MODES = {
   replace: 'Zellinhalt ersetzen'
 };
 
+const EMOJI_RECENT_KEY = 'pace-emoji-recent-v1';
+const EMOJI_CATEGORIES = {
+  Alltag: ['☕','🫖','🥤','💧','🍽️','🛒','🧺','🧹','🛏️','🚿','🪥','🧴','🧻','🗑️','📦','🔑','💳','💶','📞','✉️','📅','⏰','📝','✅'],
+  Essen: ['🍎','🍐','🍌','🍊','🍓','🍇','🥝','🥑','🥕','🥗','🍞','🥐','🥚','🧀','🍲','🍝','🍚','🍕','🍰','🍫','🍪','🥜','☕','🍵'],
+  Körper: ['❤️','🫀','🧠','🫁','🦷','👁️','👂','💪','🦵','🦶','🩹','💊','🌡️','😴','🛌','🧘','🪥','🧴','🩺','⚖️'],
+  Aktivität: ['🚶','🏃','🚴','🏊','🧘','🏋️','🤸','🧗','⚽','🎾','🥾','🌳','☀️','🌧️','🐕','🐾','🎧','🎵','📚','🎮'],
+  Arbeit: ['💻','⌨️','🖥️','📱','📞','📧','📝','📌','📎','📁','📊','🧮','🔧','🛠️','💡','🔍','✅','⏳','🚧','🎯'],
+  Stimmung: ['🙂','😊','😌','🥰','😐','😕','😟','😢','😭','😣','😫','😴','🤯','😤','😡','🤔','🥱','🫠','✨','🌤️'],
+  Orte: ['🏠','🏢','🏥','🏪','🛒','☕','🍽️','🌳','🌲','🏞️','🚗','🚲','🚌','🚆','✈️','🛋️','🛏️','🚿','🧑‍💻','🐕'],
+  Symbole: ['✅','❌','➕','➖','⭐','✨','⚠️','❗','❓','❤️','💚','💙','🟡','🔴','🟢','🔵','⬆️','⬇️','➡️','🔁','⏰','📍','🔒','🔓']
+};
+
 const EMPTY = { groups: [], fields: [] };
 let data = { ...EMPTY, ...loadJSON(KEY, EMPTY) };
 data.groups ||= [];
@@ -31,6 +43,88 @@ data.fields ||= [];
 let editingGroupId = '';
 let editingFieldId = '';
 let currentEntryFields = [];
+let emojiTargetId = '';
+let emojiCategory = Object.keys(EMOJI_CATEGORIES)[0];
+
+function loadRecentEmojis() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(EMOJI_RECENT_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed.filter(Boolean).slice(0, 12) : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberEmoji(emoji) {
+  const recent = [emoji, ...loadRecentEmojis().filter(item => item !== emoji)].slice(0, 12);
+  localStorage.setItem(EMOJI_RECENT_KEY, JSON.stringify(recent));
+}
+
+function emojiButton(emoji) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'emoji-choice';
+  button.textContent = emoji;
+  button.setAttribute('role', 'option');
+  button.setAttribute('aria-label', `Emoji ${emoji}`);
+  button.addEventListener('click', () => chooseEmoji(emoji));
+  return button;
+}
+
+function renderEmojiPicker() {
+  const tabs = $('emojiCategoryTabs');
+  const grid = $('emojiPickerGrid');
+  const recentSection = $('emojiRecentSection');
+  const recentGrid = $('emojiRecentGrid');
+  if (!tabs || !grid || !recentSection || !recentGrid) return;
+
+  tabs.innerHTML = '';
+  for (const name of Object.keys(EMOJI_CATEGORIES)) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `emoji-category${name === emojiCategory ? ' active' : ''}`;
+    button.textContent = name;
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-selected', String(name === emojiCategory));
+    button.addEventListener('click', () => {
+      emojiCategory = name;
+      renderEmojiPicker();
+    });
+    tabs.appendChild(button);
+  }
+
+  grid.innerHTML = '';
+  for (const emoji of EMOJI_CATEGORIES[emojiCategory] || []) grid.appendChild(emojiButton(emoji));
+
+  const recent = loadRecentEmojis();
+  recentGrid.innerHTML = '';
+  recentSection.hidden = recent.length === 0;
+  for (const emoji of recent) recentGrid.appendChild(emojiButton(emoji));
+}
+
+function openEmojiPicker(targetId) {
+  emojiTargetId = targetId;
+  renderEmojiPicker();
+  openDialog('emojiPickerDialog');
+}
+
+function chooseEmoji(emoji) {
+  const target = $(emojiTargetId);
+  if (!target) return;
+  target.value = emoji;
+  target.dispatchEvent(new Event('input', { bubbles: true }));
+  rememberEmoji(emoji);
+  $('emojiPickerDialog').close();
+  target.focus();
+}
+
+function clearEmoji() {
+  const target = $(emojiTargetId);
+  if (!target) return;
+  target.value = '';
+  $('emojiPickerDialog').close();
+  target.focus();
+}
 
 function normalizeType(value) {
   return value === 'Gruppe' || value === 'group' ? 'group' : 'field';
@@ -508,6 +602,10 @@ export function initTrackingFeature() {
   $('trackingFieldForm').addEventListener('submit', submitField);
   $('trackingFieldCancel').addEventListener('click', clearFieldForm);
   $('trackingEntryForm').addEventListener('submit', previewEntry);
+  document.querySelectorAll('.emoji-picker-open').forEach(button => {
+    button.addEventListener('click', () => openEmojiPicker(button.dataset.emojiTarget));
+  });
+  $('emojiClear').addEventListener('click', clearEmoji);
 
   clearGroupForm();
   clearFieldForm();
