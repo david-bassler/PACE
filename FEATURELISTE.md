@@ -649,6 +649,20 @@ Wichtig ist dabei die Trennung:
 
 Damit kann sich die bestehende Tabelle weiterentwickeln, ohne dass ihre konkrete Struktur im öffentlichen Repository festgeschrieben wird.
 
+### Zugriff auf die bestehende Tracking-Tabelle: Google Picker
+
+Sobald dieses Feature tatsächlich umgesetzt wird, soll die bestehende Tracking-Tabelle **nicht über einen pauschal breiteren Google-Scope** zugänglich gemacht werden.
+
+Geplanter Weg:
+
+- den bisherigen engen Zugriff möglichst beibehalten
+- die bestehende Tracking-Tabelle einmal bewusst über den **Google Picker** auswählen
+- PACE erhält damit gezielt Zugriff auf genau diese ausgewählte Datei
+- anschließend wird nur die Spreadsheet-ID der verbundenen Tracking-Tabelle gespeichert
+- in den Einstellungen soll klar sichtbar sein, welche Tabelle als **PACE-Daten** und welche als **Tracking-Tabelle** verbunden ist
+
+**Umsetzungshinweis:** Beim Beginn der Implementierung dieses Features den Nutzer ausdrücklich daran erinnern, dass hierfür die **Picker-Variante** vereinbart wurde, bevor OAuth-/Berechtigungslogik geändert wird.
+
 ### Grundprinzip
 
 PACE soll nicht versuchen, die bestehende Tabelle durch eine starre neue Datenstruktur zu ersetzen.
