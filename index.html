@@ -27,6 +27,16 @@
       </div><p id="energyHint" class="hint"></p>
     </section>
 
+    <section class="feature-card tracking-home" aria-labelledby="trackingHomeTitle">
+      <div>
+        <p class="micro">SCHNELL ERFASSEN</p>
+        <h2 id="trackingHomeTitle">Ein Ort für laufende Daten</h2>
+        <p id="trackingSummary" class="hint">Noch keine Erfassungsfelder konfiguriert.</p>
+      </div>
+      <div id="trackingQuickActions" class="tracking-quick-actions"></div>
+      <button id="openTrackingConfig" class="quiet-button tracking-config-open" type="button">Erfassung konfigurieren</button>
+    </section>
+
     <section id="reserveFirst" class="reserve-first" aria-labelledby="reserveFirstTitle">
       <div class="reserve-first-head"><span class="reserve-badge">C</span><div><p class="micro">RESERVE IM BLICK</p><h2 id="reserveFirstTitle">Was muss heute nicht auch noch sein?</h2></div></div>
       <p class="hint">Eine Möglichkeit, keine Pflicht. Reserve schützt den Rest des Tages.</p>
@@ -213,6 +223,83 @@
       <div id="nextActionChoices" class="action-list"></div>
       <div class="choice-actions"><button id="nextActionMore" class="secondary-button" type="button">Andere Möglichkeiten</button><form method="dialog"><button class="quiet-button" value="close">Heute nichts davon</button></form></div>
     </div>
+  </dialog>
+
+  <dialog id="trackingConfigDialog" class="dialog wide-dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div>
+      <p class="micro">TABELLENERFASSUNG</p>
+      <h2>Erfassung konfigurieren</h2>
+      <p class="hint">Hier wird nur die flexible Eingabeoberfläche eingerichtet. Die bestehende Tracking-Tabelle wird noch nicht beschrieben; die Verbindung folgt später über den vereinbarten Google Picker.</p>
+
+      <section class="tracking-connection-placeholder">
+        <div>
+          <strong>Tracking-Tabelle</strong>
+          <p>Noch nicht verbunden. Die Picker-Anbindung kommt in einem späteren Schritt.</p>
+        </div>
+        <button class="secondary-button" type="button" disabled>Tracking-Tabelle auswählen · später</button>
+      </section>
+
+      <section class="dialog-section">
+        <h3>Gruppen</h3>
+        <p class="hint">Eine Gruppe bündelt mehrere Spalten zu einer gemeinsamen Eingabe, z. B. eine Abendroutine.</p>
+        <div id="trackingGroupList" class="tracking-config-list"></div>
+        <form id="trackingGroupForm" class="stack-form">
+          <label><span>Titel</span><input id="trackingGroupTitle" maxlength="180" required></label>
+          <label><span>Icon <small>(optional)</small></span><input id="trackingGroupIcon" maxlength="16" placeholder="z. B. 🪥"></label>
+          <label><span>Reihenfolge</span><input id="trackingGroupOrder" type="number" step="1" value="10"></label>
+          <div class="form-actions">
+            <button id="trackingGroupSubmit" class="primary-button" type="submit">Gruppe anlegen</button>
+            <button id="trackingGroupCancel" class="secondary-button" type="button" hidden>Abbrechen</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="dialog-section">
+        <h3>Felder</h3>
+        <p class="hint">Jedes Feld verweist später über Tabellenblatt + stabile Spalten-ID auf die bestehende Tabelle. Spaltenbuchstaben werden bewusst nicht gespeichert.</p>
+        <div id="trackingFieldList" class="tracking-config-list"></div>
+        <form id="trackingFieldForm" class="stack-form">
+          <label><span>Titel</span><input id="trackingFieldTitle" maxlength="180" required></label>
+          <label><span>Icon <small>(optional)</small></span><input id="trackingFieldIcon" maxlength="16" placeholder="z. B. ☕"></label>
+          <label><span>Gruppe <small>(optional)</small></span><select id="trackingFieldGroup"></select></label>
+          <label><span>Tabellenblatt / Sheet-Tab</span><input id="trackingFieldSheetTab" maxlength="180" placeholder="z. B. 2026"></label>
+          <label><span>Stabile Spalten-ID</span><input id="trackingFieldColumnId" maxlength="80" inputmode="numeric" placeholder="ID aus der fortlaufenden ID-Zeile"></label>
+          <label><span>Eingabeformat</span>
+            <select id="trackingFieldInputType">
+              <option value="text">Text</option>
+              <option value="time_text">Uhrzeit + Text</option>
+              <option value="time">Uhrzeit</option>
+              <option value="number">Zahl</option>
+              <option value="yes_no">Ja / Nein</option>
+            </select>
+          </label>
+          <label><span>Schreibmodus</span>
+            <select id="trackingFieldWriteMode">
+              <option value="append_newline">mit Zeilenumbruch anhängen</option>
+              <option value="replace">Zellinhalt ersetzen</option>
+            </select>
+          </label>
+          <label><span>Reihenfolge</span><input id="trackingFieldOrder" type="number" step="1" value="10"></label>
+          <div class="form-actions">
+            <button id="trackingFieldSubmit" class="primary-button" type="submit">Feld anlegen</button>
+            <button id="trackingFieldCancel" class="secondary-button" type="button" hidden>Abbrechen</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </dialog>
+
+  <dialog id="trackingEntryDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <form id="trackingEntryForm" class="stack-form dialog-form-clear tracking-entry-form">
+      <p class="micro">ERFASSUNGSVORSCHAU</p>
+      <h2 id="trackingEntryTitle">Erfassen</h2>
+      <p class="hint">Die Eingabe kann schon ausprobiert werden. Noch wird nichts in deine bestehende Tracking-Tabelle geschrieben.</p>
+      <div id="trackingEntryFields" class="tracking-entry-fields"></div>
+      <button class="primary-button" type="submit">Schreibvorschau erzeugen</button>
+      <div id="trackingWritePreview" class="tracking-write-preview" hidden></div>
+    </form>
   </dialog>
 
   <dialog id="settingsDialog" class="dialog settings-dialog">
