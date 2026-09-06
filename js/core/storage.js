@@ -40,7 +40,11 @@ function openDatabase() {
       if (!nextDb.objectStoreNames.contains(STORE_NAME)) nextDb.createObjectStore(STORE_NAME);
     });
 
-    request.addEventListener('success', () => resolve(request.result), { once: true });
+    request.addEventListener('success', () => {
+      const nextDb = request.result;
+      nextDb.addEventListener('versionchange', () => nextDb.close());
+      resolve(nextDb);
+    }, { once: true });
     request.addEventListener('error', () => reject(request.error || new Error('IndexedDB could not be opened.')), { once: true });
     request.addEventListener('blocked', () => reject(new Error('IndexedDB upgrade is blocked by another PACE tab.')), { once: true });
   });
@@ -110,11 +114,20 @@ async function initializeStorage() {
   try {
     db = await openDatabase();
     await hydrateCache(db);
-    await migrateLegacyLocalStorage(db);
   } catch (error) {
     console.warn('PACE: IndexedDB unavailable, using localStorage fallback.', error);
     localStorageFallback = true;
     hydrateLocalStorageFallback();
+    return;
+  }
+
+  try {
+    await migrateLegacyLocalStorage(db);
+  } catch (error) {
+    // Bereits vorhandene IndexedDB-Daten bleiben in diesem Fall maßgeblich.
+    // Die localStorage-Kopie wird absichtlich nicht gelöscht und kann beim
+    // nächsten Start erneut migriert werden.
+    console.warn('PACE: legacy localStorage migration will be retried later.', error);
   }
 }
 
