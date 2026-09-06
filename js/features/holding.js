@@ -206,7 +206,7 @@ function chooseDifferent(items, currentId) {
   return source.length ? source[Math.floor(Math.random() * source.length)] : null;
 }
 
-function openHoldingChooser() {
+export function openHoldingChooser() {
   const box = $('holdingStatementList');
   box.innerHTML = '';
   const statements = sortedStatements();
