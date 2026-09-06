@@ -12,8 +12,9 @@ import {
   trackingRows,
   sortTrackingItems as sortItems
 } from './tracking-data.js';
+import { buildTrackingWritePlan } from './tracking-domain.js';
 
-export { trackingSheetSpecs };
+export { trackingSheetSpecs, buildTrackingWritePlan };
 
 const KEY = 'pace-tracking-config-v1';
 
@@ -474,17 +475,6 @@ function readEntryValue(field) {
     return [time, text].filter(Boolean).join(' ');
   }
   return wrapper.querySelector('[data-part="value"]')?.value.trim() || '';
-}
-
-export function buildTrackingWritePlan(fields, valuesById) {
-  return fields.map(field => ({
-    fieldId: field.id,
-    title: field.title,
-    sheetTab: field.sheetTab || '',
-    columnId: field.columnId || '',
-    writeMode: field.writeMode || 'append_newline',
-    value: String(valuesById[field.id] ?? '').trim()
-  })).filter(item => item.value);
 }
 
 function previewEntry(event) {
