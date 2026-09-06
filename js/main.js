@@ -8,12 +8,16 @@ function initServiceWorker() {
     refreshing = true;
     window.location.reload();
   });
-  window.addEventListener('load', async () => {
+
+  const register = async () => {
     try {
       const registration = await navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
       registration.update().catch(() => {});
     } catch {}
-  });
+  };
+
+  if (document.readyState === 'complete') register();
+  else window.addEventListener('load', register, { once: true });
 }
 
 async function boot() {
