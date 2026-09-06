@@ -90,7 +90,28 @@
   </dialog>
 
   <dialog id="choiceDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><div><p id="choiceMicro" class="micro"></p><h2 id="choiceTitle"></h2><p id="choiceHint" class="hint"></p><div class="choice-actions"><button id="choiceUse" class="primary-button" type="button">Für heute auswählen</button><button id="choiceAnother" class="secondary-button" type="button">Anderen Vorschlag</button></div></div></dialog>
-  <dialog id="stuckDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><div><p class="micro">FESTSTECKEN IST EIN SIGNAL</p><h2>Was bringt wieder Bewegung hinein?</h2><p class="hint">Nicht lösen müssen. Nur die Schleife unterbrechen.</p><button id="openBreathFromStuck" class="breath-stuck-choice" type="button"><span class="breath-shortcut-orb" aria-hidden="true"></span><span><strong>Nur atmen</strong><small>Atemkreis ohne Messung oder Auswertung</small></span></button><div id="stuckChoices" class="dialog-list"></div></div></dialog>
+  <dialog id="stuckDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><div><p class="micro">FESTSTECKEN IST EIN SIGNAL</p><h2>Was bringt wieder Bewegung hinein?</h2><p class="hint">Nicht lösen müssen. Nur die Schleife unterbrechen.</p><button id="openBreathFromStuck" class="breath-stuck-choice" type="button"><span class="breath-shortcut-orb" aria-hidden="true"></span><span><strong>Nur atmen</strong><small>Atemkreis ohne Messung oder Auswertung</small></span></button><button id="openAnchorsFromStuck" class="anchor-stuck-choice" type="button"><span aria-hidden="true">◌</span><span><strong>Erinnerungsanker</strong><small>Etwas Reales wieder zugänglich machen, ohne den aktuellen Zustand wegzudiskutieren</small></span></button><div id="stuckChoices" class="dialog-list"></div></div></dialog>
+
+  <dialog id="anchorChooserDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div>
+      <p class="micro">ERINNERUNGSANKER</p>
+      <h2>Etwas Reales wieder zugänglich machen.</h2>
+      <p class="hint">Nicht als Gegenargument gegen das, was du gerade fühlst. Nur als Zugriff auf Erfahrungen, die im Moment schwer erreichbar sind.</p>
+      <div id="anchorChooserList" class="anchor-choice-list"></div>
+    </div>
+  </dialog>
+
+  <dialog id="anchorResultDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div>
+      <p class="micro">EIN REALES GEGENBEISPIEL</p>
+      <h2 id="anchorResultTitle">Erinnerungsanker</h2>
+      <p id="anchorResultDescription" class="hint"></p>
+      <article id="anchorEventCard" class="anchor-event-card" aria-live="polite"></article>
+      <div class="choice-actions"><button id="anchorNextExample" class="secondary-button" type="button">Noch ein Beispiel</button><form method="dialog"><button class="quiet-button" value="close">Reicht</button></form></div>
+    </div>
+  </dialog>
 
   <dialog id="breathDialog" class="dialog breath-dialog">
     <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
@@ -175,6 +196,30 @@
           <button class="primary-button" type="submit">Beispiel privat speichern</button>
         </form>
       </section>
+      <section class="dialog-section">
+        <div class="section-head"><div><h3>Resonanzbibliothek & Erinnerungsanker</h3><p id="resonanceLibrarySummary" class="hint">Noch keine Resonanzbibliothek synchronisiert.</p></div><button id="openAnchorChooser" class="secondary-button" type="button">Erinnerungsanker öffnen</button></div>
+        <p class="hint">Kategorien sind keine festen App-Spalten. Ereignisse verweisen auf frei benennbare Tags; Erinnerungsanker kombinieren diese Tags. Tags können später umbenannt, ergänzt oder pausiert werden, ohne die Ereignisse neu zu strukturieren.</p>
+
+        <h4>Erinnerungsanker</h4>
+        <div id="anchorConfigList" class="library-list"></div>
+        <form id="anchorForm" class="stack-form">
+          <label><span>Titel</span><input id="anchorName" maxlength="220" placeholder="z. B. Menschen waren gut zu mir" required></label>
+          <label><span>Kurze Einordnung <small>(optional)</small></span><textarea id="anchorDescription" rows="2" maxlength="1200" placeholder="Was soll dieser Anker wieder zugänglich machen?"></textarea></label>
+          <fieldset><legend>Passende Tags</legend><div id="anchorTagChoices" class="check-chip-row"></div></fieldset>
+          <label><span>Trefferregel</span><select id="anchorMatchMode"><option value="any">mindestens einer der Tags</option><option value="all">alle gewählten Tags</option></select></label>
+          <div class="form-actions"><button id="anchorSubmit" class="primary-button" type="submit">Erinnerungsanker anlegen</button><button id="anchorCancel" class="secondary-button" type="button" hidden>Abbrechen</button></div>
+        </form>
+
+        <h4>Tags</h4>
+        <div id="resonanceTagList" class="library-list"></div>
+        <form id="resonanceTagForm" class="stack-form">
+          <label><span>Name</span><input id="resonanceTagName" maxlength="180" required></label>
+          <label><span>Beschreibung <small>(optional)</small></span><textarea id="resonanceTagDescription" rows="2" maxlength="900"></textarea></label>
+          <div class="form-actions"><button id="resonanceTagSubmit" class="primary-button" type="submit">Tag anlegen</button><button id="resonanceTagCancel" class="secondary-button" type="button" hidden>Abbrechen</button></div>
+        </form>
+        <p class="hint">Für den Erstimport kann die vorbereitete CSV direkt in das private Sheet-Tab <strong>Resonanzbibliothek</strong> kopiert werden.</p>
+      </section>
+
       <section class="dialog-section">
         <h3>Resonanzchancen</h3><p class="hint">Keine Resonanz-Aufgaben. Nur Dinge, Orte oder Situationen, in denen etwas passieren könnte.</p><div id="resonanceChanceList" class="library-list"></div>
         <form id="chanceForm" class="stack-form">
