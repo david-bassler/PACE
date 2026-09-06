@@ -162,7 +162,24 @@
   </dialog>
 
   <dialog id="choiceDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><div><p id="choiceMicro" class="micro"></p><h2 id="choiceTitle"></h2><p id="choiceHint" class="hint"></p><div class="choice-actions"><button id="choiceUse" class="primary-button" type="button">Für heute auswählen</button><button id="choiceAnother" class="secondary-button" type="button">Anderen Vorschlag</button></div></div></dialog>
-  <dialog id="stuckDialog" class="dialog"><form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form><div><p class="micro">FESTSTECKEN IST EIN SIGNAL</p><h2>Was bringt wieder Bewegung hinein?</h2><p class="hint">Nicht lösen müssen. Nur die Schleife unterbrechen.</p><button id="openBreathFromStuck" class="breath-stuck-choice" type="button"><span class="breath-shortcut-orb" aria-hidden="true"></span><span><strong>Nur atmen</strong><small>Atemkreis ohne Messung oder Auswertung</small></span></button><button id="openAnchorsFromStuck" class="anchor-stuck-choice" type="button"><span aria-hidden="true">◌</span><span><strong>Erinnerungsanker</strong><small>Etwas Reales wieder zugänglich machen, ohne den aktuellen Zustand wegzudiskutieren</small></span></button><div id="stuckChoices" class="dialog-list"></div></div></dialog>
+  <dialog id="stuckDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div>
+      <p class="micro">ICH STECKE FEST</p>
+      <h2>Was fehlt gerade eher?</h2>
+      <p class="hint">Du musst nicht wissen, welches PACE-Feature dafür zuständig ist.</p>
+      <div class="stuck-need-list">
+        <button id="openBreathFromStuck" class="stuck-need" type="button"><span class="stuck-need-icon breath-shortcut-orb" aria-hidden="true"></span><span><strong>Ruhe im System</strong><small>Nur atmen, ohne Messung oder Auswertung.</small></span></button>
+        <button id="stuckOpenParking" class="stuck-need" type="button"><span class="stuck-need-icon" aria-hidden="true">↓</span><span><strong>Weniger im Kopf</strong><small>Etwas parken oder den Tag kleiner machen.</small></span></button>
+        <button id="stuckOpenDirection" class="stuck-need" type="button"><span class="stuck-need-icon" aria-hidden="true">→</span><span><strong>Eine Richtung</strong><small>Wenn vieles möglich ist, aber nichts gerade klar zieht.</small></span></button>
+        <button id="openAnchorsFromStuck" class="stuck-need" type="button"><span class="stuck-need-icon" aria-hidden="true">◌</span><span><strong>Einen anderen Blick</strong><small>Ein reales Beispiel aus dem eigenen Leben wieder zugänglich machen.</small></span></button>
+      </div>
+      <details class="stuck-personal-more">
+        <summary>Weitere persönliche Feststecken-Hilfen</summary>
+        <div id="stuckChoices" class="dialog-list"></div>
+      </details>
+    </div>
+  </dialog>
 
   <dialog id="anchorChooserDialog" class="dialog">
     <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
