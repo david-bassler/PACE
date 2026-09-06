@@ -709,6 +709,81 @@ Für die erste Umsetzung liegen Ereignisse, Schlagwörter und Erinnerungsanker g
 
 Dadurch kann ein kompletter Startbestand als **eine CSV** in ein einziges Tabellenblatt kopiert werden, während die logischen Beziehungen trotzdem über stabile IDs erhalten bleiben.
 
+## 7e. Haltepunkte gegen gedankliche Verengung
+
+Neben autobiografischen Erinnerungsankern soll PACE eine zweite Art von Material kennen: **Haltepunkte**.
+
+Ein Haltepunkt kann eine Geschichte, ein Bild, ein Gedicht, ein Aphorismus, ein Liedhinweis, eine Metapher oder ein anderer vertrauter Inhalt sein, der in schwierigen Zuständen bereits geholfen hat, eine gedankliche Verengung zu öffnen.
+
+Wichtig ist nicht die „richtige“ allgemeine Interpretation des Materials, sondern **welche Bewegung es für den Nutzer tatsächlich ermöglicht**.
+
+### Einstieg über den Satz, der sich gerade wahr anfühlt
+
+PACE soll nicht zuerst fragen, welches Werkzeug gebraucht wird, sondern kann fragen:
+
+**„Welcher Satz fühlt sich gerade besonders wahr an?“**
+
+Eine Aussage beschreibt dabei keine Diagnose und keine fest eingebaute Kategorie. Sie ist ein frei veränderbarer Zugriff auf passende Haltepunkte.
+
+Das Datenmodell ist deshalb viele-zu-viele:
+
+**Aussage ↔ Haltepunkt**
+
+- Eine Aussage kann mehrere Haltepunkte haben.
+- Ein Haltepunkt kann später mehreren Aussagen zugeordnet werden.
+- Aussagen, Haltepunkte und Zuordnungen liegen ausschließlich im privaten Sheet.
+- Der öffentliche App-Code kennt keine feste Liste solcher Aussagen.
+
+### Persönliche Bedeutung
+
+Ein Haltepunkt kann zusätzlich eine private Notiz enthalten:
+
+**„Was das für mich bedeutet“**
+
+Diese persönliche Funktion hat für PACE Vorrang vor einer allgemeinen Interpretation des Textes, Bildes oder Gedichts.
+
+Optional können Schlagwörter und eine Bild-URL hinterlegt werden. Bildmaterial selbst wird nicht ins öffentliche Repository aufgenommen.
+
+### Situation festhalten
+
+Während ein Haltepunkt angezeigt wird, kann freiwillig notiert werden:
+
+**„Was ist gerade los?“**
+
+Das ist keine Pflichtdokumentation und keine Aufforderung, die Situation vollständig zu analysieren.
+
+Gespeichert werden:
+
+- Zeitpunkt
+- gewählte Aussage
+- angezeigter Haltepunkt
+- freie Situationsbeschreibung
+
+Später kann die Situation bewusst als **„liegt hinter mir“** markiert werden. Optional kann dann ein kurzer Rückblick ergänzt werden.
+
+Eine abgeschlossene Situation wird dadurch zu autobiografischem Material: Beim gleichen Satz kann PACE später zusätzlich **„Etwas Eigenes von früher“** anbieten.
+
+So entsteht aus einem zunächst fremden Haltepunkt nach und nach auch eine eigene Evidenz:
+
+**Ich war schon einmal in einer Situation, in der sich dieser Satz sehr wahr anfühlte – und diese konkrete Situation liegt heute hinter mir.**
+
+### Keine Optimierungsschleife
+
+PACE erfasst nicht:
+
+- wie oft ein Haltepunkt geöffnet wurde
+- ob er „gewirkt“ hat
+- ob die Stimmung danach besser war
+- eine Erfolgsquote einzelner Geschichten
+- einen Streak oder eine Pflicht, Situationen später abzuschließen
+
+Haltepunkte sollen Zugang zu einem größeren Erfahrungsraum schaffen, nicht zu einer weiteren Selbstbeobachtungsaufgabe werden.
+
+### Private Sheet-Tabs
+
+- **Haltepunkte:** normalisierte Zeilen vom Typ `Aussage`, `Haltepunkt` und `Zuordnung`
+- **HaltepunktSituationen:** freiwillig festgehaltene aktuelle und später abgeschlossene Situationen
+
 ## 8. Tagesbegleitung – vorläufige Idee
 
 Nicht als starre Abfolge, sondern als mögliche Begleitung:
