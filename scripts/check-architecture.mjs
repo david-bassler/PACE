@@ -36,7 +36,7 @@ for (const id of new Set(ids.filter((id, index) => ids.indexOf(id) !== index))) 
 // 2. Literal DOM references must point at existing markup.
 for (const [file, source] of sources) {
   const refs = [
-    ...source.matchAll(/\$\(\s*["']([^"']+)["']\s*\)/g),
+    ...source.matchAll(/(?<!\$)\$\(\s*["']([^"']+)["']\s*\)/g),
     ...source.matchAll(/getElementById\(\s*["']([^"']+)["']\s*\)/g)
   ].map(match => match[1]);
 
