@@ -12,6 +12,7 @@ import {
   resonanceRecordFromRow,
   wellbeingTables
 } from './wellbeing-data.js';
+import { matchingResonanceEvents, chooseAnchorEvent } from './wellbeing-domain.js';
 
 export { wellbeingSheetSpecs };
 
@@ -183,28 +184,9 @@ function submitAnchor(event) {
   clearAnchorForm(); persist();
 }
 
-function matchingEvents(anchor) {
-  const wanted = anchor?.tagIds || [];
-  if (!wanted.length) return [];
-  return data.resonanceEvents.filter(event => {
-    if (event.active === false) return false;
-    const ids = new Set(event.tagIds || []);
-    return anchor.matchMode === 'all' ? wanted.every(id => ids.has(id)) : wanted.some(id => ids.has(id));
-  });
-}
-
-function pickAnchorEvent(anchor) {
-  const matches = matchingEvents(anchor);
-  if (!matches.length) return null;
-  let candidates = matches.filter(item => item.id !== lastAnchorEventId);
-  if (!candidates.length) candidates = matches;
-  const rich = candidates.filter(item => item.context && item.context !== '—');
-  return random(rich.length ? rich : candidates);
-}
-
 function renderAnchorEvent(anchor) {
   const box = $('anchorEventCard'); box.innerHTML = '';
-  const event = pickAnchorEvent(anchor);
+  const event = chooseAnchorEvent(data.resonanceEvents, anchor, lastAnchorEventId);
   $('anchorResultTitle').textContent = anchor.title;
   $('anchorResultDescription').textContent = anchor.description || 'Ein reales Beispiel aus deiner eigenen Resonanzbibliothek.';
   $('anchorNextExample').disabled = !event;
@@ -243,7 +225,7 @@ function openAnchorChooser() {
   for (const anchor of anchors) {
     const button = document.createElement('button'); button.type = 'button'; button.className = 'anchor-choice';
     const title = document.createElement('strong'); title.textContent = anchor.title;
-    const text = document.createElement('small'); text.textContent = anchor.description || `${matchingEvents(anchor).length} passende Ereignisse`;
+    const text = document.createElement('small'); text.textContent = anchor.description || `${matchingResonanceEvents(data.resonanceEvents, anchor).length} passende Ereignisse`;
     button.append(title, text);
     button.addEventListener('click', () => { $('anchorChooserDialog').close(); openAnchor(anchor.id); });
     list.appendChild(button);
@@ -277,7 +259,7 @@ function renderResonanceLibrary() {
     const copy = document.createElement('div'); const title = document.createElement('strong'); title.textContent = anchor.title;
     const names = (anchor.tagIds || []).map(tagName).filter(Boolean);
     const p = document.createElement('p'); p.textContent = anchor.description || '';
-    const meta = document.createElement('small'); meta.textContent = `${anchor.matchMode === 'all' ? 'alle Schlagwörter' : 'mindestens ein Schlagwort'} · ${names.join(' · ')} · ${matchingEvents(anchor).length} Ereignisse`;
+    const meta = document.createElement('small'); meta.textContent = `${anchor.matchMode === 'all' ? 'alle Schlagwörter' : 'mindestens ein Schlagwort'} · ${names.join(' · ')} · ${matchingResonanceEvents(data.resonanceEvents, anchor).length} Ereignisse`;
     copy.append(title); if (anchor.description) copy.append(p); copy.append(meta);
     const actions = document.createElement('div');
     const show = document.createElement('button'); show.type = 'button'; show.className = 'tiny-button'; show.textContent = 'Anzeigen'; show.addEventListener('click', () => openAnchor(anchor.id));
