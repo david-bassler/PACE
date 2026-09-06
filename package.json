@@ -1,0 +1,8 @@
+{
+  "name": "pace-pwa",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/check-architecture.mjs && node --test tests/*.test.mjs"
+  }
+}
