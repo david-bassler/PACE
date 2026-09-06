@@ -16,6 +16,51 @@ Ein guter Tag ist nicht einfach ein möglichst produktiver Tag. Das Zielbild ist
 
 Die vier PACE-Bereiche sind deshalb keine vier täglichen Pflichtfelder.
 
+## 0. Primäre UX: Benutzen vor Verwalten
+
+PACE wird nicht nach seinen internen Datenmodellen gegliedert, sondern danach, **warum die App gerade geöffnet wird**.
+
+Die primäre Navigation besteht deshalb aus vier Bereichen:
+
+- **Heute:** momentane Tagesform, Schnellerfassung, Reserve, Tagesauswahl, Feststecken und Abendabschluss
+- **Werkzeuge:** Atemkreis, Parken / Tag verkleinern, Auswahlhilfe, Erinnerungsanker und bei Bedarf direkte PACE-Vorschläge
+- **Fortschritt:** Lebenslandkarte, Fortschrittsereignisse und nächste mögliche Schritte
+- **Mehr:** Bibliothek, Erfassungskonfiguration, Erklärungstexte, Synchronisation und Einstellungen
+
+Grundsatz:
+
+**Benutzen und Konfigurieren liegen nicht auf derselben visuellen Ebene.**
+
+Auf „Heute“ sollen deshalb nur Dinge sichtbar sein, die für den aktuellen Abschnitt des Tages unmittelbar relevant sind. Die Konfiguration der Schnellerfassung liegt unter „Mehr“. Erinnerungsanker werden unter „Werkzeuge“ benutzt; Schlagwörter und Ankerregeln werden in der persönlichen Bibliothek verwaltet.
+
+### Feststecken nach Bedürfnis statt Feature
+
+In belasteten oder unklaren Momenten soll PACE nicht verlangen, dass der Nutzer bereits weiß, welches Feature zuständig ist.
+
+Der Einstieg **„Ich stecke fest“** fragt deshalb zuerst nach wenigen verständlichen Bedürfnissen:
+
+- **Ruhe im System**
+- **Weniger im Kopf**
+- **Eine Richtung**
+- **Einen anderen Blick**
+
+Erst dahinter liegen die konkreten Werkzeuge.
+
+Private zusätzliche Feststecken-Hilfen bleiben weiterhin verfügbar, stehen aber hinter einer aufklappbaren zweiten Ebene.
+
+### Verwaltung progressiv offenlegen
+
+Komplexe Hintergrundstrukturen wie:
+
+- Erinnerungsanker-Regeln
+- Schlagwörter
+- PACE-Beispiele
+- Resonanzchancen
+
+sollen in der persönlichen Bibliothek zunächst eingeklappt bleiben und nur bei bewusster Verwaltung geöffnet werden.
+
+Die vier Hauptbereiche sind ausdrücklich **eine veränderbare UX-Hypothese**, keine unveränderliche Informationsarchitektur. Entscheidend ist, ob sie die kognitive Last bei tatsächlicher Nutzung senken.
+
 ## 1. Erklärungstexte jederzeit griffbereit
 
 Wichtig: Die App soll kurze, verständliche Erklärungstexte zu den Grundideen bereithalten.
