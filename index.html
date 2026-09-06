@@ -258,48 +258,67 @@
 
   <dialog id="libraryDialog" class="dialog wide-dialog">
     <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
-    <div><p class="micro">PRIVATE BEISPIELBIBLIOTHEK</p><h2>So sieht das bei mir in echt aus.</h2><p class="hint">Gute Beispiele dürfen später Orientierung geben. Sie werden nicht gezählt und sind keine Pflichtdokumentation.</p>
-      <section class="dialog-section">
-        <h3>Beispiele</h3><div id="libraryExampleList" class="library-list"></div>
-        <form id="exampleForm" class="stack-form">
-          <label><span>PACE-Bereich</span><select id="exampleArea"><option value="P">Kompetenz</option><option value="A">Fortschritt</option><option value="C">Reserve</option><option value="E">Resonanz</option></select></label>
-          <label><span>Kurzer Titel <small>(optional)</small></span><input id="exampleTitle" maxlength="220"></label>
-          <label><span>Was ist passiert?</span><textarea id="exampleText" rows="4" maxlength="2500" required></textarea></label>
-          <button class="primary-button" type="submit">Beispiel privat speichern</button>
-        </form>
-      </section>
-      <section class="dialog-section">
-        <div class="section-head"><div><h3>Resonanzbibliothek & Erinnerungsanker</h3><p id="resonanceLibrarySummary" class="hint">Noch keine Resonanzbibliothek synchronisiert.</p></div><button id="openAnchorChooser" class="secondary-button" type="button">Erinnerungsanker öffnen</button></div>
-        <p class="hint">Kategorien sind keine festen App-Spalten. Ereignisse verweisen auf frei benennbare Schlagwörter; Erinnerungsanker kombinieren diese Schlagwörter. Schlagwörter können später umbenannt, ergänzt oder pausiert werden, ohne die Ereignisse neu zu strukturieren.</p>
+    <div>
+      <p class="micro">PERSÖNLICHE BIBLIOTHEK</p>
+      <h2>Hintergrund statt Tagesoberfläche.</h2>
+      <p id="resonanceLibrarySummary" class="hint">Noch keine Resonanzbibliothek synchronisiert.</p>
+      <p class="hint">Hier wird verwaltet. Erinnerungsanker selbst benutzt du unter <strong>Werkzeuge</strong>.</p>
 
-        <h4>Erinnerungsanker</h4>
-        <div id="anchorConfigList" class="library-list"></div>
-        <form id="anchorForm" class="stack-form">
-          <label><span>Titel</span><input id="anchorName" maxlength="220" placeholder="z. B. Menschen waren gut zu mir" required></label>
-          <label><span>Kurze Einordnung <small>(optional)</small></span><textarea id="anchorDescription" rows="2" maxlength="1200" placeholder="Was soll dieser Anker wieder zugänglich machen?"></textarea></label>
-          <fieldset><legend>Passende Schlagwörter</legend><div id="anchorTagChoices" class="check-chip-row"></div></fieldset>
-          <label><span>Trefferregel</span><select id="anchorMatchMode"><option value="any">mindestens eines der Schlagwörter</option><option value="all">alle gewählten Schlagwörter</option></select></label>
-          <div class="form-actions"><button id="anchorSubmit" class="primary-button" type="submit">Erinnerungsanker anlegen</button><button id="anchorCancel" class="secondary-button" type="button" hidden>Abbrechen</button></div>
-        </form>
+      <details class="library-admin-group">
+        <summary>Erinnerungsanker verwalten</summary>
+        <div class="library-admin-body">
+          <p class="hint">Ein Anker kombiniert frei gewählte Schlagwörter. Die Trefferlogik kann später jederzeit verändert werden.</p>
+          <div id="anchorConfigList" class="library-list"></div>
+          <form id="anchorForm" class="stack-form">
+            <label><span>Titel</span><input id="anchorName" maxlength="220" placeholder="z. B. Menschen waren gut zu mir" required></label>
+            <label><span>Kurze Einordnung <small>(optional)</small></span><textarea id="anchorDescription" rows="2" maxlength="1200" placeholder="Was soll dieser Anker wieder zugänglich machen?"></textarea></label>
+            <fieldset><legend>Passende Schlagwörter</legend><div id="anchorTagChoices" class="check-chip-row"></div></fieldset>
+            <label><span>Trefferregel</span><select id="anchorMatchMode"><option value="any">mindestens eines der Schlagwörter</option><option value="all">alle gewählten Schlagwörter</option></select></label>
+            <div class="form-actions"><button id="anchorSubmit" class="primary-button" type="submit">Erinnerungsanker anlegen</button><button id="anchorCancel" class="secondary-button" type="button" hidden>Abbrechen</button></div>
+          </form>
+        </div>
+      </details>
 
-        <h4>Schlagwörter</h4>
-        <div id="resonanceTagList" class="library-list"></div>
-        <form id="resonanceTagForm" class="stack-form">
-          <label><span>Name</span><input id="resonanceTagName" maxlength="180" required></label>
-          <label><span>Beschreibung <small>(optional)</small></span><textarea id="resonanceTagDescription" rows="2" maxlength="900"></textarea></label>
-          <div class="form-actions"><button id="resonanceTagSubmit" class="primary-button" type="submit">Schlagwort anlegen</button><button id="resonanceTagCancel" class="secondary-button" type="button" hidden>Abbrechen</button></div>
-        </form>
-        <p class="hint">Für den Erstimport kann die vorbereitete CSV direkt in das private Sheet-Tab <strong>Resonanzbibliothek</strong> kopiert werden.</p>
-      </section>
+      <details class="library-admin-group">
+        <summary>Schlagwörter verwalten</summary>
+        <div class="library-admin-body">
+          <p class="hint">Schlagwörter sind frei veränderbare Hintergrunddaten, keine fest eingebauten Kategorien.</p>
+          <div id="resonanceTagList" class="library-list"></div>
+          <form id="resonanceTagForm" class="stack-form">
+            <label><span>Name</span><input id="resonanceTagName" maxlength="180" required></label>
+            <label><span>Beschreibung <small>(optional)</small></span><textarea id="resonanceTagDescription" rows="2" maxlength="900"></textarea></label>
+            <div class="form-actions"><button id="resonanceTagSubmit" class="primary-button" type="submit">Schlagwort anlegen</button><button id="resonanceTagCancel" class="secondary-button" type="button" hidden>Abbrechen</button></div>
+          </form>
+          <p class="hint">Für einen Erstimport kann die vorbereitete CSV in das private Sheet-Tab <strong>Resonanzbibliothek</strong> kopiert werden.</p>
+        </div>
+      </details>
 
-      <section class="dialog-section">
-        <h3>Resonanzchancen</h3><p class="hint">Keine Resonanz-Aufgaben. Nur Dinge, Orte oder Situationen, in denen etwas passieren könnte.</p><div id="resonanceChanceList" class="library-list"></div>
-        <form id="chanceForm" class="stack-form">
-          <label><span>Titel</span><input id="chanceTitle" maxlength="220" required></label>
-          <label><span>Beschreibung <small>(optional)</small></span><textarea id="chanceText" rows="3" maxlength="1500"></textarea></label>
-          <button class="primary-button" type="submit">Resonanzchance speichern</button>
-        </form>
-      </section>
+      <details class="library-admin-group">
+        <summary>PACE-Beispiele</summary>
+        <div class="library-admin-body">
+          <p class="hint">Beispiele für Kompetenz, Fortschritt, Reserve oder Resonanz. Sie werden nicht gezählt und sind keine Pflichtdokumentation.</p>
+          <div id="libraryExampleList" class="library-list"></div>
+          <form id="exampleForm" class="stack-form">
+            <label><span>PACE-Bereich</span><select id="exampleArea"><option value="P">Kompetenz</option><option value="A">Fortschritt</option><option value="C">Reserve</option><option value="E">Resonanz</option></select></label>
+            <label><span>Kurzer Titel <small>(optional)</small></span><input id="exampleTitle" maxlength="220"></label>
+            <label><span>Was ist passiert?</span><textarea id="exampleText" rows="4" maxlength="2500" required></textarea></label>
+            <button class="primary-button" type="submit">Beispiel privat speichern</button>
+          </form>
+        </div>
+      </details>
+
+      <details class="library-admin-group">
+        <summary>Resonanzchancen</summary>
+        <div class="library-admin-body">
+          <p class="hint">Dinge, Orte oder Situationen, in denen Resonanz möglich sein könnte – keine Resonanz-Aufgaben.</p>
+          <div id="resonanceChanceList" class="library-list"></div>
+          <form id="chanceForm" class="stack-form">
+            <label><span>Titel</span><input id="chanceTitle" maxlength="220" required></label>
+            <label><span>Beschreibung <small>(optional)</small></span><textarea id="chanceText" rows="3" maxlength="1500"></textarea></label>
+            <button class="primary-button" type="submit">Resonanzchance speichern</button>
+          </form>
+        </div>
+      </details>
     </div>
   </dialog>
 
