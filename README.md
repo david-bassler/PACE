@@ -31,6 +31,7 @@ Die App ist bewusst in kleine ES-Module getrennt:
 - `js/features/wellbeing.js` – Meh-Modus, Erklärungstexte, private Beispiele, Resonanzchancen
 - `js/features/space.js` – Parken, Tag verkleinern, „Das behalten“ / Savour-Marker
 - `js/features/tracking.js` – konfigurierbare Tabellen-Erfassung, Gruppen/Felder und Schreibplan-Vorschau
+- `js/features/holding.js` – flexible Haltepunkte, Aussage-Zuordnungen und überstandene Situationen
 
 Neue Funktionen sollen möglichst als eigenes Feature-Modul ergänzt werden statt die Tageslogik weiter aufzublähen.
 
@@ -69,6 +70,8 @@ PACE verwendet aktuell:
 - `Geparkt` – offene Schleifen mit nächstem Schritt / Wiederaufnahme
 - `Behalten` – kurze Savour-Marker
 - `ErfassungKonfig` – private Konfiguration der flexiblen Erfassungsfelder und Gruppen
+- `Haltepunkte` – private Aussagen, Geschichten/Bilder/Metaphern und viele-zu-viele-Zuordnungen
+- `HaltepunktSituationen` – freiwillig festgehaltene aktuelle und später vergangene Situationen
 
 Die App legt fehlende Tabs bei bestehender Google-Verbindung selbst an.
 
