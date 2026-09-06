@@ -2,6 +2,7 @@ import { loadJSON, nowIso, saveJSON, uid } from '../core/storage.js';
 import { $, announce, emptyMessage, openDialog, option } from '../core/ui.js';
 import { loadTable, replaceTable } from '../core/google.js';
 import { markDirty, registerSync } from '../core/sync.js';
+import { mergeUpdatedById } from '../core/collections.js';
 
 const KEY = 'pace-tracking-config-v1';
 const CONFIG_HEADERS = ['ID','Typ','Titel','Icon','GruppeID','Tabellenblatt','SpaltenID','Eingabetyp','Schreibmodus','Reihenfolge','Status','Aktualisiert'];
@@ -160,15 +161,6 @@ function toRow(item) {
   ];
 }
 
-function mergeById(local, remote) {
-  const map = new Map();
-  for (const item of [...remote, ...local]) {
-    const old = map.get(item.id);
-    if (!old || String(item.updatedAt || '') >= String(old.updatedAt || '')) map.set(item.id, item);
-  }
-  return [...map.values()];
-}
-
 function activeGroups() {
   return data.groups.filter(item => item.status !== 'archived').sort(sortItems);
 }
@@ -195,8 +187,8 @@ async function pushTrackingConfig() {
 export async function syncTrackingConfig() {
   const rows = await loadTable('ErfassungKonfig', CONFIG_HEADERS);
   const remote = rows.map(fromRow);
-  data.groups = mergeById(data.groups, remote.filter(item => item.kind === 'group'));
-  data.fields = mergeById(data.fields, remote.filter(item => item.kind === 'field'));
+  data.groups = mergeUpdatedById(data.groups, remote.filter(item => item.kind === 'group'));
+  data.fields = mergeUpdatedById(data.fields, remote.filter(item => item.kind === 'field'));
   saveJSON(KEY, data);
   await pushTrackingConfig();
   renderAll();
