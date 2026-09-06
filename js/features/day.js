@@ -296,12 +296,15 @@ export function initDayFeature() {
   }));
 
   $('moreReserve').addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('pace:navigate', { detail: { page: 'tools', focus: 'paceSuggestionsDetails' } }));
+    const details = $('paceSuggestionsDetails');
+    if (details) details.open = true;
     const row = document.querySelector('[data-key="C"]');
     const panel = $('suggestions-C');
     row.setAttribute('aria-expanded', 'true');
     panel.hidden = false;
     renderSuggestions('C');
-    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    window.requestAnimationFrame(() => row.scrollIntoView({ behavior: 'smooth', block: 'center' }));
   });
   $('stuckButton').addEventListener('click', openStuck);
   $('resetDay').addEventListener('click', resetDay);
