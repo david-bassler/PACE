@@ -784,6 +784,92 @@ Haltepunkte sollen Zugang zu einem größeren Erfahrungsraum schaffen, nicht zu 
 - **Haltepunkte:** normalisierte Zeilen vom Typ `Aussage`, `Haltepunkt` und `Zuordnung`
 - **HaltepunktSituationen:** freiwillig festgehaltene aktuelle und später abgeschlossene Situationen
 
+## 7f. Horizonte: den Maßstab bewusst wechseln
+
+PACE soll zusätzlich mit **Horizonten** arbeiten. Gemeint ist nicht die Wahrheit oder Wichtigkeit eines Themas, sondern die Zeitskala bzw. der Bedeutungsrahmen, der gerade den nächsten Abschnitt des Lebens bestimmt.
+
+Ein größerer Horizont ist nicht automatisch der passendere Maßstab für den aktuellen Moment.
+
+### Kein Trackingfeld, sondern Meta-Werkzeug
+
+Horizonte werden **nicht täglich abgefragt**, nicht ausgewertet und nicht als Verlauf gespeichert. Der aktuell gewählte Horizont ist nur eine lokale, tagesgebundene Arbeitsinformation und verfällt mit dem Tag.
+
+Der Flow ist fast vollständig klickbasiert.
+
+### Schritt 1 – Input: Welcher Horizont bestimmt gerade alles?
+
+PACE zeigt feste Auswahlmöglichkeiten:
+
+- nächste Stunden
+- heute
+- Wochen / Monate
+- mein weiteres Leben
+- Gesellschaft / Welt
+
+Der Nutzer tippt genau **eine** Auswahl an. Freitext ist nicht nötig.
+
+### Schritt 2 – Input: Was soll für den nächsten Abschnitt gelten?
+
+PACE zeigt drei feste Möglichkeiten:
+
+- **Dabei bleiben** – Ich will mich gerade wirklich mit diesem Horizont beschäftigen.
+- **Näher heranholen** – Das Thema darf bleiben, aber nicht den nächsten Abschnitt bestimmen.
+- **Beides halten** – Der große Horizont ist real und wichtig; der kleinere auch.
+
+Der Nutzer tippt genau **eine** Auswahl an.
+
+### Schritt 3 – nur bei „Näher heranholen“ oder „Beides halten“
+
+PACE fragt:
+
+**„Welcher Horizont soll jetzt praktisch gelten?“**
+
+Feste Auswahl:
+
+- nächste 30 Minuten
+- bis heute Abend
+- bis morgen
+- eigener Zeitraum
+
+Nur bei **eigener Zeitraum** gibt es ein kurzes Freitextfeld.
+
+### Schritt 4 – feste Anzeige der App
+
+PACE zeigt danach keine weitere Analyse, sondern eine kurze Einordnung.
+
+Bei „Näher heranholen“ etwa:
+
+> Dieser größere Horizont darf wichtig bleiben. Für den nächsten Abschnitt muss er aber nicht der Maßstab für alles sein.
+
+Bei „Beides halten“:
+
+> Der größere Horizont bleibt real und wichtig. Gleichzeitig darf der kleinere Horizont für den nächsten Abschnitt zählen.
+
+Zusätzlich wird der praktisch gewählte Zeitraum angezeigt.
+
+### Optionale Anschlusswege
+
+Erst nach diesem Ergebnis bietet PACE optional an:
+
+- **Haltepunkt öffnen**
+- **Thema für später parken**
+- **Reicht**
+
+„Haltepunkt öffnen“ führt in die bestehende private Haltepunkte-Bibliothek.
+
+„Thema für später parken“ öffnet erst dann ein Freitextfeld **„Was beschäftigt dich gerade?“** und legt den Text im bestehenden Parkbereich ab. Damit muss ein großer Horizont nicht verdrängt werden, aber auch nicht diffus den gesamten nächsten Abschnitt besetzen.
+
+### Schutzregel
+
+Der Horizont-Flow darf nicht behaupten:
+
+- dass ein großes Problem unwichtig sei
+- dass ein Modell, Risiko oder gesellschaftliches Thema falsch sei
+- dass ein enger Horizont „richtiger“ sei
+- dass der Nutzer sich nur auf kleine Dinge konzentrieren solle
+
+Er verändert den **Maßstab für den nächsten Abschnitt**, nicht die Wahrheit über die Welt.
+
 ## 8. Tagesbegleitung – vorläufige Idee
 
 Nicht als starre Abfolge, sondern als mögliche Begleitung:
