@@ -8,7 +8,7 @@ import { getSuggestions } from './day.js';
 const KEY = 'pace-library-v1';
 const EXAMPLE_HEADERS = ['ID','Bereich','Datum','Titel','Text','Aktualisiert'];
 const CHANCE_HEADERS = ['ID','Titel','Text','Aktiv','Aktualisiert'];
-const RESONANCE_HEADERS = ['Typ','ID','Datum','Titel','Kontext','Tags','TagName','Beschreibung','MatchModus','Aktiv','Evidenz','Quelle','Aktualisiert'];
+const RESONANCE_HEADERS = ['Typ','ID','Datum','Titel','Kontext','Schlagworte','SchlagwortName','Beschreibung','MatchModus','Aktiv','Evidenz','Quelle','Aktualisiert'];
 
 export const wellbeingSheetSpecs = {
   Beispiele: EXAMPLE_HEADERS,
@@ -68,7 +68,7 @@ function resonanceRecordFromRow(row) {
   if (type === 'ereignis' || type === 'event') {
     return { type: 'event', ...common, date: row[2] || '', title: row[3] || '', context: row[4] || '', tagIds: splitTagIds(row[5]), evidence: row[10] || '', source: row[11] || '' };
   }
-  if (type === 'tag') {
+  if (type === 'tag' || type === 'schlagwort') {
     return { type: 'tag', ...common, name: row[6] || row[3] || '', description: row[7] || '' };
   }
   if (type === 'anker' || type === 'anchor') {
@@ -79,7 +79,7 @@ function resonanceRecordFromRow(row) {
 
 function resonanceRecordToRow(record) {
   if (record.type === 'event') return ['Ereignis', record.id, record.date || '', record.title || '', record.context || '', joinTagIds(record.tagIds), '', '', '', record.active !== false, record.evidence || '', record.source || '', record.updatedAt || nowIso()];
-  if (record.type === 'tag') return ['Tag', record.id, '', '', '', '', record.name || '', record.description || '', '', record.active !== false, '', '', record.updatedAt || nowIso()];
+  if (record.type === 'tag') return ['Schlagwort', record.id, '', '', '', '', record.name || '', record.description || '', '', record.active !== false, '', '', record.updatedAt || nowIso()];
   return ['Anker', record.id, '', record.title || '', '', joinTagIds(record.tagIds), '', record.description || '', record.matchMode === 'all' ? 'all' : 'any', record.active !== false, '', '', record.updatedAt || nowIso()];
 }
 
@@ -158,7 +158,7 @@ function renderTagChoices(targetId, selected = []) {
   const box = $(targetId); box.innerHTML = '';
   const tags = [...activeResonanceTags()].sort((a,b) => a.name.localeCompare(b.name, 'de'));
   if (!tags.length) {
-    box.appendChild(emptyMessage('Noch keine Resonanz-Tags vorhanden. Nach dem CSV-Import erscheinen sie hier automatisch.'));
+    box.appendChild(emptyMessage('Noch keine Resonanz-Schlagwörter vorhanden. Nach dem CSV-Import erscheinen sie hier automatisch.'));
     return;
   }
   for (const tag of tags) {
@@ -220,7 +220,7 @@ function submitAnchor(event) {
   event.preventDefault();
   const title = $('anchorName').value.trim(); if (!title) return;
   const tagIds = [...$('anchorTagChoices').querySelectorAll('input:checked')].map(input => input.value);
-  if (!tagIds.length) { announce('Wähle mindestens einen Tag für den Erinnerungsanker.', ''); return; }
+  if (!tagIds.length) { announce('Wähle mindestens ein Schlagwort für den Erinnerungsanker.', ''); return; }
   const old = data.anchors.find(item => item.id === editingAnchorId);
   const anchor = old || { id: uid('anchor'), active: true };
   Object.assign(anchor, {
@@ -289,7 +289,7 @@ function openAnchorChooser() {
   const list = $('anchorChooserList'); list.innerHTML = '';
   const anchors = data.anchors.filter(item => item.active !== false);
   if (!anchors.length) {
-    list.appendChild(emptyMessage('Noch keine Erinnerungsanker eingerichtet. Du kannst sie unter „Eigene Beispiele“ frei aus Tags zusammensetzen.'));
+    list.appendChild(emptyMessage('Noch keine Erinnerungsanker eingerichtet. Du kannst sie unter „Eigene Beispiele“ frei aus Schlagwörtern zusammensetzen.'));
   }
   for (const anchor of anchors) {
     const button = document.createElement('button'); button.type = 'button'; button.className = 'anchor-choice';
@@ -304,11 +304,11 @@ function openAnchorChooser() {
 
 function renderResonanceLibrary() {
   if (!$('resonanceLibrarySummary')) return;
-  $('resonanceLibrarySummary').textContent = `${data.resonanceEvents.filter(item => item.active !== false).length} Ereignisse · ${activeResonanceTags().length} Tags · ${data.anchors.filter(item => item.active !== false).length} Erinnerungsanker`;
+  $('resonanceLibrarySummary').textContent = `${data.resonanceEvents.filter(item => item.active !== false).length} Ereignisse · ${activeResonanceTags().length} Schlagwörter · ${data.anchors.filter(item => item.active !== false).length} Erinnerungsanker`;
 
   const tagList = $('resonanceTagList'); tagList.innerHTML = '';
   const tags = [...data.resonanceTags].sort((a,b) => (a.name || '').localeCompare(b.name || '', 'de'));
-  if (!tags.length) tagList.appendChild(emptyMessage('Noch keine Resonanz-Tags.'));
+  if (!tags.length) tagList.appendChild(emptyMessage('Noch keine Resonanz-Schlagwörter.'));
   for (const tag of tags) {
     const card = document.createElement('article'); card.className = 'library-card';
     const copy = document.createElement('div'); const title = document.createElement('strong'); title.textContent = tag.name || '(unbenannt)';
@@ -322,13 +322,13 @@ function renderResonanceLibrary() {
 
   const anchorList = $('anchorConfigList'); anchorList.innerHTML = '';
   const anchors = [...data.anchors].sort((a,b) => (a.title || '').localeCompare(b.title || '', 'de'));
-  if (!anchors.length) anchorList.appendChild(emptyMessage('Noch keine Erinnerungsanker. Sie kombinieren frei gewählte Tags.'));
+  if (!anchors.length) anchorList.appendChild(emptyMessage('Noch keine Erinnerungsanker. Sie kombinieren frei gewählte Schlagwörter.'));
   for (const anchor of anchors) {
     const card = document.createElement('article'); card.className = 'library-card';
     const copy = document.createElement('div'); const title = document.createElement('strong'); title.textContent = anchor.title;
     const names = (anchor.tagIds || []).map(tagName).filter(Boolean);
     const p = document.createElement('p'); p.textContent = anchor.description || '';
-    const meta = document.createElement('small'); meta.textContent = `${anchor.matchMode === 'all' ? 'alle Tags' : 'mindestens ein Tag'} · ${names.join(' · ')} · ${matchingEvents(anchor).length} Ereignisse`;
+    const meta = document.createElement('small'); meta.textContent = `${anchor.matchMode === 'all' ? 'alle Schlagwörter' : 'mindestens ein Schlagwort'} · ${names.join(' · ')} · ${matchingEvents(anchor).length} Ereignisse`;
     copy.append(title); if (anchor.description) copy.append(p); copy.append(meta);
     const actions = document.createElement('div');
     const show = document.createElement('button'); show.type = 'button'; show.className = 'tiny-button'; show.textContent = 'Anzeigen'; show.addEventListener('click', () => openAnchor(anchor.id));
