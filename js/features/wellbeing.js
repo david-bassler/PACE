@@ -8,10 +8,12 @@ import { getSuggestions } from './day.js';
 const KEY = 'pace-library-v1';
 const EXAMPLE_HEADERS = ['ID','Bereich','Datum','Titel','Text','Aktualisiert'];
 const CHANCE_HEADERS = ['ID','Titel','Text','Aktiv','Aktualisiert'];
+const RESONANCE_HEADERS = ['Typ','ID','Datum','Titel','Kontext','Tags','TagName','Beschreibung','MatchModus','Aktiv','Evidenz','Quelle','Aktualisiert'];
 
 export const wellbeingSheetSpecs = {
   Beispiele: EXAMPLE_HEADERS,
-  Resonanzchancen: CHANCE_HEADERS
+  Resonanzchancen: CHANCE_HEADERS,
+  Resonanzbibliothek: RESONANCE_HEADERS
 };
 
 const EXPLANATIONS = {
@@ -41,14 +43,45 @@ const EXPLANATIONS = {
   }
 };
 
-let data = { examples: [], chances: [], ...loadJSON(KEY, { examples: [], chances: [] }) };
-data.examples ||= []; data.chances ||= [];
+let data = { examples: [], chances: [], resonanceEvents: [], resonanceTags: [], anchors: [], ...loadJSON(KEY, { examples: [], chances: [], resonanceEvents: [], resonanceTags: [], anchors: [] }) };
+data.examples ||= []; data.chances ||= []; data.resonanceEvents ||= []; data.resonanceTags ||= []; data.anchors ||= [];
 let mehMode = '';
+let editingTagId = '';
+let editingAnchorId = '';
+let currentAnchorId = '';
+let lastAnchorEventId = '';
 
 function exampleFromRow(row) { return { id: row[0] || uid('example'), area: row[1] || 'E', date: row[2] || dateKey(), title: row[3] || '', text: row[4] || '', updatedAt: row[5] || nowIso() }; }
 function exampleToRow(item) { return [item.id, item.area, item.date, item.title, item.text, item.updatedAt]; }
 function chanceFromRow(row) { return { id: row[0] || uid('chance'), title: row[1] || '', text: row[2] || '', active: String(row[3] ?? 'true') !== 'false', updatedAt: row[4] || nowIso() }; }
 function chanceToRow(item) { return [item.id, item.title, item.text, item.active, item.updatedAt]; }
+
+function splitTagIds(value) { return String(value || '').split(';').map(item => item.trim()).filter(Boolean); }
+function joinTagIds(values) { return [...new Set((values || []).filter(Boolean))].join(';'); }
+function rowActive(value) { return String(value ?? 'true').trim().toLowerCase() !== 'false'; }
+
+function resonanceRecordFromRow(row) {
+  const type = String(row[0] || '').trim().toLowerCase();
+  if (!type) return null;
+  const common = { id: row[1] || uid('resonance'), active: rowActive(row[9]), updatedAt: row[12] || nowIso() };
+
+  if (type === 'ereignis' || type === 'event') {
+    return { type: 'event', ...common, date: row[2] || '', title: row[3] || '', context: row[4] || '', tagIds: splitTagIds(row[5]), evidence: row[10] || '', source: row[11] || '' };
+  }
+  if (type === 'tag') {
+    return { type: 'tag', ...common, name: row[6] || row[3] || '', description: row[7] || '' };
+  }
+  if (type === 'anker' || type === 'anchor') {
+    return { type: 'anchor', ...common, title: row[3] || '', description: row[7] || row[4] || '', tagIds: splitTagIds(row[5]), matchMode: row[8] === 'all' ? 'all' : 'any' };
+  }
+  return null;
+}
+
+function resonanceRecordToRow(record) {
+  if (record.type === 'event') return ['Ereignis', record.id, record.date || '', record.title || '', record.context || '', joinTagIds(record.tagIds), '', '', '', record.active !== false, record.evidence || '', record.source || '', record.updatedAt || nowIso()];
+  if (record.type === 'tag') return ['Tag', record.id, '', '', '', '', record.name || '', record.description || '', '', record.active !== false, '', '', record.updatedAt || nowIso()];
+  return ['Anker', record.id, '', record.title || '', '', joinTagIds(record.tagIds), '', record.description || '', record.matchMode === 'all' ? 'all' : 'any', record.active !== false, '', '', record.updatedAt || nowIso()];
+}
 
 function mergeById(local, remote) {
   const map = new Map();
@@ -67,7 +100,15 @@ function persist(sync = true) {
 async function push() {
   await replaceTables({
     Beispiele: { headers: EXAMPLE_HEADERS, rows: data.examples.map(exampleToRow) },
-    Resonanzchancen: { headers: CHANCE_HEADERS, rows: data.chances.map(chanceToRow) }
+    Resonanzchancen: { headers: CHANCE_HEADERS, rows: data.chances.map(chanceToRow) },
+    Resonanzbibliothek: {
+      headers: RESONANCE_HEADERS,
+      rows: [
+        ...data.resonanceTags.map(item => resonanceRecordToRow({ ...item, type: 'tag' })),
+        ...data.anchors.map(item => resonanceRecordToRow({ ...item, type: 'anchor' })),
+        ...data.resonanceEvents.map(item => resonanceRecordToRow({ ...item, type: 'event' }))
+      ]
+    }
   });
 }
 
@@ -75,6 +116,12 @@ export async function syncWellbeing() {
   const tables = await loadTables(wellbeingSheetSpecs);
   data.examples = mergeById(data.examples, (tables.Beispiele || []).map(exampleFromRow));
   data.chances = mergeById(data.chances, (tables.Resonanzchancen || []).map(chanceFromRow));
+
+  const records = (tables.Resonanzbibliothek || []).map(resonanceRecordFromRow).filter(Boolean);
+  data.resonanceTags = mergeById(data.resonanceTags, records.filter(item => item.type === 'tag'));
+  data.anchors = mergeById(data.anchors, records.filter(item => item.type === 'anchor'));
+  data.resonanceEvents = mergeById(data.resonanceEvents, records.filter(item => item.type === 'event'));
+
   saveJSON(KEY, data);
   await push();
   renderLibrary();
@@ -101,6 +148,196 @@ function renderLibrary() {
     const copy = document.createElement('div'); const title = document.createElement('strong'); title.textContent = chance.title; const p = document.createElement('p'); p.textContent = chance.text; copy.append(title); if (chance.text) copy.append(p); card.append(copy);
     const off = document.createElement('button'); off.type = 'button'; off.className = 'tiny-button'; off.textContent = 'Pausieren'; off.addEventListener('click', () => { chance.active = false; chance.updatedAt = nowIso(); persist(); }); card.append(off); chances.appendChild(card);
   }
+  renderResonanceLibrary();
+}
+
+function activeResonanceTags() { return data.resonanceTags.filter(item => item.active !== false && item.name); }
+function tagName(id) { return data.resonanceTags.find(item => item.id === id)?.name || id; }
+
+function renderTagChoices(targetId, selected = []) {
+  const box = $(targetId); box.innerHTML = '';
+  const tags = [...activeResonanceTags()].sort((a,b) => a.name.localeCompare(b.name, 'de'));
+  if (!tags.length) {
+    box.appendChild(emptyMessage('Noch keine Resonanz-Tags vorhanden. Nach dem CSV-Import erscheinen sie hier automatisch.'));
+    return;
+  }
+  for (const tag of tags) {
+    const label = document.createElement('label'); label.className = 'check-chip';
+    const input = document.createElement('input'); input.type = 'checkbox'; input.value = tag.id; input.checked = selected.includes(tag.id);
+    label.append(input, document.createTextNode(tag.name)); box.appendChild(label);
+  }
+}
+
+function clearTagForm() {
+  editingTagId = '';
+  $('resonanceTagForm').reset();
+  $('resonanceTagSubmit').textContent = 'Tag anlegen';
+  $('resonanceTagCancel').hidden = true;
+}
+
+function editTag(id) {
+  const tag = data.resonanceTags.find(item => item.id === id); if (!tag) return;
+  editingTagId = id;
+  $('resonanceTagName').value = tag.name || '';
+  $('resonanceTagDescription').value = tag.description || '';
+  $('resonanceTagSubmit').textContent = 'Tag speichern';
+  $('resonanceTagCancel').hidden = false;
+  $('resonanceTagName').focus();
+}
+
+function submitTag(event) {
+  event.preventDefault();
+  const name = $('resonanceTagName').value.trim(); if (!name) return;
+  const old = data.resonanceTags.find(item => item.id === editingTagId);
+  const tag = old || { id: uid('res-tag'), active: true };
+  Object.assign(tag, { name, description: $('resonanceTagDescription').value.trim(), updatedAt: nowIso() });
+  if (!old) data.resonanceTags.push(tag);
+  clearTagForm(); persist();
+}
+
+function clearAnchorForm() {
+  editingAnchorId = '';
+  $('anchorForm').reset();
+  $('anchorMatchMode').value = 'any';
+  renderTagChoices('anchorTagChoices', []);
+  $('anchorSubmit').textContent = 'Erinnerungsanker anlegen';
+  $('anchorCancel').hidden = true;
+}
+
+function editAnchor(id) {
+  const anchor = data.anchors.find(item => item.id === id); if (!anchor) return;
+  editingAnchorId = id;
+  $('anchorName').value = anchor.title || '';
+  $('anchorDescription').value = anchor.description || '';
+  $('anchorMatchMode').value = anchor.matchMode === 'all' ? 'all' : 'any';
+  renderTagChoices('anchorTagChoices', anchor.tagIds || []);
+  $('anchorSubmit').textContent = 'Erinnerungsanker speichern';
+  $('anchorCancel').hidden = false;
+  $('anchorName').focus();
+}
+
+function submitAnchor(event) {
+  event.preventDefault();
+  const title = $('anchorName').value.trim(); if (!title) return;
+  const tagIds = [...$('anchorTagChoices').querySelectorAll('input:checked')].map(input => input.value);
+  if (!tagIds.length) { announce('Wähle mindestens einen Tag für den Erinnerungsanker.', ''); return; }
+  const old = data.anchors.find(item => item.id === editingAnchorId);
+  const anchor = old || { id: uid('anchor'), active: true };
+  Object.assign(anchor, {
+    title,
+    description: $('anchorDescription').value.trim(),
+    tagIds,
+    matchMode: $('anchorMatchMode').value === 'all' ? 'all' : 'any',
+    updatedAt: nowIso()
+  });
+  if (!old) data.anchors.push(anchor);
+  clearAnchorForm(); persist();
+}
+
+function matchingEvents(anchor) {
+  const wanted = anchor?.tagIds || [];
+  if (!wanted.length) return [];
+  return data.resonanceEvents.filter(event => {
+    if (event.active === false) return false;
+    const ids = new Set(event.tagIds || []);
+    return anchor.matchMode === 'all' ? wanted.every(id => ids.has(id)) : wanted.some(id => ids.has(id));
+  });
+}
+
+function pickAnchorEvent(anchor) {
+  const matches = matchingEvents(anchor);
+  if (!matches.length) return null;
+  let candidates = matches.filter(item => item.id !== lastAnchorEventId);
+  if (!candidates.length) candidates = matches;
+  const rich = candidates.filter(item => item.context && item.context !== '—');
+  return random(rich.length ? rich : candidates);
+}
+
+function renderAnchorEvent(anchor) {
+  const box = $('anchorEventCard'); box.innerHTML = '';
+  const event = pickAnchorEvent(anchor);
+  $('anchorResultTitle').textContent = anchor.title;
+  $('anchorResultDescription').textContent = anchor.description || 'Ein reales Beispiel aus deiner eigenen Resonanzbibliothek.';
+  $('anchorNextExample').disabled = !event;
+
+  if (!event) {
+    box.appendChild(emptyMessage('Für diesen Erinnerungsanker gibt es noch kein passendes Ereignis.'));
+    return;
+  }
+
+  lastAnchorEventId = event.id;
+  const date = document.createElement('p'); date.className = 'micro'; date.textContent = event.date || 'UNDATIERT';
+  const title = document.createElement('h3'); title.textContent = event.title;
+  box.append(date, title);
+  if (event.context && event.context !== '—') {
+    const context = document.createElement('p'); context.className = 'anchor-context'; context.textContent = event.context; box.appendChild(context);
+  }
+  const tags = document.createElement('p'); tags.className = 'anchor-tags';
+  tags.textContent = (event.tagIds || []).map(tagName).filter(Boolean).join(' · ');
+  if (tags.textContent) box.appendChild(tags);
+}
+
+function openAnchor(id) {
+  const anchor = data.anchors.find(item => item.id === id && item.active !== false); if (!anchor) return;
+  currentAnchorId = id;
+  lastAnchorEventId = '';
+  renderAnchorEvent(anchor);
+  openDialog('anchorResultDialog');
+}
+
+function openAnchorChooser() {
+  const list = $('anchorChooserList'); list.innerHTML = '';
+  const anchors = data.anchors.filter(item => item.active !== false);
+  if (!anchors.length) {
+    list.appendChild(emptyMessage('Noch keine Erinnerungsanker eingerichtet. Du kannst sie unter „Eigene Beispiele“ frei aus Tags zusammensetzen.'));
+  }
+  for (const anchor of anchors) {
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'anchor-choice';
+    const title = document.createElement('strong'); title.textContent = anchor.title;
+    const text = document.createElement('small'); text.textContent = anchor.description || `${matchingEvents(anchor).length} passende Ereignisse`;
+    button.append(title, text);
+    button.addEventListener('click', () => { $('anchorChooserDialog').close(); openAnchor(anchor.id); });
+    list.appendChild(button);
+  }
+  openDialog('anchorChooserDialog');
+}
+
+function renderResonanceLibrary() {
+  if (!$('resonanceLibrarySummary')) return;
+  $('resonanceLibrarySummary').textContent = `${data.resonanceEvents.filter(item => item.active !== false).length} Ereignisse · ${activeResonanceTags().length} Tags · ${data.anchors.filter(item => item.active !== false).length} Erinnerungsanker`;
+
+  const tagList = $('resonanceTagList'); tagList.innerHTML = '';
+  const tags = [...data.resonanceTags].sort((a,b) => (a.name || '').localeCompare(b.name || '', 'de'));
+  if (!tags.length) tagList.appendChild(emptyMessage('Noch keine Resonanz-Tags.'));
+  for (const tag of tags) {
+    const card = document.createElement('article'); card.className = 'library-card';
+    const copy = document.createElement('div'); const title = document.createElement('strong'); title.textContent = tag.name || '(unbenannt)';
+    const p = document.createElement('p'); p.textContent = tag.description || '';
+    copy.append(title); if (tag.description) copy.append(p);
+    const actions = document.createElement('div');
+    const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'tiny-button'; edit.textContent = 'Bearbeiten'; edit.addEventListener('click', () => editTag(tag.id));
+    const toggle = document.createElement('button'); toggle.type = 'button'; toggle.className = 'tiny-button'; toggle.textContent = tag.active === false ? 'Aktivieren' : 'Pausieren'; toggle.addEventListener('click', () => { tag.active = tag.active === false; tag.updatedAt = nowIso(); persist(); });
+    actions.append(edit, toggle); card.append(copy, actions); tagList.appendChild(card);
+  }
+
+  const anchorList = $('anchorConfigList'); anchorList.innerHTML = '';
+  const anchors = [...data.anchors].sort((a,b) => (a.title || '').localeCompare(b.title || '', 'de'));
+  if (!anchors.length) anchorList.appendChild(emptyMessage('Noch keine Erinnerungsanker. Sie kombinieren frei gewählte Tags.'));
+  for (const anchor of anchors) {
+    const card = document.createElement('article'); card.className = 'library-card';
+    const copy = document.createElement('div'); const title = document.createElement('strong'); title.textContent = anchor.title;
+    const names = (anchor.tagIds || []).map(tagName).filter(Boolean);
+    const p = document.createElement('p'); p.textContent = anchor.description || '';
+    const meta = document.createElement('small'); meta.textContent = `${anchor.matchMode === 'all' ? 'alle Tags' : 'mindestens ein Tag'} · ${names.join(' · ')} · ${matchingEvents(anchor).length} Ereignisse`;
+    copy.append(title); if (anchor.description) copy.append(p); copy.append(meta);
+    const actions = document.createElement('div');
+    const show = document.createElement('button'); show.type = 'button'; show.className = 'tiny-button'; show.textContent = 'Anzeigen'; show.addEventListener('click', () => openAnchor(anchor.id));
+    const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'tiny-button'; edit.textContent = 'Bearbeiten'; edit.addEventListener('click', () => editAnchor(anchor.id));
+    const toggle = document.createElement('button'); toggle.type = 'button'; toggle.className = 'tiny-button'; toggle.textContent = anchor.active === false ? 'Aktivieren' : 'Pausieren'; toggle.addEventListener('click', () => { anchor.active = anchor.active === false; anchor.updatedAt = nowIso(); persist(); });
+    actions.append(show, edit, toggle); card.append(copy, actions); anchorList.appendChild(card);
+  }
+
+  if (!editingAnchorId) renderTagChoices('anchorTagChoices', []);
 }
 
 function random(arr) { return arr.length ? arr[Math.floor(Math.random() * arr.length)] : null; }
@@ -184,6 +421,16 @@ export function initWellbeingFeature() {
   $('openExplanations').addEventListener('click', () => openDialog('explanationDialog'));
   $('exampleForm').addEventListener('submit', addExample);
   $('chanceForm').addEventListener('submit', addChance);
+  $('resonanceTagForm').addEventListener('submit', submitTag);
+  $('resonanceTagCancel').addEventListener('click', clearTagForm);
+  $('anchorForm').addEventListener('submit', submitAnchor);
+  $('anchorCancel').addEventListener('click', clearAnchorForm);
+  $('openAnchorChooser').addEventListener('click', openAnchorChooser);
+  $('openAnchorsFromStuck').addEventListener('click', () => { $('stuckDialog').close(); openAnchorChooser(); });
+  $('anchorNextExample').addEventListener('click', () => {
+    const anchor = data.anchors.find(item => item.id === currentAnchorId);
+    if (anchor) renderAnchorEvent(anchor);
+  });
 }
 
 export function getWellbeingData() { return structuredClone(data); }
