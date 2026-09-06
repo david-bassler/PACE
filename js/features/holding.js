@@ -155,9 +155,16 @@ export async function syncHolding() {
   const tables = await loadTables(holdingSheetSpecs);
   const records = (tables.Haltepunkte || []).map(rowToHolding).filter(Boolean);
 
-  data.statements = mergeById(data.statements, records.filter(item => item.type === 'statement'));
-  data.points = mergeById(data.points, records.filter(item => item.type === 'point'));
-  data.links = mergeById(data.links, records.filter(item => item.type === 'link'));
+  // Aussagen, Haltepunkte und Zuordnungen werden im privaten Sheet gepflegt.
+  // Bei einem vollständigen Sync ist das Sheet dafür die maßgebliche Quelle;
+  // so bleiben manuelle Änderungen flexibel, ohne Aktualisiert-Zeitstempel
+  // in Google Sheets nachpflegen zu müssen.
+  data.statements = records.filter(item => item.type === 'statement');
+  data.points = records.filter(item => item.type === 'point');
+  data.links = records.filter(item => item.type === 'link');
+
+  // Situationen können dagegen sowohl in der App als auch im Sheet verändert
+  // werden und werden deshalb wie die übrigen PACE-Daten nach ID zusammengeführt.
   data.situations = mergeById(data.situations, (tables.HaltepunktSituationen || []).map(rowToSituation));
 
   saveJSON(KEY, data);
