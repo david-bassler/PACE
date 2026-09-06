@@ -3,17 +3,25 @@ import { $, announce, emptyMessage, openDialog, option } from '../core/ui.js';
 import { loadTables, replaceTables } from '../core/google.js';
 import { markDirty, registerSync } from '../core/sync.js';
 import { addProgressSelection } from './day.js';
+import { mergeUpdatedById } from '../core/collections.js';
+import {
+  progressSheetSpecs,
+  areaFromRow,
+  itemFromRow,
+  eventFromRow,
+  progressTables
+} from './progress-data.js';
+import {
+  clarificationCycles,
+  currentClarification,
+  isClarifying,
+  allClarificationActionsDone,
+  actionableProgressEntries
+} from './progress-domain.js';
+
+export { progressSheetSpecs };
 
 const KEY = 'pace-progress-v1';
-const AREA_HEADERS = ['ID','Name','Warum','Wunschzustand','IstStand','Ressourcen','Status','Aktualisiert'];
-const ITEM_HEADERS = ['ID','Typ','Text','Details','ZielbereichIDs','ElternIDs','Status','Aktualisiert','Aufgabenmodus','KlaerungszyklenJSON'];
-const EVENT_HEADERS = ['ID','Datum','Text','ZielbereichIDs','BezugsIDs','Aktualisiert'];
-
-export const progressSheetSpecs = {
-  Zielbereiche: AREA_HEADERS,
-  Fortschritt: ITEM_HEADERS,
-  FortschrittEreignisse: EVENT_HEADERS
-};
 
 const EMPTY = { areas: [], items: [], events: [] };
 let data = { ...EMPTY, ...loadJSON(KEY, EMPTY) };
@@ -25,26 +33,6 @@ let actionOffset = 0;
 let clarificationTaskId = '';
 let clarificationActionId = '';
 
-function splitIds(value) { return String(value || '').split(';').map(v => v.trim()).filter(Boolean); }
-function joinIds(values) { return [...new Set((values || []).filter(Boolean))].join(';'); }
-function parseJSON(value, fallback) { try { return value ? JSON.parse(value) : structuredClone(fallback); } catch { return structuredClone(fallback); } }
-
-function areaFromRow(row) { return { id: row[0] || uid('area'), name: row[1] || '', why: row[2] || '', desired: row[3] || '', current: row[4] || '', resources: row[5] || '', status: row[6] || 'active', updatedAt: row[7] || nowIso() }; }
-function areaToRow(area) { return [area.id, area.name, area.why, area.desired, area.current, area.resources, area.status, area.updatedAt]; }
-function itemFromRow(row) { return { id: row[0] || uid('progress'), type: row[1] || 'Aufgabe', text: row[2] || '', details: row[3] || '', areaIds: splitIds(row[4]), parentIds: splitIds(row[5]), status: row[6] || 'active', updatedAt: row[7] || nowIso(), taskMode: row[8] || 'ready', clarificationCycles: parseJSON(row[9], []) }; }
-function itemToRow(item) { return [item.id, item.type, item.text, item.details, joinIds(item.areaIds), joinIds(item.parentIds), item.status, item.updatedAt, item.taskMode || 'ready', JSON.stringify(item.clarificationCycles || [])]; }
-function eventFromRow(row) { return { id: row[0] || uid('event'), date: row[1] || dateKey(), text: row[2] || '', areaIds: splitIds(row[3]), referenceIds: splitIds(row[4]), updatedAt: row[5] || nowIso() }; }
-function eventToRow(event) { return [event.id, event.date, event.text, joinIds(event.areaIds), joinIds(event.referenceIds), event.updatedAt]; }
-
-function mergeById(local, remote) {
-  const map = new Map();
-  for (const item of [...remote, ...local]) {
-    const old = map.get(item.id);
-    if (!old || String(item.updatedAt || '') >= String(old.updatedAt || '')) map.set(item.id, item);
-  }
-  return [...map.values()];
-}
-
 function persist(sync = true) {
   saveJSON(KEY, data);
   renderProgress();
@@ -52,11 +40,7 @@ function persist(sync = true) {
 }
 
 async function pushProgress() {
-  await replaceTables({
-    Zielbereiche: { headers: AREA_HEADERS, rows: data.areas.map(areaToRow) },
-    Fortschritt: { headers: ITEM_HEADERS, rows: data.items.map(itemToRow) },
-    FortschrittEreignisse: { headers: EVENT_HEADERS, rows: data.events.map(eventToRow) }
-  });
+  await replaceTables(progressTables(data));
 }
 
 export async function syncProgress() {
@@ -65,9 +49,9 @@ export async function syncProgress() {
   const itemRows = tables.Fortschritt || [];
   const eventRows = tables.FortschrittEreignisse || [];
   data = {
-    areas: mergeById(data.areas, areaRows.map(areaFromRow)),
-    items: mergeById(data.items, itemRows.map(itemFromRow)),
-    events: mergeById(data.events, eventRows.map(eventFromRow))
+    areas: mergeUpdatedById(data.areas, areaRows.map(areaFromRow)),
+    items: mergeUpdatedById(data.items, itemRows.map(itemFromRow)),
+    events: mergeUpdatedById(data.events, eventRows.map(eventFromRow))
   };
   saveJSON(KEY, data);
   await pushProgress();
@@ -78,63 +62,9 @@ function activeAreas() { return data.areas.filter(area => area.status !== 'archi
 function activeItems() { return data.items.filter(item => item.status !== 'archived'); }
 function areaNames(ids = []) { return ids.map(id => data.areas.find(area => area.id === id)?.name).filter(Boolean); }
 
-function clarificationCycles(item) {
-  if (!Array.isArray(item.clarificationCycles)) item.clarificationCycles = [];
-  return item.clarificationCycles;
-}
-
-function currentClarification(item) {
-  return clarificationCycles(item).find(cycle => cycle.status === 'active') || null;
-}
-
-function isClarifying(item) {
-  return item.type === 'Aufgabe' && item.taskMode === 'clarify';
-}
-
-function openClarificationActions(item) {
-  const cycle = currentClarification(item);
-  return cycle ? (cycle.actions || []).filter(action => action.status !== 'done') : [];
-}
-
-function allClarificationActionsDone(item) {
-  const cycle = currentClarification(item);
-  return Boolean(cycle?.actions?.length) && cycle.actions.every(action => action.status === 'done');
-}
-
-function getActionableEntries() {
-  const entries = [];
-  for (const item of activeItems()) {
-    if (item.type === 'Anweisung') {
-      entries.push({ kind: 'item', item, type: item.type, text: item.text, areaIds: item.areaIds || [] });
-      continue;
-    }
-    if (item.type !== 'Aufgabe') continue;
-
-    if (!isClarifying(item)) {
-      entries.push({ kind: 'item', item, type: item.type, text: item.text, areaIds: item.areaIds || [] });
-      continue;
-    }
-
-    const cycle = currentClarification(item);
-    if (!cycle) {
-      entries.push({ kind: 'clarification-setup', item, type: 'Klärung', text: 'Nächste Klärungsfrage festlegen', question: '', areaIds: item.areaIds || [] });
-      continue;
-    }
-
-    const openActions = openClarificationActions(item);
-    for (const action of openActions) {
-      entries.push({ kind: 'clarification', item, cycle, action, type: 'Klärung', text: action.text, question: cycle.question, areaIds: item.areaIds || [] });
-    }
-    if (!openActions.length && allClarificationActionsDone(item)) {
-      entries.push({ kind: 'clarification-review', item, cycle, type: 'Klärung', text: 'Klärung auswerten', question: cycle.question, areaIds: item.areaIds || [] });
-    }
-  }
-  return entries;
-}
-
 function renderOverview() {
   const areaCount = activeAreas().length;
-  const openActions = getActionableEntries().length;
+  const openActions = actionableProgressEntries(activeItems()).length;
   const eventCount = data.events.length;
   $('progressOverview').textContent = areaCount
     ? `${areaCount} Zielbereich${areaCount === 1 ? '' : 'e'} · ${openActions} nächste Möglichkeit${openActions === 1 ? '' : 'en'} · ${eventCount} archivierte${eventCount === 1 ? 'r' : ''} Fortschritt${eventCount === 1 ? '' : 'e'}`
@@ -287,7 +217,7 @@ function submitEvent(eventObject) {
 
 function renderNextActions() {
   const box = $('nextActionChoices'); box.innerHTML = '';
-  const actions = getActionableEntries();
+  const actions = actionableProgressEntries(activeItems());
   if (!actions.length) { box.appendChild(emptyMessage('Noch keine Aufgaben, klaren Anweisungen oder Klärungsschritte hinterlegt. Du kannst trotzdem spontanen Fortschritt archivieren.')); return; }
   const sorted = [...actions].sort((a,b) => {
     const rank = entry => entry.kind === 'clarification' ? 0 : entry.type === 'Anweisung' ? 1 : entry.kind === 'clarification-review' ? 2 : 3;

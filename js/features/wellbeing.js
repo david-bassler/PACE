@@ -4,17 +4,19 @@ import { loadTables, replaceTables } from '../core/google.js';
 import { markDirty, registerSync } from '../core/sync.js';
 import { getActionableItems, getProgressData } from './progress.js';
 import { getSuggestions } from './day.js';
+import { mergeUpdatedById } from '../core/collections.js';
+import {
+  wellbeingSheetSpecs,
+  exampleFromRow,
+  chanceFromRow,
+  resonanceRecordFromRow,
+  wellbeingTables
+} from './wellbeing-data.js';
+import { matchingResonanceEvents, chooseAnchorEvent } from './wellbeing-domain.js';
+
+export { wellbeingSheetSpecs };
 
 const KEY = 'pace-library-v1';
-const EXAMPLE_HEADERS = ['ID','Bereich','Datum','Titel','Text','Aktualisiert'];
-const CHANCE_HEADERS = ['ID','Titel','Text','Aktiv','Aktualisiert'];
-const RESONANCE_HEADERS = ['Typ','ID','Datum','Titel','Kontext','Schlagworte','SchlagwortName','Beschreibung','MatchModus','Aktiv','Evidenz','Quelle','Aktualisiert'];
-
-export const wellbeingSheetSpecs = {
-  Beispiele: EXAMPLE_HEADERS,
-  Resonanzchancen: CHANCE_HEADERS,
-  Resonanzbibliothek: RESONANCE_HEADERS
-};
 
 const EXPLANATIONS = {
   goodday: {
@@ -51,76 +53,24 @@ let editingAnchorId = '';
 let currentAnchorId = '';
 let lastAnchorEventId = '';
 
-function exampleFromRow(row) { return { id: row[0] || uid('example'), area: row[1] || 'E', date: row[2] || dateKey(), title: row[3] || '', text: row[4] || '', updatedAt: row[5] || nowIso() }; }
-function exampleToRow(item) { return [item.id, item.area, item.date, item.title, item.text, item.updatedAt]; }
-function chanceFromRow(row) { return { id: row[0] || uid('chance'), title: row[1] || '', text: row[2] || '', active: String(row[3] ?? 'true') !== 'false', updatedAt: row[4] || nowIso() }; }
-function chanceToRow(item) { return [item.id, item.title, item.text, item.active, item.updatedAt]; }
-
-function splitTagIds(value) { return String(value || '').split(';').map(item => item.trim()).filter(Boolean); }
-function joinTagIds(values) { return [...new Set((values || []).filter(Boolean))].join(';'); }
-function rowActive(value) { return String(value ?? 'true').trim().toLowerCase() !== 'false'; }
-
-function resonanceRecordFromRow(row) {
-  const type = String(row[0] || '').trim().toLowerCase();
-  if (!type) return null;
-  const common = { id: row[1] || uid('resonance'), active: rowActive(row[9]), updatedAt: row[12] || nowIso() };
-
-  if (type === 'ereignis' || type === 'event') {
-    return { type: 'event', ...common, date: row[2] || '', title: row[3] || '', context: row[4] || '', tagIds: splitTagIds(row[5]), evidence: row[10] || '', source: row[11] || '' };
-  }
-  if (type === 'tag' || type === 'schlagwort') {
-    return { type: 'tag', ...common, name: row[6] || row[3] || '', description: row[7] || '' };
-  }
-  if (type === 'anker' || type === 'anchor') {
-    return { type: 'anchor', ...common, title: row[3] || '', description: row[7] || row[4] || '', tagIds: splitTagIds(row[5]), matchMode: row[8] === 'all' ? 'all' : 'any' };
-  }
-  return null;
-}
-
-function resonanceRecordToRow(record) {
-  if (record.type === 'event') return ['Ereignis', record.id, record.date || '', record.title || '', record.context || '', joinTagIds(record.tagIds), '', '', '', record.active !== false, record.evidence || '', record.source || '', record.updatedAt || nowIso()];
-  if (record.type === 'tag') return ['Schlagwort', record.id, '', '', '', '', record.name || '', record.description || '', '', record.active !== false, '', '', record.updatedAt || nowIso()];
-  return ['Anker', record.id, '', record.title || '', '', joinTagIds(record.tagIds), '', record.description || '', record.matchMode === 'all' ? 'all' : 'any', record.active !== false, '', '', record.updatedAt || nowIso()];
-}
-
-function mergeById(local, remote) {
-  const map = new Map();
-  for (const item of [...remote, ...local]) {
-    const old = map.get(item.id);
-    if (!old || String(item.updatedAt || '') >= String(old.updatedAt || '')) map.set(item.id, item);
-  }
-  return [...map.values()];
-}
-
 function persist(sync = true) {
   saveJSON(KEY, data);
   renderLibrary();
   if (sync) markDirty('wellbeing');
 }
 async function push() {
-  await replaceTables({
-    Beispiele: { headers: EXAMPLE_HEADERS, rows: data.examples.map(exampleToRow) },
-    Resonanzchancen: { headers: CHANCE_HEADERS, rows: data.chances.map(chanceToRow) },
-    Resonanzbibliothek: {
-      headers: RESONANCE_HEADERS,
-      rows: [
-        ...data.resonanceTags.map(item => resonanceRecordToRow({ ...item, type: 'tag' })),
-        ...data.anchors.map(item => resonanceRecordToRow({ ...item, type: 'anchor' })),
-        ...data.resonanceEvents.map(item => resonanceRecordToRow({ ...item, type: 'event' }))
-      ]
-    }
-  });
+  await replaceTables(wellbeingTables(data));
 }
 
 export async function syncWellbeing() {
   const tables = await loadTables(wellbeingSheetSpecs);
-  data.examples = mergeById(data.examples, (tables.Beispiele || []).map(exampleFromRow));
-  data.chances = mergeById(data.chances, (tables.Resonanzchancen || []).map(chanceFromRow));
+  data.examples = mergeUpdatedById(data.examples, (tables.Beispiele || []).map(exampleFromRow));
+  data.chances = mergeUpdatedById(data.chances, (tables.Resonanzchancen || []).map(chanceFromRow));
 
   const records = (tables.Resonanzbibliothek || []).map(resonanceRecordFromRow).filter(Boolean);
-  data.resonanceTags = mergeById(data.resonanceTags, records.filter(item => item.type === 'tag'));
-  data.anchors = mergeById(data.anchors, records.filter(item => item.type === 'anchor'));
-  data.resonanceEvents = mergeById(data.resonanceEvents, records.filter(item => item.type === 'event'));
+  data.resonanceTags = mergeUpdatedById(data.resonanceTags, records.filter(item => item.type === 'tag'));
+  data.anchors = mergeUpdatedById(data.anchors, records.filter(item => item.type === 'anchor'));
+  data.resonanceEvents = mergeUpdatedById(data.resonanceEvents, records.filter(item => item.type === 'event'));
 
   saveJSON(KEY, data);
   await push();
@@ -234,28 +184,9 @@ function submitAnchor(event) {
   clearAnchorForm(); persist();
 }
 
-function matchingEvents(anchor) {
-  const wanted = anchor?.tagIds || [];
-  if (!wanted.length) return [];
-  return data.resonanceEvents.filter(event => {
-    if (event.active === false) return false;
-    const ids = new Set(event.tagIds || []);
-    return anchor.matchMode === 'all' ? wanted.every(id => ids.has(id)) : wanted.some(id => ids.has(id));
-  });
-}
-
-function pickAnchorEvent(anchor) {
-  const matches = matchingEvents(anchor);
-  if (!matches.length) return null;
-  let candidates = matches.filter(item => item.id !== lastAnchorEventId);
-  if (!candidates.length) candidates = matches;
-  const rich = candidates.filter(item => item.context && item.context !== '—');
-  return random(rich.length ? rich : candidates);
-}
-
 function renderAnchorEvent(anchor) {
   const box = $('anchorEventCard'); box.innerHTML = '';
-  const event = pickAnchorEvent(anchor);
+  const event = chooseAnchorEvent(data.resonanceEvents, anchor, lastAnchorEventId);
   $('anchorResultTitle').textContent = anchor.title;
   $('anchorResultDescription').textContent = anchor.description || 'Ein reales Beispiel aus deiner eigenen Resonanzbibliothek.';
   $('anchorNextExample').disabled = !event;
@@ -294,7 +225,7 @@ function openAnchorChooser() {
   for (const anchor of anchors) {
     const button = document.createElement('button'); button.type = 'button'; button.className = 'anchor-choice';
     const title = document.createElement('strong'); title.textContent = anchor.title;
-    const text = document.createElement('small'); text.textContent = anchor.description || `${matchingEvents(anchor).length} passende Ereignisse`;
+    const text = document.createElement('small'); text.textContent = anchor.description || `${matchingResonanceEvents(data.resonanceEvents, anchor).length} passende Ereignisse`;
     button.append(title, text);
     button.addEventListener('click', () => { $('anchorChooserDialog').close(); openAnchor(anchor.id); });
     list.appendChild(button);
@@ -328,7 +259,7 @@ function renderResonanceLibrary() {
     const copy = document.createElement('div'); const title = document.createElement('strong'); title.textContent = anchor.title;
     const names = (anchor.tagIds || []).map(tagName).filter(Boolean);
     const p = document.createElement('p'); p.textContent = anchor.description || '';
-    const meta = document.createElement('small'); meta.textContent = `${anchor.matchMode === 'all' ? 'alle Schlagwörter' : 'mindestens ein Schlagwort'} · ${names.join(' · ')} · ${matchingEvents(anchor).length} Ereignisse`;
+    const meta = document.createElement('small'); meta.textContent = `${anchor.matchMode === 'all' ? 'alle Schlagwörter' : 'mindestens ein Schlagwort'} · ${names.join(' · ')} · ${matchingResonanceEvents(data.resonanceEvents, anchor).length} Ereignisse`;
     copy.append(title); if (anchor.description) copy.append(p); copy.append(meta);
     const actions = document.createElement('div');
     const show = document.createElement('button'); show.type = 'button'; show.className = 'tiny-button'; show.textContent = 'Anzeigen'; show.addEventListener('click', () => openAnchor(anchor.id));

@@ -19,21 +19,37 @@ Die zentrale Frage für Features ist:
 
 ## Modularer Aufbau
 
-Die App ist bewusst in kleine ES-Module getrennt:
+PACE bleibt eine Zero-Build-PWA aus nativen ES-Modulen. Die Grenzen sind bewusst klein gehalten:
 
 - `js/core/storage.js` – lokale IndexedDB-Speicherung, Migration alter Browserdaten, IDs, Datumshelfer
 - `js/core/ui.js` – kleine gemeinsame UI-Helfer
 - `js/core/google.js` – OAuth, serialisierte API-Queue, Batch-Zugriffe und 429-Retry
 - `js/core/sync.js` – zentrale Synchronisationsqueue und Status (`lokal`, `wartet`, `syncing`, `synced`)
-- `js/features/day.js` – Tagesform, P/A/C/E-Auswahl, Feststecken, Abendabschluss
-- `js/features/settings.js` – Google-Konfiguration, Verbindung, TSV-Import, Installation
-- `js/features/progress.js` – persönliche Verfassung, Zielnetz, Fortschritts-Inbox, nächste Schritte
-- `js/features/wellbeing.js` – Meh-Modus, Erklärungstexte, private Beispiele, Resonanzchancen
-- `js/features/space.js` – Parken, Tag verkleinern, „Das behalten“ / Savour-Marker
-- `js/features/tracking.js` – konfigurierbare Tabellen-Erfassung, Gruppen/Felder und Schreibplan-Vorschau
-- `js/features/holding.js` – flexible Haltepunkte, Aussage-Zuordnungen und überstandene Situationen
+- `js/core/collections.js` – gemeinsame, explizite Merge-Regeln für geräteübergreifende Collections
+- `js/features/*.js` – Feature-Orchestrierung und DOM/UI
+- `js/features/*-data.js` – Sheet-Schemata und Zeile↔Objekt-Adapter größerer Features
+- `js/features/*-domain.js` – reine, browserunabhängige Fachlogik, die direkt getestet werden kann
 
-Neue Funktionen sollen möglichst als eigenes Feature-Modul ergänzt werden statt die Tageslogik weiter aufzublähen.
+Größere Features wie Fortschritt, Tracking, Resonanzbibliothek und Haltepunkte sind damit nicht mehr gleichzeitig UI, Datenadapter und Fachlogik in einer Datei. Kleine Features wie Atemkreis oder Navigation bleiben bewusst einzelne Module.
+
+Neue Funktionen sollen möglichst als eigenes Feature-Modul ergänzt werden. Fachlogik soll nach Möglichkeit in dependency-freie `*-domain.js`-Module, Sheet-Mapping in `*-data.js`, statt die UI-Datei weiter aufzublähen.
+
+### Architektur-Checks
+
+Das Repository enthält einen dependency-freien Quality-Check:
+
+`npm run check`
+
+Er prüft unter anderem:
+
+- doppelte DOM-IDs und fehlende feste DOM-Referenzen
+- nicht auflösbare oder zyklische ES-Module
+- direkten `localStorage`-Zugriff außerhalb von `core/storage.js`
+- Reinheit der `*-domain.js`-Module
+- vollständige Offline-Cache-Liste des Service Workers
+- Unit-Tests für Merge-Regeln und zentrale Domänenlogik
+
+Die GitHub-Action `quality` führt zusätzlich einen Syntaxcheck aller JS/MJS-Dateien aus.
 
 ## Fortschritt: flexibles Netz statt Pflicht-Hierarchie
 
