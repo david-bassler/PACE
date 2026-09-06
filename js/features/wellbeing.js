@@ -4,6 +4,7 @@ import { loadTables, replaceTables } from '../core/google.js';
 import { markDirty, registerSync } from '../core/sync.js';
 import { getActionableItems, getProgressData } from './progress.js';
 import { getSuggestions } from './day.js';
+import { mergeUpdatedById } from '../core/collections.js';
 
 const KEY = 'pace-library-v1';
 const EXAMPLE_HEADERS = ['ID','Bereich','Datum','Titel','Text','Aktualisiert'];
@@ -83,15 +84,6 @@ function resonanceRecordToRow(record) {
   return ['Anker', record.id, '', record.title || '', '', joinTagIds(record.tagIds), '', record.description || '', record.matchMode === 'all' ? 'all' : 'any', record.active !== false, '', '', record.updatedAt || nowIso()];
 }
 
-function mergeById(local, remote) {
-  const map = new Map();
-  for (const item of [...remote, ...local]) {
-    const old = map.get(item.id);
-    if (!old || String(item.updatedAt || '') >= String(old.updatedAt || '')) map.set(item.id, item);
-  }
-  return [...map.values()];
-}
-
 function persist(sync = true) {
   saveJSON(KEY, data);
   renderLibrary();
@@ -114,13 +106,13 @@ async function push() {
 
 export async function syncWellbeing() {
   const tables = await loadTables(wellbeingSheetSpecs);
-  data.examples = mergeById(data.examples, (tables.Beispiele || []).map(exampleFromRow));
-  data.chances = mergeById(data.chances, (tables.Resonanzchancen || []).map(chanceFromRow));
+  data.examples = mergeUpdatedById(data.examples, (tables.Beispiele || []).map(exampleFromRow));
+  data.chances = mergeUpdatedById(data.chances, (tables.Resonanzchancen || []).map(chanceFromRow));
 
   const records = (tables.Resonanzbibliothek || []).map(resonanceRecordFromRow).filter(Boolean);
-  data.resonanceTags = mergeById(data.resonanceTags, records.filter(item => item.type === 'tag'));
-  data.anchors = mergeById(data.anchors, records.filter(item => item.type === 'anchor'));
-  data.resonanceEvents = mergeById(data.resonanceEvents, records.filter(item => item.type === 'event'));
+  data.resonanceTags = mergeUpdatedById(data.resonanceTags, records.filter(item => item.type === 'tag'));
+  data.anchors = mergeUpdatedById(data.anchors, records.filter(item => item.type === 'anchor'));
+  data.resonanceEvents = mergeUpdatedById(data.resonanceEvents, records.filter(item => item.type === 'event'));
 
   saveJSON(KEY, data);
   await push();
