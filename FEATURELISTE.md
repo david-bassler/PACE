@@ -605,6 +605,65 @@ Grundprinzip:
 
 Als erste Platzierung ist der Atemkreis direkt beim Feststecken-Bereich erreichbar und zusätzlich als feste Möglichkeit im Feststecken-Dialog. Wo er später noch kontextabhängig angeboten wird, kann mit dem Zustands- und Orts-Routing entschieden werden.
 
+## 7d. Erinnerungsanker aus der eigenen Resonanzbibliothek
+
+PACE soll bei Feststecken, Dysregulation oder stark verengtem Blick **reale autobiografische Gegenbeispiele** aus der eigenen Geschichte wieder zugänglich machen können.
+
+Das ist ausdrücklich **kein Gegenargument gegen den aktuellen Zustand**. Beispiel: Wenn gerade starke Wut auf Menschen da ist, soll PACE nicht behaupten, Menschen seien „eigentlich nett“. Stattdessen kann der Nutzer freiwillig einen Erinnerungsanker öffnen und ein konkretes Ereignis sehen, in dem ein Mensch tatsächlich freundlich, hilfreich, anerkennend oder zugewandt war.
+
+Grundsatz:
+
+**Ein Erinnerungsanker korrigiert nicht das aktuelle Gefühl. Er erweitert nur wieder den zugänglichen Erfahrungsraum.**
+
+### Flexible Tags statt fest eingebauter Kategorien
+
+Die Kategorien der Resonanzbibliothek dürfen **nicht als feste Boolean-Spalten im App-Code** verankert werden.
+
+Stattdessen besteht die private Resonanzbibliothek aus drei frei veränderbaren Datentypen:
+
+- **Ereignis:** Datum, Kurztext, optional ausführlicher Kontext, Quelle und Verweise auf Tags
+- **Tag:** stabile ID, frei benennbarer Name und optionale Beschreibung
+- **Erinnerungsanker:** Titel, optionale Beschreibung, ausgewählte Tag-IDs und Trefferregel
+
+Ereignisse und Erinnerungsanker verweisen auf **stabile Tag-IDs**. Dadurch kann ein Tag später umbenannt werden, ohne alle Ereignisse neu zu kategorisieren.
+
+Tags dürfen:
+
+- neu angelegt werden
+- umbenannt werden
+- pausiert werden
+- später ergänzt oder neu geordnet werden
+
+Die App darf deshalb keine feste Liste wie „Tier“, „Natur“ oder „soziale Wärme“ voraussetzen. Solche Kategorien können als **Startbestand** importiert werden, bleiben aber private, veränderbare Daten.
+
+### Erinnerungsanker als gespeicherte Filter
+
+Ein Erinnerungsanker kombiniert beliebige Tags.
+
+Beispiel:
+
+**Menschen waren gut zu mir**
+
+kann mehrere Tags verwenden, etwa soziale Wärme, Gesehenwerden/Anerkennung oder Fürsorge/Geben.
+
+Die Trefferregel kann mindestens zwei Varianten haben:
+
+- **mindestens einer der Tags**
+- **alle gewählten Tags**
+
+PACE zeigt dann jeweils **ein konkretes Ereignis** und bevorzugt nach Möglichkeit Einträge mit ausführlichem Kontext. Danach gibt es nur:
+
+- **Noch ein Beispiel**
+- **Reicht**
+
+Keine Statistik darüber, wie häufig der Anker benutzt wurde, keine Pflicht, danach anders zu fühlen, und keine Bewertung, ob das Gegenbeispiel „gewirkt“ hat.
+
+### Privates Sheet-Modell
+
+Für die erste Umsetzung liegen Ereignisse, Tags und Erinnerungsanker gemeinsam im privaten Sheet-Tab **Resonanzbibliothek**. Die Zeilen unterscheiden sich über den Typ `Ereignis`, `Tag` oder `Anker`.
+
+Dadurch kann ein kompletter Startbestand als **eine CSV** in ein einziges Tabellenblatt kopiert werden, während die logischen Beziehungen trotzdem über stabile IDs erhalten bleiben.
+
 ## 8. Tagesbegleitung – vorläufige Idee
 
 Nicht als starre Abfolge, sondern als mögliche Begleitung:
