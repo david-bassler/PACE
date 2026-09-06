@@ -92,8 +92,11 @@
       </section>
 
       <section class="feature-card anchor-home tool-card" aria-labelledby="anchorHomeTitle">
-        <div><p class="micro">EIN ANDERER BLICK</p><h2 id="anchorHomeTitle">Etwas Reales wieder zugänglich machen.</h2><p class="hint">Eigene Erinnerungen als Anker – nicht um den aktuellen Zustand wegzudiskutieren.</p></div>
-        <button id="openAnchorChooser" class="primary-button" type="button">Erinnerungsanker öffnen</button>
+        <div><p class="micro">EIN ANDERER BLICK</p><h2 id="anchorHomeTitle">Etwas Reales wieder zugänglich machen.</h2><p class="hint">Entweder ein eigenes Erlebnis erinnern oder einen vertrauten Haltepunkt öffnen.</p></div>
+        <div class="feature-actions">
+          <button id="openAnchorChooser" class="secondary-button" type="button">Eigenes Erlebnis erinnern</button>
+          <button id="openHoldingChooser" class="primary-button" type="button">Welcher Satz fühlt sich wahr an?</button>
+        </div>
       </section>
 
       <details id="paceSuggestionsDetails" class="secondary-tools">
@@ -135,6 +138,11 @@
       <section class="feature-card">
         <div><p class="micro">PERSÖNLICHE BIBLIOTHEK</p><h2>Erinnerungen und Anker verwalten.</h2><p class="hint">Resonanzereignisse, Erinnerungsanker, Schlagwörter, PACE-Beispiele und Resonanzchancen.</p></div>
         <button id="openLibrary" class="secondary-button" type="button">Persönliche Bibliothek</button>
+      </section>
+
+      <section class="feature-card">
+        <div><p class="micro">HALTEPUNKTE</p><h2>Geschichten und überstandene Situationen.</h2><p class="hint">Aussagen und Haltepunkte kommen aus dem privaten Sheet. Hier kannst du festgehaltene Situationen später als vergangen markieren.</p></div>
+        <button id="openHoldingManager" class="secondary-button" type="button">Haltepunkte verwalten</button>
       </section>
 
       <section class="feature-card">
@@ -181,6 +189,19 @@
     </div>
   </dialog>
 
+  <dialog id="perspectiveDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div>
+      <p class="micro">EIN ANDERER BLICK</p>
+      <h2>Was wäre gerade hilfreicher?</h2>
+      <p class="hint">Beides soll den aktuellen Zustand nicht widerlegen, sondern etwas wieder zugänglich machen.</p>
+      <div class="anchor-choice-list">
+        <button id="openPerspectiveAnchors" class="anchor-choice" type="button"><strong>Ein eigenes Erlebnis</strong><small>Etwas, das in deinem Leben tatsächlich schon passiert ist.</small></button>
+        <button id="openPerspectiveHolding" class="anchor-choice" type="button"><strong>Eine Geschichte, ein Bild oder ein Satz</strong><small>Ein Haltepunkt, der schon einmal eine gedankliche Verengung geöffnet hat.</small></button>
+      </div>
+    </div>
+  </dialog>
+
   <dialog id="anchorChooserDialog" class="dialog">
     <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
     <div>
@@ -200,6 +221,78 @@
       <article id="anchorEventCard" class="anchor-event-card" aria-live="polite"></article>
       <div class="choice-actions"><button id="anchorNextExample" class="secondary-button" type="button">Noch ein Beispiel</button><form method="dialog"><button class="quiet-button" value="close">Reicht</button></form></div>
     </div>
+  </dialog>
+
+  <dialog id="holdingChooserDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div>
+      <p class="micro">HALTEPUNKTE</p>
+      <h2>Welcher Satz fühlt sich gerade besonders wahr an?</h2>
+      <p class="hint">Du musst nicht wirklich davon überzeugt sein. Nimm einfach den Satz, zu dem dein Kopf gerade am stärksten „ja“ sagt.</p>
+      <div id="holdingStatementList" class="holding-statement-list"></div>
+    </div>
+  </dialog>
+
+  <dialog id="holdingPointDialog" class="dialog wide-dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div>
+      <p id="holdingSelectedStatement" class="micro">HALTEPUNKT</p>
+      <h2 id="holdingPointTitle">Haltepunkt</h2>
+      <p id="holdingPointKind" class="holding-kind"></p>
+      <img id="holdingPointImage" class="holding-image" alt="" hidden>
+      <div id="holdingPointContent" class="holding-content"></div>
+
+      <div id="holdingMeaningWrap" class="holding-meaning" hidden>
+        <p class="micro">WAS DAS FÜR MICH BEDEUTET</p>
+        <p id="holdingPointMeaning"></p>
+      </div>
+      <p id="holdingPointKeywords" class="holding-keywords"></p>
+
+      <div class="feature-actions holding-point-actions">
+        <button id="holdingAnotherPoint" class="secondary-button" type="button" hidden>Anderen Haltepunkt</button>
+        <button id="holdingPastSituation" class="secondary-button" type="button" hidden>Etwas Eigenes von früher</button>
+      </div>
+
+      <article id="holdingPastCard" class="holding-past-card" hidden></article>
+
+      <form id="holdingSituationForm" class="holding-situation-form">
+        <label><span>Was ist gerade los? <small>optional – nur wenn du es festhalten möchtest</small></span><textarea id="holdingSituationText" rows="4" maxlength="3500" required></textarea></label>
+        <button class="primary-button" type="submit">Situation festhalten</button>
+        <p id="holdingSituationSaved" class="holding-saved" hidden>Gespeichert. Du musst damit jetzt nichts weiter machen.</p>
+      </form>
+    </div>
+  </dialog>
+
+  <dialog id="holdingManagerDialog" class="dialog wide-dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div>
+      <p class="micro">HALTEPUNKTE VERWALTEN</p>
+      <h2>Aus Situationen können später eigene Haltepunkte werden.</h2>
+      <p id="holdingManagerSummary" class="hint"></p>
+      <p class="hint">Aussagen, Geschichten, Bilder und Zuordnungen bleiben flexibel im privaten Sheet <strong>Haltepunkte</strong>. Hier geht es nur um deine festgehaltenen Situationen.</p>
+
+      <section class="dialog-section">
+        <h3>Noch offen</h3>
+        <div id="holdingOpenSituations" class="holding-situation-list"></div>
+      </section>
+
+      <section class="dialog-section">
+        <h3>Liegt hinter mir</h3>
+        <p class="hint">Diese Einträge können später beim gleichen Satz als autobiografischer Haltepunkt wieder auftauchen.</p>
+        <div id="holdingCompletedSituations" class="holding-situation-list"></div>
+      </section>
+    </div>
+  </dialog>
+
+  <dialog id="holdingReviewDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <form id="holdingReviewForm" class="stack-form dialog-form-clear">
+      <p class="micro">DAS LIEGT HINTER MIR</p>
+      <h2>Diese Situation ist vorbei.</h2>
+      <p id="holdingReviewSituation" class="holding-review-situation"></p>
+      <label><span>Was weiß ich heute darüber? <small>optional</small></span><textarea id="holdingReviewText" rows="4" maxlength="2500" placeholder="z. B. wie es weiterging, was sich verändert hat oder einfach: Es ist vorbei."></textarea></label>
+      <button class="primary-button" type="submit">Als vergangen markieren</button>
+    </form>
   </dialog>
 
   <dialog id="breathDialog" class="dialog breath-dialog">
