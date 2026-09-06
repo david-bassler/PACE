@@ -1,4 +1,4 @@
-import { KEYS, dateKey, loadJSON, nowIso, saveJSON } from '../core/storage.js';
+import { KEYS, dateKey, loadJSON, loadValue, nowIso, saveJSON, saveValue } from '../core/storage.js';
 import { $, $$, announce, emptyMessage, openDialog } from '../core/ui.js';
 import { isConnected, loadTables, replaceTables, upsertRow } from '../core/google.js';
 import { markDirty, registerSync } from '../core/sync.js';
@@ -14,8 +14,8 @@ const DAY_HEADERS = ['Datum','Tagesform','Kompetenz','Kompetenz_erledigt','Forts
 const CONTENT_DEFAULT = { lists: { P: [], A: [], C: [], E: [] }, stuck: [], loadedAt: '' };
 let content = loadJSON(KEYS.content, null) || loadJSON(KEYS.legacyContent, CONTENT_DEFAULT);
 saveJSON(KEYS.content, content);
-let energy = localStorage.getItem(KEYS.energy) || localStorage.getItem(KEYS.legacyEnergy) || 'normal';
-localStorage.setItem(KEYS.energy, energy);
+let energy = loadValue(KEYS.energy, null) || loadValue(KEYS.legacyEnergy, null) || 'normal';
+saveValue(KEYS.energy, energy);
 
 function blankDay() {
   return { date: dateKey(), selections: {}, done: {}, stuckCount: 0, rescue: '', smallDay: { active: false, focus: '', release: '' }, evening: { progress: '', resonance: '', reserve: '', closedAt: '' }, updatedAt: nowIso() };
@@ -274,7 +274,7 @@ export function initDayFeature() {
   renderAll();
   $$('[data-energy]').forEach(button => button.addEventListener('click', () => {
     energy = button.dataset.energy;
-    localStorage.setItem(KEYS.energy, energy);
+    saveValue(KEYS.energy, energy);
     saveDay();
     renderAll();
   }));
