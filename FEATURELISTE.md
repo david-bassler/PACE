@@ -615,19 +615,19 @@ Grundsatz:
 
 **Ein Erinnerungsanker korrigiert nicht das aktuelle Gefühl. Er erweitert nur wieder den zugänglichen Erfahrungsraum.**
 
-### Flexible Tags statt fest eingebauter Kategorien
+### Flexible Schlagwörter statt fest eingebauter Kategorien
 
 Die Kategorien der Resonanzbibliothek dürfen **nicht als feste Boolean-Spalten im App-Code** verankert werden.
 
 Stattdessen besteht die private Resonanzbibliothek aus drei frei veränderbaren Datentypen:
 
-- **Ereignis:** Datum, Kurztext, optional ausführlicher Kontext, Quelle und Verweise auf Tags
-- **Tag:** stabile ID, frei benennbarer Name und optionale Beschreibung
-- **Erinnerungsanker:** Titel, optionale Beschreibung, ausgewählte Tag-IDs und Trefferregel
+- **Ereignis:** Datum, Kurztext, optional ausführlicher Kontext, Quelle und Verweise auf Schlagwörter
+- **Schlagwort:** stabile ID, frei benennbarer Name und optionale Beschreibung
+- **Erinnerungsanker:** Titel, optionale Beschreibung, ausgewählte Schlagwort-IDs und Trefferregel
 
-Ereignisse und Erinnerungsanker verweisen auf **stabile Tag-IDs**. Dadurch kann ein Tag später umbenannt werden, ohne alle Ereignisse neu zu kategorisieren.
+Ereignisse und Erinnerungsanker verweisen auf **stabile Schlagwort-IDs**. Dadurch kann ein Schlagwort später umbenannt werden, ohne alle Ereignisse neu zu kategorisieren.
 
-Tags dürfen:
+Schlagwörter dürfen:
 
 - neu angelegt werden
 - umbenannt werden
@@ -638,18 +638,18 @@ Die App darf deshalb keine feste Liste wie „Tier“, „Natur“ oder „sozia
 
 ### Erinnerungsanker als gespeicherte Filter
 
-Ein Erinnerungsanker kombiniert beliebige Tags.
+Ein Erinnerungsanker kombiniert beliebige Schlagwörter.
 
 Beispiel:
 
 **Menschen waren gut zu mir**
 
-kann mehrere Tags verwenden, etwa soziale Wärme, Gesehenwerden/Anerkennung oder Fürsorge/Geben.
+kann mehrere Schlagwörter verwenden, etwa soziale Wärme, Gesehenwerden/Anerkennung oder Fürsorge/Geben.
 
 Die Trefferregel kann mindestens zwei Varianten haben:
 
-- **mindestens einer der Tags**
-- **alle gewählten Tags**
+- **mindestens eines der Schlagwörter**
+- **alle gewählten Schlagwörter**
 
 PACE zeigt dann jeweils **ein konkretes Ereignis** und bevorzugt nach Möglichkeit Einträge mit ausführlichem Kontext. Danach gibt es nur:
 
@@ -660,7 +660,7 @@ Keine Statistik darüber, wie häufig der Anker benutzt wurde, keine Pflicht, da
 
 ### Privates Sheet-Modell
 
-Für die erste Umsetzung liegen Ereignisse, Tags und Erinnerungsanker gemeinsam im privaten Sheet-Tab **Resonanzbibliothek**. Die Zeilen unterscheiden sich über den Typ `Ereignis`, `Tag` oder `Anker`.
+Für die erste Umsetzung liegen Ereignisse, Schlagwörter und Erinnerungsanker gemeinsam im privaten Sheet-Tab **Resonanzbibliothek**. Die Zeilen unterscheiden sich über den Typ `Ereignis`, `Schlagwort` oder `Anker`.
 
 Dadurch kann ein kompletter Startbestand als **eine CSV** in ein einziges Tabellenblatt kopiert werden, während die logischen Beziehungen trotzdem über stabile IDs erhalten bleiben.
 
