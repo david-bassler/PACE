@@ -47,17 +47,13 @@ let emojiTargetId = '';
 let emojiCategory = Object.keys(EMOJI_CATEGORIES)[0];
 
 function loadRecentEmojis() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(EMOJI_RECENT_KEY) || '[]');
-    return Array.isArray(parsed) ? parsed.filter(Boolean).slice(0, 12) : [];
-  } catch {
-    return [];
-  }
+  const parsed = loadJSON(EMOJI_RECENT_KEY, []);
+  return Array.isArray(parsed) ? parsed.filter(Boolean).slice(0, 12) : [];
 }
 
 function rememberEmoji(emoji) {
   const recent = [emoji, ...loadRecentEmojis().filter(item => item !== emoji)].slice(0, 12);
-  localStorage.setItem(EMOJI_RECENT_KEY, JSON.stringify(recent));
+  saveJSON(EMOJI_RECENT_KEY, recent);
 }
 
 function emojiButton(emoji) {
