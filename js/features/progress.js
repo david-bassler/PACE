@@ -11,6 +11,13 @@ import {
   eventFromRow,
   progressTables
 } from './progress-data.js';
+import {
+  clarificationCycles,
+  currentClarification,
+  isClarifying,
+  allClarificationActionsDone,
+  actionableProgressEntries
+} from './progress-domain.js';
 
 export { progressSheetSpecs };
 
@@ -55,63 +62,9 @@ function activeAreas() { return data.areas.filter(area => area.status !== 'archi
 function activeItems() { return data.items.filter(item => item.status !== 'archived'); }
 function areaNames(ids = []) { return ids.map(id => data.areas.find(area => area.id === id)?.name).filter(Boolean); }
 
-function clarificationCycles(item) {
-  if (!Array.isArray(item.clarificationCycles)) item.clarificationCycles = [];
-  return item.clarificationCycles;
-}
-
-function currentClarification(item) {
-  return clarificationCycles(item).find(cycle => cycle.status === 'active') || null;
-}
-
-function isClarifying(item) {
-  return item.type === 'Aufgabe' && item.taskMode === 'clarify';
-}
-
-function openClarificationActions(item) {
-  const cycle = currentClarification(item);
-  return cycle ? (cycle.actions || []).filter(action => action.status !== 'done') : [];
-}
-
-function allClarificationActionsDone(item) {
-  const cycle = currentClarification(item);
-  return Boolean(cycle?.actions?.length) && cycle.actions.every(action => action.status === 'done');
-}
-
-function getActionableEntries() {
-  const entries = [];
-  for (const item of activeItems()) {
-    if (item.type === 'Anweisung') {
-      entries.push({ kind: 'item', item, type: item.type, text: item.text, areaIds: item.areaIds || [] });
-      continue;
-    }
-    if (item.type !== 'Aufgabe') continue;
-
-    if (!isClarifying(item)) {
-      entries.push({ kind: 'item', item, type: item.type, text: item.text, areaIds: item.areaIds || [] });
-      continue;
-    }
-
-    const cycle = currentClarification(item);
-    if (!cycle) {
-      entries.push({ kind: 'clarification-setup', item, type: 'Klärung', text: 'Nächste Klärungsfrage festlegen', question: '', areaIds: item.areaIds || [] });
-      continue;
-    }
-
-    const openActions = openClarificationActions(item);
-    for (const action of openActions) {
-      entries.push({ kind: 'clarification', item, cycle, action, type: 'Klärung', text: action.text, question: cycle.question, areaIds: item.areaIds || [] });
-    }
-    if (!openActions.length && allClarificationActionsDone(item)) {
-      entries.push({ kind: 'clarification-review', item, cycle, type: 'Klärung', text: 'Klärung auswerten', question: cycle.question, areaIds: item.areaIds || [] });
-    }
-  }
-  return entries;
-}
-
 function renderOverview() {
   const areaCount = activeAreas().length;
-  const openActions = getActionableEntries().length;
+  const openActions = actionableProgressEntries(activeItems()).length;
   const eventCount = data.events.length;
   $('progressOverview').textContent = areaCount
     ? `${areaCount} Zielbereich${areaCount === 1 ? '' : 'e'} · ${openActions} nächste Möglichkeit${openActions === 1 ? '' : 'en'} · ${eventCount} archivierte${eventCount === 1 ? 'r' : ''} Fortschritt${eventCount === 1 ? '' : 'e'}`
@@ -264,7 +217,7 @@ function submitEvent(eventObject) {
 
 function renderNextActions() {
   const box = $('nextActionChoices'); box.innerHTML = '';
-  const actions = getActionableEntries();
+  const actions = actionableProgressEntries(activeItems());
   if (!actions.length) { box.appendChild(emptyMessage('Noch keine Aufgaben, klaren Anweisungen oder Klärungsschritte hinterlegt. Du kannst trotzdem spontanen Fortschritt archivieren.')); return; }
   const sorted = [...actions].sort((a,b) => {
     const rank = entry => entry.kind === 'clarification' ? 0 : entry.type === 'Anweisung' ? 1 : entry.kind === 'clarification-review' ? 2 : 3;
