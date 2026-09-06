@@ -1,12 +1,4 @@
-import { initDayFeature } from './features/day.js';
-import { initSettings, setExtraSheetsProvider } from './features/settings.js';
-import { initProgressFeature, progressSheetSpecs } from './features/progress.js';
-import { initWellbeingFeature, wellbeingSheetSpecs } from './features/wellbeing.js';
-import { initSpaceFeature, spaceSheetSpecs } from './features/space.js';
-import { initShareFeature } from './features/share.js';
-import { initTrackingFeature, trackingSheetSpecs } from './features/tracking.js';
-import { initBreathFeature } from './features/breath.js';
-import { initNavigation } from './features/navigation.js';
+import { storageReady } from './core/storage.js';
 
 function initServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
@@ -24,14 +16,56 @@ function initServiceWorker() {
   });
 }
 
-initDayFeature();
-initProgressFeature();
-initWellbeingFeature();
-initSpaceFeature();
-initShareFeature();
-initTrackingFeature();
-initBreathFeature();
-initNavigation();
-setExtraSheetsProvider(() => ({ ...progressSheetSpecs, ...wellbeingSheetSpecs, ...spaceSheetSpecs, ...trackingSheetSpecs }));
-initSettings();
-initServiceWorker();
+async function boot() {
+  await storageReady;
+
+  const [
+    day,
+    settings,
+    progress,
+    wellbeing,
+    space,
+    share,
+    tracking,
+    breath,
+    navigation
+  ] = await Promise.all([
+    import('./features/day.js'),
+    import('./features/settings.js'),
+    import('./features/progress.js'),
+    import('./features/wellbeing.js'),
+    import('./features/space.js'),
+    import('./features/share.js'),
+    import('./features/tracking.js'),
+    import('./features/breath.js'),
+    import('./features/navigation.js')
+  ]);
+
+  day.initDayFeature();
+  progress.initProgressFeature();
+  wellbeing.initWellbeingFeature();
+  space.initSpaceFeature();
+  share.initShareFeature();
+  tracking.initTrackingFeature();
+  breath.initBreathFeature();
+  navigation.initNavigation();
+
+  settings.setExtraSheetsProvider(() => ({
+    ...progress.progressSheetSpecs,
+    ...wellbeing.wellbeingSheetSpecs,
+    ...space.spaceSheetSpecs,
+    ...tracking.trackingSheetSpecs
+  }));
+  settings.initSettings();
+  initServiceWorker();
+}
+
+boot().catch(error => {
+  console.error('PACE could not start.', error);
+  const notice = document.getElementById('appNotice');
+  if (notice) {
+    notice.hidden = false;
+    notice.className = 'app-notice bad';
+    notice.textContent = 'PACE konnte nicht vollständig gestartet werden. Bitte Seite neu laden.';
+  }
+});
