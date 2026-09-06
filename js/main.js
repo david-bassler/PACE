@@ -33,6 +33,7 @@ async function boot() {
     tracking,
     breath,
     holding,
+    horizon,
     navigation
   ] = await Promise.all([
     import('./features/day.js'),
@@ -44,6 +45,7 @@ async function boot() {
     import('./features/tracking.js'),
     import('./features/breath.js'),
     import('./features/holding.js'),
+    import('./features/horizon.js'),
     import('./features/navigation.js')
   ]);
 
@@ -55,6 +57,10 @@ async function boot() {
   tracking.initTrackingFeature();
   breath.initBreathFeature();
   holding.initHoldingFeature();
+  horizon.initHorizonFeature({
+    parkTopic: space.addParkedFromTool,
+    openHolding: holding.openHoldingChooser
+  });
   navigation.initNavigation();
 
   settings.setExtraSheetsProvider(() => ({
