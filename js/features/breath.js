@@ -1,3 +1,4 @@
+import { loadJSON, saveJSON } from '../core/storage.js';
 import { $, openDialog } from '../core/ui.js';
 
 const SETTINGS_KEY = 'pace-breath-settings-v1';
@@ -14,19 +15,15 @@ function clampSeconds(value) {
 }
 
 function loadSettings() {
-  try {
-    const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
-    return {
-      inhale: clampSeconds(stored.inhale ?? DEFAULT_SECONDS),
-      exhale: clampSeconds(stored.exhale ?? DEFAULT_SECONDS)
-    };
-  } catch {
-    return { inhale: DEFAULT_SECONDS, exhale: DEFAULT_SECONDS };
-  }
+  const stored = loadJSON(SETTINGS_KEY, {});
+  return {
+    inhale: clampSeconds(stored.inhale ?? DEFAULT_SECONDS),
+    exhale: clampSeconds(stored.exhale ?? DEFAULT_SECONDS)
+  };
 }
 
 function saveSettings(settings) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  saveJSON(SETTINGS_KEY, settings);
 }
 
 function settingsFromForm() {
