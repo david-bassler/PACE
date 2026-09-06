@@ -55,12 +55,13 @@ function requestResult(request) {
 
 async function hydrateCache(nextDb) {
   const transaction = nextDb.transaction(STORE_NAME, 'readonly');
+  const done = transactionDone(transaction);
   const store = transaction.objectStore(STORE_NAME);
   const [keys, values] = await Promise.all([
     requestResult(store.getAllKeys()),
     requestResult(store.getAll())
   ]);
-  await transactionDone(transaction);
+  await done;
   cache = new Map(keys.map((key, index) => [String(key), String(values[index] ?? '')]));
 }
 
@@ -82,9 +83,10 @@ async function migrateLegacyLocalStorage(nextDb) {
   if (!entries.length) return;
 
   const transaction = nextDb.transaction(STORE_NAME, 'readwrite');
+  const done = transactionDone(transaction);
   const store = transaction.objectStore(STORE_NAME);
   for (const [key, value] of entries) store.put(value, key);
-  await transactionDone(transaction);
+  await done;
 
   for (const [key, value] of entries) cache.set(key, value);
 
@@ -134,14 +136,16 @@ function queueWrite(operation) {
 
 function persistValue(key, value) {
   if (localStorageFallback) {
-    localStorage.setItem(key, value);
+    try { localStorage.setItem(key, value); }
+    catch (error) { console.error('PACE: localStorage fallback write failed.', error); }
     return;
   }
 
   queueWrite(async nextDb => {
     const transaction = nextDb.transaction(STORE_NAME, 'readwrite');
+    const done = transactionDone(transaction);
     transaction.objectStore(STORE_NAME).put(value, key);
-    await transactionDone(transaction);
+    await done;
   });
 }
 
@@ -166,8 +170,9 @@ export function removeValue(key) {
 
   queueWrite(async nextDb => {
     const transaction = nextDb.transaction(STORE_NAME, 'readwrite');
+    const done = transactionDone(transaction);
     transaction.objectStore(STORE_NAME).delete(key);
-    await transactionDone(transaction);
+    await done;
   });
 }
 
@@ -201,8 +206,6 @@ export function uid(prefix = 'id') {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-// Dieses Modul wird von den zustandsbehafteten Features importiert. Durch das
-// top-level await ist der IndexedDB-Cache gefüllt, bevor deren loadJSON-Aufrufe
-// auf Modulebene ausgeführt werden.
+// main.js wartet auf diese Promise, bevor zustandsbehaftete Features importiert
+// werden. So bleiben deren synchrone loadJSON-Aufrufe auf Modulebene möglich.
 export const storageReady = initializeStorage();
-await storageReady;
