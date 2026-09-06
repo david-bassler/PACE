@@ -97,9 +97,9 @@ function renderTargetChoices() {
 
 function resetFlow() {
   draft = { current: '', mode: '', working: '' };
-  $('horizonCustomWrap').hidden = true;
+  $('horizonCustomForm').hidden = true;
   $('horizonCustomInput').value = '';
-  $('horizonParkWrap').hidden = true;
+  $('horizonParkForm').hidden = true;
   $('horizonParkText').value = '';
   $('horizonParkSaved').hidden = true;
   renderCurrentChoices();
@@ -132,7 +132,7 @@ function chooseMode(id) {
 
 function chooseTarget(id) {
   if (id === 'custom') {
-    $('horizonCustomWrap').hidden = false;
+    $('horizonCustomForm').hidden = false;
     $('horizonCustomInput').focus();
     return;
   }
@@ -185,7 +185,7 @@ function showResult() {
   saveJSON(KEY, state);
   renderSummary();
 
-  $('horizonParkWrap').hidden = true;
+  $('horizonParkForm').hidden = true;
   $('horizonParkSaved').hidden = true;
   setStep('horizonStepResult');
 }
@@ -213,7 +213,7 @@ function openHoldingPoint() {
 }
 
 function revealPark() {
-  $('horizonParkWrap').hidden = false;
+  $('horizonParkForm').hidden = false;
   $('horizonParkText').focus();
 }
 
