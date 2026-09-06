@@ -3,6 +3,7 @@ import { $, announce, emptyMessage, openDialog, option } from '../core/ui.js';
 import { loadTables, replaceTables } from '../core/google.js';
 import { markDirty, registerSync } from '../core/sync.js';
 import { addProgressSelection } from './day.js';
+import { mergeUpdatedById } from '../core/collections.js';
 
 const KEY = 'pace-progress-v1';
 const AREA_HEADERS = ['ID','Name','Warum','Wunschzustand','IstStand','Ressourcen','Status','Aktualisiert'];
@@ -36,15 +37,6 @@ function itemToRow(item) { return [item.id, item.type, item.text, item.details, 
 function eventFromRow(row) { return { id: row[0] || uid('event'), date: row[1] || dateKey(), text: row[2] || '', areaIds: splitIds(row[3]), referenceIds: splitIds(row[4]), updatedAt: row[5] || nowIso() }; }
 function eventToRow(event) { return [event.id, event.date, event.text, joinIds(event.areaIds), joinIds(event.referenceIds), event.updatedAt]; }
 
-function mergeById(local, remote) {
-  const map = new Map();
-  for (const item of [...remote, ...local]) {
-    const old = map.get(item.id);
-    if (!old || String(item.updatedAt || '') >= String(old.updatedAt || '')) map.set(item.id, item);
-  }
-  return [...map.values()];
-}
-
 function persist(sync = true) {
   saveJSON(KEY, data);
   renderProgress();
@@ -65,9 +57,9 @@ export async function syncProgress() {
   const itemRows = tables.Fortschritt || [];
   const eventRows = tables.FortschrittEreignisse || [];
   data = {
-    areas: mergeById(data.areas, areaRows.map(areaFromRow)),
-    items: mergeById(data.items, itemRows.map(itemFromRow)),
-    events: mergeById(data.events, eventRows.map(eventFromRow))
+    areas: mergeUpdatedById(data.areas, areaRows.map(areaFromRow)),
+    items: mergeUpdatedById(data.items, itemRows.map(itemFromRow)),
+    events: mergeUpdatedById(data.events, eventRows.map(eventFromRow))
   };
   saveJSON(KEY, data);
   await pushProgress();
