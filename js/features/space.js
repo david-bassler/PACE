@@ -3,6 +3,7 @@ import { $, announce, emptyMessage, openDialog } from '../core/ui.js';
 import { isConnected, loadTables, replaceTables } from '../core/google.js';
 import { markDirty, registerSync } from '../core/sync.js';
 import { getDayState, setSmallDay } from './day.js';
+import { mergeUpdatedById } from '../core/collections.js';
 
 const KEY = 'pace-space-v1';
 const PARK_HEADERS = ['ID','Erstellt','Text','NaechsterSchritt','Wiederaufnahme','Status','Aktualisiert'];
@@ -21,15 +22,6 @@ function parkedToRow(item) { return [item.id, item.createdAt, item.text, item.ne
 function keepFromRow(row) { return { id: row[0] || uid('keep'), date: row[1] || dateKey(), text: row[2] || '', updatedAt: row[3] || nowIso() }; }
 function keepToRow(item) { return [item.id, item.date, item.text, item.updatedAt]; }
 
-function mergeById(local, remote) {
-  const map = new Map();
-  for (const item of [...remote, ...local]) {
-    const old = map.get(item.id);
-    if (!old || String(item.updatedAt || '') >= String(old.updatedAt || '')) map.set(item.id, item);
-  }
-  return [...map.values()];
-}
-
 function persist(sync = true) {
   saveJSON(KEY, data);
   renderParked(); renderKeeps(); renderEveningKeeps();
@@ -44,8 +36,8 @@ async function push() {
 
 export async function syncSpace() {
   const tables = await loadTables(spaceSheetSpecs);
-  data.parked = mergeById(data.parked, (tables.Geparkt || []).map(parkedFromRow));
-  data.keeps = mergeById(data.keeps, (tables.Behalten || []).map(keepFromRow));
+  data.parked = mergeUpdatedById(data.parked, (tables.Geparkt || []).map(parkedFromRow));
+  data.keeps = mergeUpdatedById(data.keeps, (tables.Behalten || []).map(keepFromRow));
   saveJSON(KEY, data);
   await push();
   renderParked(); renderKeeps(); renderEveningKeeps();
