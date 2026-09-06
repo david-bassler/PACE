@@ -1,4 +1,4 @@
-const CACHE = 'pace-v24';
+const CACHE = 'pace-v25';
 const ASSETS = [
   './', './index.html', './style.css', './manifest.webmanifest', './icon.svg', './icon-maskable.svg',
   './js/main.js', './js/core/storage.js', './js/core/ui.js', './js/core/google.js', './js/core/sync.js',
