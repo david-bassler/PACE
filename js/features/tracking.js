@@ -3,26 +3,19 @@ import { $, announce, emptyMessage, openDialog, option } from '../core/ui.js';
 import { loadTable, replaceTable } from '../core/google.js';
 import { markDirty, registerSync } from '../core/sync.js';
 import { mergeUpdatedById } from '../core/collections.js';
+import {
+  CONFIG_HEADERS,
+  INPUT_TYPES,
+  WRITE_MODES,
+  trackingSheetSpecs,
+  trackingFromRow,
+  trackingRows,
+  sortTrackingItems as sortItems
+} from './tracking-data.js';
+
+export { trackingSheetSpecs };
 
 const KEY = 'pace-tracking-config-v1';
-const CONFIG_HEADERS = ['ID','Typ','Titel','Icon','GruppeID','Tabellenblatt','SpaltenID','Eingabetyp','Schreibmodus','Reihenfolge','Status','Aktualisiert'];
-
-export const trackingSheetSpecs = {
-  ErfassungKonfig: CONFIG_HEADERS
-};
-
-const INPUT_TYPES = {
-  text: 'Text',
-  time_text: 'Uhrzeit + Text',
-  time: 'Uhrzeit',
-  number: 'Zahl',
-  yes_no: 'Ja / Nein'
-};
-
-const WRITE_MODES = {
-  append_newline: 'mit Zeilenumbruch anhängen',
-  replace: 'Zellinhalt ersetzen'
-};
 
 const EMOJI_RECENT_KEY = 'pace-emoji-recent-v1';
 const EMOJI_CATEGORIES = {
@@ -123,54 +116,12 @@ function clearEmoji() {
   target.focus();
 }
 
-function normalizeType(value) {
-  return value === 'Gruppe' || value === 'group' ? 'group' : 'field';
-}
-
-function fromRow(row) {
-  return {
-    id: row[0] || uid('track'),
-    kind: normalizeType(row[1]),
-    title: row[2] || '',
-    icon: row[3] || '',
-    groupId: row[4] || '',
-    sheetTab: row[5] || '',
-    columnId: String(row[6] ?? '').trim(),
-    inputType: row[7] || 'text',
-    writeMode: row[8] || 'append_newline',
-    order: Number(row[9] || 0),
-    status: row[10] || 'active',
-    updatedAt: row[11] || nowIso()
-  };
-}
-
-function toRow(item) {
-  return [
-    item.id,
-    item.kind === 'group' ? 'Gruppe' : 'Feld',
-    item.title,
-    item.icon || '',
-    item.groupId || '',
-    item.sheetTab || '',
-    item.columnId || '',
-    item.inputType || '',
-    item.writeMode || '',
-    Number(item.order || 0),
-    item.status || 'active',
-    item.updatedAt || nowIso()
-  ];
-}
-
 function activeGroups() {
   return data.groups.filter(item => item.status !== 'archived').sort(sortItems);
 }
 
 function activeFields() {
   return data.fields.filter(item => item.status !== 'archived').sort(sortItems);
-}
-
-function sortItems(a, b) {
-  return Number(a.order || 0) - Number(b.order || 0) || String(a.title).localeCompare(String(b.title), 'de');
 }
 
 function persist(sync = true) {
@@ -180,13 +131,12 @@ function persist(sync = true) {
 }
 
 async function pushTrackingConfig() {
-  const rows = [...data.groups, ...data.fields].sort((a, b) => a.kind.localeCompare(b.kind) || sortItems(a, b)).map(toRow);
-  await replaceTable('ErfassungKonfig', CONFIG_HEADERS, rows);
+  await replaceTable('ErfassungKonfig', CONFIG_HEADERS, trackingRows(data));
 }
 
 export async function syncTrackingConfig() {
   const rows = await loadTable('ErfassungKonfig', CONFIG_HEADERS);
-  const remote = rows.map(fromRow);
+  const remote = rows.map(trackingFromRow);
   data.groups = mergeUpdatedById(data.groups, remote.filter(item => item.kind === 'group'));
   data.fields = mergeUpdatedById(data.fields, remote.filter(item => item.kind === 'field'));
   saveJSON(KEY, data);
