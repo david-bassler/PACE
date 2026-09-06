@@ -20,67 +20,139 @@
 
     <div id="appNotice" class="app-notice" hidden aria-live="polite"></div>
 
-    <section class="energy-strip" aria-labelledby="energyTitle">
-      <div><p class="micro">TAGESFORM</p><h2 id="energyTitle">Was ist heute realistisch?</h2></div>
-      <div class="segmented" role="group" aria-label="Tagesform">
-        <button type="button" data-energy="low">wenig</button><button type="button" data-energy="normal">normal</button><button type="button" data-energy="good">viel</button>
-      </div><p id="energyHint" class="hint"></p>
-    </section>
+    <nav class="primary-nav" aria-label="PACE Hauptbereiche">
+      <button class="primary-nav-button active" type="button" data-page-target="today" aria-current="page">Heute</button>
+      <button class="primary-nav-button" type="button" data-page-target="tools">Werkzeuge</button>
+      <button class="primary-nav-button" type="button" data-page-target="progress">Fortschritt</button>
+      <button class="primary-nav-button" type="button" data-page-target="more">Mehr</button>
+    </nav>
 
-    <section class="feature-card tracking-home" aria-labelledby="trackingHomeTitle">
-      <div>
-        <p class="micro">SCHNELL ERFASSEN</p>
-        <h2 id="trackingHomeTitle">Ein Ort für laufende Daten</h2>
-        <p id="trackingSummary" class="hint">Noch keine Erfassungsfelder konfiguriert.</p>
+    <section id="page-today" class="app-page active" data-page="today">
+      <div class="page-intro">
+        <p class="micro">HEUTE</p>
+        <h2>Was ist jetzt wichtig?</h2>
+        <p class="hint">Nur der aktuelle Abschnitt des Tages. Verwaltung und Hintergrund bleiben an anderer Stelle.</p>
       </div>
-      <div id="trackingQuickActions" class="tracking-quick-actions"></div>
-      <button id="openTrackingConfig" class="quiet-button tracking-config-open" type="button">Erfassung konfigurieren</button>
+
+      <section class="energy-strip" aria-labelledby="energyTitle">
+        <div><p class="micro">TAGESFORM</p><h2 id="energyTitle">Was ist heute realistisch?</h2></div>
+        <div class="segmented" role="group" aria-label="Tagesform">
+          <button type="button" data-energy="low">wenig</button><button type="button" data-energy="normal">normal</button><button type="button" data-energy="good">viel</button>
+        </div><p id="energyHint" class="hint"></p>
+      </section>
+
+      <section class="feature-card tracking-home" aria-labelledby="trackingHomeTitle">
+        <div>
+          <p class="micro">SCHNELL ERFASSEN</p>
+          <h2 id="trackingHomeTitle">Ein Ort für laufende Daten</h2>
+          <p id="trackingSummary" class="hint">Noch keine Erfassungsfelder konfiguriert.</p>
+        </div>
+        <div id="trackingQuickActions" class="tracking-quick-actions"></div>
+      </section>
+
+      <section id="reserveFirst" class="reserve-first" aria-labelledby="reserveFirstTitle">
+        <div class="reserve-first-head"><span class="reserve-badge">C</span><div><p class="micro">RESERVE IM BLICK</p><h2 id="reserveFirstTitle">Was muss heute nicht auch noch sein?</h2></div></div>
+        <p class="hint">Eine Möglichkeit, keine Pflicht. Reserve schützt den Rest des Tages.</p>
+        <div id="reserveFirstChoices" class="quick-choices"></div>
+        <button id="moreReserve" class="secondary-button" type="button">Alle Reserve-Ideen</button>
+      </section>
+
+      <section class="today-panel" aria-labelledby="todayTitle">
+        <div class="section-head"><div><p class="micro">HEUTE</p><h2 id="todayTitle">Ein hinreichend guter Tag</h2></div><button id="resetDay" class="quiet-button" type="button">Neu</button></div>
+        <div id="todaySummary" class="today-summary" aria-live="polite"></div>
+        <div id="smallDayNote" class="small-day-note" hidden><div><strong>Heute kleiner.</strong><p id="smallDayCopy"></p></div><button id="smallDayClear" class="tiny-button" type="button">Wieder öffnen</button></div>
+      </section>
+
+      <button id="stuckButton" class="stuck-button" type="button"><span aria-hidden="true">↯</span><span><strong>Ich stecke fest</strong><small>Nicht nach einem Feature suchen müssen – nur sagen, was gerade fehlt.</small></span></button>
+      <div id="rescueCurrent" class="rescue-current" hidden aria-live="polite"></div>
+
+      <section class="evening-card" aria-labelledby="eveningTitle"><div><p class="micro">ABENDS</p><h2 id="eveningTitle">Den Tag schließen</h2><p class="hint">Drei Fragen. Keine Note.</p></div><button id="eveningButton" class="primary-button" type="button">Abendabschluss öffnen</button><p id="eveningStatus" class="subtle"></p></section>
     </section>
 
-    <section id="reserveFirst" class="reserve-first" aria-labelledby="reserveFirstTitle">
-      <div class="reserve-first-head"><span class="reserve-badge">C</span><div><p class="micro">RESERVE IM BLICK</p><h2 id="reserveFirstTitle">Was muss heute nicht auch noch sein?</h2></div></div>
-      <p class="hint">Eine Möglichkeit, keine Pflicht. Reserve schützt den Rest des Tages.</p>
-      <div id="reserveFirstChoices" class="quick-choices"></div>
-      <button id="moreReserve" class="secondary-button" type="button">Alle Reserve-Ideen</button>
-    </section>
-
-    <section class="today-panel" aria-labelledby="todayTitle">
-      <div class="section-head"><div><p class="micro">HEUTE</p><h2 id="todayTitle">Ein hinreichend guter Tag</h2></div><button id="resetDay" class="quiet-button" type="button">Neu</button></div>
-      <div id="todaySummary" class="today-summary" aria-live="polite"></div>
-      <div id="smallDayNote" class="small-day-note" hidden><div><strong>Heute kleiner.</strong><p id="smallDayCopy"></p></div><button id="smallDayClear" class="tiny-button" type="button">Wieder öffnen</button></div>
-    </section>
-
-    <section class="feature-card meh-home" aria-labelledby="mehHomeTitle">
-      <div><p class="micro">WENN DER TAG EINFACH „MEH“ IST</p><h2 id="mehHomeTitle">Ich weiß gerade nicht so recht.</h2><p class="hint">Keine Krisenfunktion. Nur ein Weg zurück zu einer Richtung, wenn gerade nichts richtig zieht.</p></div>
-      <div class="feature-actions"><button id="openMeh" class="primary-button" type="button">Was könnte jetzt gut sein?</button><button id="openLibrary" class="secondary-button" type="button">Eigene Beispiele</button><button id="openExplanations" class="quiet-button" type="button">Gedanken dahinter</button></div>
-    </section>
-
-    <section class="feature-card progress-home" aria-labelledby="progressHomeTitle">
-      <div><p class="micro">ECHTER FORTSCHRITT</p><h2 id="progressHomeTitle">Persönliche Verfassung</h2><p id="progressOverview" class="hint">Die Lebenslandkarte wird privat gespeichert.</p></div>
-      <div class="feature-actions">
-        <button id="quickProgressEvent" class="primary-button" type="button">Etwas ist weiter</button>
-        <button id="nextProgressAction" class="secondary-button" type="button">Was könnte ich tun?</button>
-        <button id="openProgress" class="secondary-button" type="button">Lebenslandkarte</button>
+    <section id="page-tools" class="app-page" data-page="tools" hidden>
+      <div class="page-intro">
+        <p class="micro">WERKZEUGE</p>
+        <h2>Was brauche ich gerade?</h2>
+        <p class="hint">Benutzung zuerst. Einstellungen und Kategorien bleiben im Hintergrund.</p>
       </div>
+
+      <section class="feature-card tool-card calm-tool" aria-labelledby="calmToolTitle">
+        <div><p class="micro">RUHE IM SYSTEM</p><h2 id="calmToolTitle">Weniger innere Lautstärke.</h2><p class="hint">Wenn gerade nicht noch mehr Denken hilfreich ist.</p></div>
+        <button id="openBreath" class="breath-shortcut tool-action" type="button"><span class="breath-shortcut-orb" aria-hidden="true"></span><span><strong>Atemkreis</strong><small>Nur dem Kreis folgen. Keine Messung.</small></span></button>
+      </section>
+
+      <section class="feature-card space-home tool-card" aria-labelledby="spaceHomeTitle">
+        <div><p class="micro">WENIGER IM KOPF</p><h2 id="spaceHomeTitle">Nicht alles muss gleichzeitig gehalten werden.</h2><p class="hint">Offene Schleifen parken oder den heutigen Anspruch verkleinern.</p></div>
+        <div class="feature-actions"><button id="openParking" class="secondary-button" type="button">Etwas parken</button><button id="shrinkDay" class="secondary-button" type="button">Tag verkleinern</button><button id="openKeep" class="quiet-button" type="button">Etwas behalten</button></div>
+      </section>
+
+      <section class="feature-card meh-home tool-card" aria-labelledby="mehHomeTitle">
+        <div><p class="micro">EINE RICHTUNG</p><h2 id="mehHomeTitle">Ich weiß gerade nicht so recht.</h2><p class="hint">Wenn Möglichkeiten da sind, aber keine davon gerade eindeutig zieht.</p></div>
+        <div class="feature-actions"><button id="openMeh" class="primary-button" type="button">Was könnte jetzt gut sein?</button></div>
+      </section>
+
+      <section class="feature-card anchor-home tool-card" aria-labelledby="anchorHomeTitle">
+        <div><p class="micro">EIN ANDERER BLICK</p><h2 id="anchorHomeTitle">Etwas Reales wieder zugänglich machen.</h2><p class="hint">Eigene Erinnerungen als Anker – nicht um den aktuellen Zustand wegzudiskutieren.</p></div>
+        <button id="openAnchorChooser" class="primary-button" type="button">Erinnerungsanker öffnen</button>
+      </section>
+
+      <details id="paceSuggestionsDetails" class="secondary-tools">
+        <summary>PACE-Vorschläge direkt öffnen</summary>
+        <p class="hint">Falls du schon weißt, welche Richtung du suchst.</p>
+        <section class="pace-list" aria-label="PACE Bereiche">
+          <button class="pace-row" type="button" data-key="P" aria-expanded="false"><span class="letter letter-p">P</span><span class="row-copy"><strong>Proficiency</strong><span>Kompetenz · Ich nutze, was ich kann.</span><small data-chosen="P">Vorschläge anzeigen</small></span><span class="chevron" aria-hidden="true">⌄</span></button><div class="suggestions" id="suggestions-P" hidden></div>
+          <button class="pace-row" type="button" data-key="A" aria-expanded="false"><span class="letter letter-a">A</span><span class="row-copy"><strong>Advancement</strong><span>Fortschritt · Etwas Reales ist weiter.</span><small data-chosen="A">Vorschläge anzeigen</small></span><span class="chevron" aria-hidden="true">⌄</span></button><div class="suggestions" id="suggestions-A" hidden></div>
+          <button class="pace-row" type="button" data-key="C" aria-expanded="false"><span class="letter letter-c">C</span><span class="row-copy"><strong>Capacity</strong><span>Reserve · Ich lasse etwas übrig.</span><small data-chosen="C">Vorschläge anzeigen</small></span><span class="chevron" aria-hidden="true">⌄</span></button><div class="suggestions" id="suggestions-C" hidden></div>
+          <button class="pace-row" type="button" data-key="E" aria-expanded="false"><span class="letter letter-e">E</span><span class="row-copy"><strong>Echo</strong><span>Resonanz · Ich ermögliche, nicht erzwinge.</span><small data-chosen="E">Vorschläge anzeigen</small></span><span class="chevron" aria-hidden="true">⌄</span></button><div class="suggestions" id="suggestions-E" hidden></div>
+        </section>
+      </details>
     </section>
 
-    <section class="feature-card space-home" aria-labelledby="spaceHomeTitle">
-      <div><p class="micro">RAUM SCHAFFEN</p><h2 id="spaceHomeTitle">Nicht alles muss im Kopf bleiben.</h2><p class="hint">Offene Schleifen parken, den Tag verkleinern oder einen schönen Moment einfach behalten.</p></div>
-      <div class="feature-actions"><button id="openParking" class="secondary-button" type="button">Etwas parken</button><button id="shrinkDay" class="secondary-button" type="button">Tag verkleinern</button><button id="openKeep" class="primary-button" type="button">Das behalten</button></div>
+    <section id="page-progress" class="app-page" data-page="progress" hidden>
+      <div class="page-intro">
+        <p class="micro">FORTSCHRITT</p>
+        <h2>Was ist wirklich weiter?</h2>
+        <p class="hint">Lebenslandkarte, reale Zustandsänderungen und nächste mögliche Schritte.</p>
+      </div>
+
+      <section class="feature-card progress-home" aria-labelledby="progressHomeTitle">
+        <div><p class="micro">ECHTER FORTSCHRITT</p><h2 id="progressHomeTitle">Persönliche Verfassung</h2><p id="progressOverview" class="hint">Die Lebenslandkarte wird privat gespeichert.</p></div>
+        <div class="feature-actions">
+          <button id="quickProgressEvent" class="primary-button" type="button">Etwas ist weiter</button>
+          <button id="nextProgressAction" class="secondary-button" type="button">Was könnte ich tun?</button>
+          <button id="openProgress" class="secondary-button" type="button">Lebenslandkarte</button>
+        </div>
+      </section>
     </section>
 
-    <button id="stuckButton" class="stuck-button" type="button"><span aria-hidden="true">↯</span><span><strong>Ich stecke fest</strong><small>Raus aus der Schleife, rein in den nächsten Schritt</small></span></button>
-    <button id="openBreath" class="breath-shortcut" type="button"><span class="breath-shortcut-orb" aria-hidden="true"></span><span><strong>Atemkreis</strong><small>Nur dem Kreis folgen. Keine Messung.</small></span></button>
-    <div id="rescueCurrent" class="rescue-current" hidden aria-live="polite"></div>
+    <section id="page-more" class="app-page" data-page="more" hidden>
+      <div class="page-intro">
+        <p class="micro">MEHR</p>
+        <h2>Verwalten und verstehen.</h2>
+        <p class="hint">Dinge, die du im normalen Tagesverlauf nicht ständig sehen musst.</p>
+      </div>
 
-    <section class="pace-list" aria-label="PACE Bereiche">
-      <button class="pace-row" type="button" data-key="P" aria-expanded="false"><span class="letter letter-p">P</span><span class="row-copy"><strong>Proficiency</strong><span>Kompetenz · Ich nutze, was ich kann.</span><small data-chosen="P">Vorschläge anzeigen</small></span><span class="chevron" aria-hidden="true">⌄</span></button><div class="suggestions" id="suggestions-P" hidden></div>
-      <button class="pace-row" type="button" data-key="A" aria-expanded="false"><span class="letter letter-a">A</span><span class="row-copy"><strong>Advancement</strong><span>Fortschritt · Etwas Reales ist weiter.</span><small data-chosen="A">Vorschläge anzeigen</small></span><span class="chevron" aria-hidden="true">⌄</span></button><div class="suggestions" id="suggestions-A" hidden></div>
-      <button class="pace-row" type="button" data-key="C" aria-expanded="false"><span class="letter letter-c">C</span><span class="row-copy"><strong>Capacity</strong><span>Reserve · Ich lasse etwas übrig.</span><small data-chosen="C">Vorschläge anzeigen</small></span><span class="chevron" aria-hidden="true">⌄</span></button><div class="suggestions" id="suggestions-C" hidden></div>
-      <button class="pace-row" type="button" data-key="E" aria-expanded="false"><span class="letter letter-e">E</span><span class="row-copy"><strong>Echo</strong><span>Resonanz · Ich ermögliche, nicht erzwinge.</span><small data-chosen="E">Vorschläge anzeigen</small></span><span class="chevron" aria-hidden="true">⌄</span></button><div class="suggestions" id="suggestions-E" hidden></div>
+      <section class="feature-card">
+        <div><p class="micro">PERSÖNLICHE BIBLIOTHEK</p><h2>Erinnerungen und Anker verwalten.</h2><p class="hint">Resonanzereignisse, Erinnerungsanker, Schlagwörter, PACE-Beispiele und Resonanzchancen.</p></div>
+        <button id="openLibrary" class="secondary-button" type="button">Persönliche Bibliothek</button>
+      </section>
+
+      <section class="feature-card">
+        <div><p class="micro">ERFASSUNG</p><h2>Schnellerfassung konfigurieren.</h2><p class="hint">Felder und Gruppen für laufende Daten. Im Alltag bleiben auf „Heute“ nur die eigentlichen Schnellaktionen sichtbar.</p></div>
+        <button id="openTrackingConfig" class="secondary-button" type="button">Erfassung konfigurieren</button>
+      </section>
+
+      <section class="feature-card">
+        <div><p class="micro">PACE VERSTEHEN</p><h2>Gedanken dahinter.</h2><p class="hint">Begriffe und Grundideen nachlesen, wenn du sie gerade wirklich brauchst.</p></div>
+        <button id="openExplanations" class="quiet-button" type="button">PACE erklärt</button>
+      </section>
+
+      <section class="feature-card">
+        <div><p class="micro">VERBINDUNG</p><h2>Google Sheets und App-Einstellungen.</h2><p class="hint">Synchronisation, Verbindung und technische Einstellungen.</p></div>
+        <button id="openSettingsFromMore" class="quiet-button" type="button">Einstellungen öffnen</button>
+      </section>
     </section>
 
-    <section class="evening-card" aria-labelledby="eveningTitle"><div><p class="micro">ABENDS</p><h2 id="eveningTitle">Den Tag schließen</h2><p class="hint">Drei Fragen. Keine Note.</p></div><button id="eveningButton" class="primary-button" type="button">Abendabschluss öffnen</button><p id="eveningStatus" class="subtle"></p></section>
     <footer><p>Nicht alles. Sondern das Richtige.</p><strong>Und genug übrig für morgen.</strong></footer>
   </main>
 
