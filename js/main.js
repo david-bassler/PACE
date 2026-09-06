@@ -32,6 +32,7 @@ async function boot() {
     share,
     tracking,
     breath,
+    holding,
     navigation
   ] = await Promise.all([
     import('./features/day.js'),
@@ -42,6 +43,7 @@ async function boot() {
     import('./features/share.js'),
     import('./features/tracking.js'),
     import('./features/breath.js'),
+    import('./features/holding.js'),
     import('./features/navigation.js')
   ]);
 
@@ -52,13 +54,15 @@ async function boot() {
   share.initShareFeature();
   tracking.initTrackingFeature();
   breath.initBreathFeature();
+  holding.initHoldingFeature();
   navigation.initNavigation();
 
   settings.setExtraSheetsProvider(() => ({
     ...progress.progressSheetSpecs,
     ...wellbeing.wellbeingSheetSpecs,
     ...space.spaceSheetSpecs,
-    ...tracking.trackingSheetSpecs
+    ...tracking.trackingSheetSpecs,
+    ...holding.holdingSheetSpecs
   }));
   settings.initSettings();
   initServiceWorker();
