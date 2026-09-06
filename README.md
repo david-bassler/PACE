@@ -21,7 +21,7 @@ Die zentrale Frage für Features ist:
 
 Die App ist bewusst in kleine ES-Module getrennt:
 
-- `js/core/storage.js` – lokale Speicherung, IDs, Datumshelfer
+- `js/core/storage.js` – lokale IndexedDB-Speicherung, Migration alter Browserdaten, IDs, Datumshelfer
 - `js/core/ui.js` – kleine gemeinsame UI-Helfer
 - `js/core/google.js` – OAuth, serialisierte API-Queue, Batch-Zugriffe und 429-Retry
 - `js/core/sync.js` – zentrale Synchronisationsqueue und Status (`lokal`, `wartet`, `syncing`, `synced`)
@@ -52,7 +52,7 @@ Im selben Repository ist eine separate Node-App zur Übernahme von Fitbit-/Googl
 
 Das öffentliche GitHub-Repository enthält **nur App-Logik, UI, generische Erklärungstexte und PWA-Dateien**.
 
-Persönliche Inhalte gehören ausschließlich in das private Google Sheet und in den lokalen Browser-Cache. Insbesondere gehören persönliche Zielbereiche, Beispiele und Resonanzgeschichten **nicht** ins Repository.
+Persönliche Inhalte gehören ausschließlich in das private Google Sheet und in den lokalen IndexedDB-Speicher des Browsers. Insbesondere gehören persönliche Zielbereiche, Beispiele und Resonanzgeschichten **nicht** ins Repository.
 
 ### Private Sheet-Tabs
 
@@ -72,13 +72,21 @@ PACE verwendet aktuell:
 
 Die App legt fehlende Tabs bei bestehender Google-Verbindung selbst an.
 
+## Lokale Speicherung
+
+PACE verwendet für dauerhafte lokale App-Daten **IndexedDB** statt `localStorage`. Beim ersten Start der IndexedDB-Version werden vorhandene PACE-Einträge aus `localStorage` automatisch in die neue Datenbank übernommen und erst nach erfolgreichem Schreiben aus `localStorage` entfernt.
+
+Die Features arbeiten weiterhin mit einem synchronen In-Memory-Cache; Schreibvorgänge werden im Hintergrund nach IndexedDB persistiert. Dadurch musste die bestehende Feature-Logik nicht in eine Vielzahl asynchroner Einzelzugriffe umgebaut werden.
+
+`localStorage` bleibt nur als technischer Fallback erhalten, falls IndexedDB im Browser tatsächlich nicht verfügbar oder nicht nutzbar ist.
+
 ## Google Sheets
 
 PACE verwendet Googles OAuth Token Model direkt im Browser und fordert nur:
 
 `https://www.googleapis.com/auth/drive.file`
 
-Es wird **kein Client Secret** verwendet. Die Client-ID und Spreadsheet-ID werden lokal gespeichert; der kurzlebige Access Token bleibt nur im Arbeitsspeicher.
+Es wird **kein Client Secret** verwendet. Die Client-ID und Spreadsheet-ID werden lokal in IndexedDB gespeichert; der kurzlebige Access Token bleibt nur im Arbeitsspeicher.
 
 ### Einmalige Einrichtung
 
