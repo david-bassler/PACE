@@ -9,6 +9,14 @@ import {
   situationFromRow,
   holdingTables
 } from './holding-data.js';
+import {
+  activeHoldingStatements,
+  holdingPointById,
+  holdingStatementById,
+  holdingPointsForStatement,
+  completedHoldingSituations,
+  chooseDifferentItem
+} from './holding-domain.js';
 
 export { holdingSheetSpecs };
 
@@ -56,44 +64,10 @@ export async function syncHolding() {
   renderManager();
 }
 
-function sortedStatements() {
-  return data.statements
-    .filter(item => item.active !== false && item.text)
-    .sort((a,b) => Number(a.order || 0) - Number(b.order || 0) || a.text.localeCompare(b.text, 'de'));
-}
-
-function pointById(id) {
-  return data.points.find(item => item.id === id && item.active !== false);
-}
-
-function statementById(id) {
-  return data.statements.find(item => item.id === id);
-}
-
-function pointsForStatement(statementId) {
-  const links = data.links
-    .filter(item => item.active !== false && item.statementId === statementId)
-    .sort((a,b) => Number(a.order || 0) - Number(b.order || 0));
-
-  return links.map(link => pointById(link.pointId)).filter(Boolean);
-}
-
-function completedSituations(statementId) {
-  return data.situations
-    .filter(item => item.status === 'abgeschlossen' && item.statementId === statementId && item.text)
-    .sort((a,b) => String(b.completedAt || b.updatedAt || '').localeCompare(String(a.completedAt || a.updatedAt || '')));
-}
-
-function chooseDifferent(items, currentId) {
-  const options = items.filter(item => item.id !== currentId);
-  const source = options.length ? options : items;
-  return source.length ? source[Math.floor(Math.random() * source.length)] : null;
-}
-
 export function openHoldingChooser() {
   const box = $('holdingStatementList');
   box.innerHTML = '';
-  const statements = sortedStatements();
+  const statements = activeHoldingStatements(data);
 
   if (!statements.length) {
     box.appendChild(emptyMessage('Noch keine Haltepunkte geladen. Nach dem Import in das private Sheet erscheinen hier die Aussagen.'));
@@ -129,7 +103,7 @@ export function openHoldingChooser() {
 }
 
 function openStatement(statementId) {
-  const points = pointsForStatement(statementId);
+  const points = holdingPointsForStatement(data, statementId);
   if (!points.length) {
     announce('Für diese Aussage ist noch kein Haltepunkt zugeordnet.', '');
     return;
@@ -146,8 +120,8 @@ function safeImageUrl(value) {
 }
 
 function renderPoint() {
-  const statement = statementById(currentStatementId);
-  const point = pointById(currentPointId);
+  const statement = holdingStatementById(data, currentStatementId);
+  const point = holdingPointById(data, currentPointId);
   if (!point) return;
 
   $('holdingSelectedStatement').textContent = statement?.text || 'Ein Haltepunkt';
@@ -177,10 +151,10 @@ function renderPoint() {
   keywords.textContent = (point.keywords || []).join(' · ');
   keywords.hidden = !(point.keywords || []).length;
 
-  const options = currentStatementId ? pointsForStatement(currentStatementId) : [];
+  const options = currentStatementId ? holdingPointsForStatement(data, currentStatementId) : [];
   $('holdingAnotherPoint').hidden = options.length < 2;
 
-  const past = currentStatementId ? completedSituations(currentStatementId) : [];
+  const past = currentStatementId ? completedHoldingSituations(data, currentStatementId) : [];
   $('holdingPastSituation').hidden = !past.length;
   $('holdingPastCard').hidden = true;
   $('holdingSituationText').value = '';
@@ -196,14 +170,14 @@ function openPoint(statementId, pointId) {
 
 function showAnotherPoint() {
   if (!currentStatementId) return;
-  const point = chooseDifferent(pointsForStatement(currentStatementId), currentPointId);
+  const point = chooseDifferentItem(holdingPointsForStatement(data, currentStatementId), currentPointId);
   if (!point) return;
   currentPointId = point.id;
   renderPoint();
 }
 
 function showPastSituation() {
-  const situations = completedSituations(currentStatementId);
+  const situations = completedHoldingSituations(data, currentStatementId);
   const item = situations[Math.floor(Math.random() * situations.length)];
   if (!item) return;
 
@@ -265,7 +239,7 @@ function renderSituationCard(item, completed) {
 
   const copy = document.createElement('div');
   const statement = document.createElement('small');
-  statement.textContent = statementById(item.statementId)?.text || 'Ohne zugeordnete Aussage';
+  statement.textContent = holdingStatementById(data, item.statementId)?.text || 'Ohne zugeordnete Aussage';
 
   const text = document.createElement('p');
   text.textContent = item.text;
@@ -301,7 +275,7 @@ function renderSituationCard(item, completed) {
 function renderManager() {
   if (!$('holdingManagerSummary')) return;
 
-  const statements = sortedStatements();
+  const statements = activeHoldingStatements(data);
   const points = data.points.filter(item => item.active !== false);
   const open = data.situations
     .filter(item => item.status !== 'abgeschlossen')
