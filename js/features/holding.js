@@ -2,6 +2,7 @@ import { loadJSON, nowIso, saveJSON, uid } from '../core/storage.js';
 import { $, announce, emptyMessage, openDialog } from '../core/ui.js';
 import { loadTables, replaceTables } from '../core/google.js';
 import { markDirty, registerSync } from '../core/sync.js';
+import { mergeUpdatedById } from '../core/collections.js';
 
 const KEY = 'pace-holding-v1';
 
@@ -119,15 +120,6 @@ function situationToRow(item) {
   ];
 }
 
-function mergeById(local, remote) {
-  const map = new Map();
-  for (const item of [...remote, ...local]) {
-    const old = map.get(item.id);
-    if (!old || String(item.updatedAt || '') >= String(old.updatedAt || '')) map.set(item.id, item);
-  }
-  return [...map.values()];
-}
-
 function persist(sync = true) {
   saveJSON(KEY, data);
   if (sync) markDirty('holding');
@@ -165,7 +157,7 @@ export async function syncHolding() {
 
   // Situationen können dagegen sowohl in der App als auch im Sheet verändert
   // werden und werden deshalb wie die übrigen PACE-Daten nach ID zusammengeführt.
-  data.situations = mergeById(data.situations, (tables.HaltepunktSituationen || []).map(rowToSituation));
+  data.situations = mergeUpdatedById(data.situations, (tables.HaltepunktSituationen || []).map(rowToSituation));
 
   saveJSON(KEY, data);
   await push();
