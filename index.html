@@ -92,11 +92,13 @@
       </section>
 
       <section class="feature-card anchor-home tool-card" aria-labelledby="anchorHomeTitle">
-        <div><p class="micro">EIN ANDERER BLICK</p><h2 id="anchorHomeTitle">Etwas Reales wieder zugänglich machen.</h2><p class="hint">Entweder ein eigenes Erlebnis erinnern oder einen vertrauten Haltepunkt öffnen.</p></div>
+        <div><p class="micro">EIN ANDERER BLICK</p><h2 id="anchorHomeTitle">Etwas Reales wieder zugänglich machen.</h2><p class="hint">Eigene Erfahrungen, vertraute Haltepunkte oder ein anderer zeitlicher Maßstab.</p></div>
         <div class="feature-actions">
           <button id="openAnchorChooser" class="secondary-button" type="button">Eigenes Erlebnis erinnern</button>
-          <button id="openHoldingChooser" class="primary-button" type="button">Welcher Satz fühlt sich wahr an?</button>
+          <button id="openHoldingChooser" class="secondary-button" type="button">Welcher Satz fühlt sich wahr an?</button>
+          <button id="openHorizon" class="primary-button" type="button">Horizont wechseln</button>
         </div>
+        <p id="horizonCurrentSummary" class="subtle">Kein Horizont für den aktuellen Abschnitt gewählt.</p>
       </section>
 
       <details id="paceSuggestionsDetails" class="secondary-tools">
@@ -198,6 +200,7 @@
       <div class="anchor-choice-list">
         <button id="openPerspectiveAnchors" class="anchor-choice" type="button"><strong>Ein eigenes Erlebnis</strong><small>Etwas, das in deinem Leben tatsächlich schon passiert ist.</small></button>
         <button id="openPerspectiveHolding" class="anchor-choice" type="button"><strong>Eine Geschichte, ein Bild oder ein Satz</strong><small>Ein Haltepunkt, der schon einmal eine gedankliche Verengung geöffnet hat.</small></button>
+        <button id="openPerspectiveHorizon" class="anchor-choice" type="button"><strong>Horizont wechseln</strong><small>Der größere Maßstab darf wichtig bleiben, ohne den nächsten Abschnitt vollständig zu bestimmen.</small></button>
       </div>
     </div>
   </dialog>
@@ -293,6 +296,56 @@
       <label><span>Was weiß ich heute darüber? <small>optional</small></span><textarea id="holdingReviewText" rows="4" maxlength="2500" placeholder="z. B. wie es weiterging, was sich verändert hat oder einfach: Es ist vorbei."></textarea></label>
       <button class="primary-button" type="submit">Als vergangen markieren</button>
     </form>
+  </dialog>
+
+  <dialog id="horizonDialog" class="dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div>
+      <p class="micro">HORIZONT WECHSELN</p>
+
+      <section id="horizonStepCurrent">
+        <h2>Welcher Horizont bestimmt gerade alles?</h2>
+        <p class="hint">Nur den Maßstab erkennen. Du musst nicht erklären, worum es konkret geht.</p>
+        <div id="horizonCurrentChoices" class="horizon-choice-list"></div>
+      </section>
+
+      <section id="horizonStepMode" hidden>
+        <h2>Was soll für den nächsten Abschnitt gelten?</h2>
+        <p id="horizonModeContext" class="hint"></p>
+        <div id="horizonModeChoices" class="horizon-choice-list"></div>
+      </section>
+
+      <section id="horizonStepTarget" hidden>
+        <h2>Welcher Horizont soll jetzt praktisch gelten?</h2>
+        <p id="horizonTargetContext" class="hint"></p>
+        <div id="horizonTargetChoices" class="horizon-choice-list"></div>
+        <form id="horizonCustomForm" class="stack-form horizon-custom" hidden>
+          <label><span>Eigener Zeitraum</span><input id="horizonCustomInput" maxlength="180" placeholder="z. B. bis zum Abendessen"></label>
+          <button class="primary-button" type="submit">Diesen Zeitraum nehmen</button>
+        </form>
+      </section>
+
+      <section id="horizonStepResult" hidden>
+        <p id="horizonResultCurrent" class="micro"></p>
+        <h2 id="horizonResultMode">Horizont</h2>
+        <p id="horizonResultCopy" class="horizon-result-copy"></p>
+        <p id="horizonResultWorking" class="horizon-working" hidden></p>
+
+        <div class="feature-actions horizon-result-actions">
+          <button id="horizonOpenHolding" class="secondary-button" type="button">Haltepunkt öffnen</button>
+          <button id="horizonOpenPark" class="secondary-button" type="button">Thema für später parken</button>
+          <form method="dialog"><button class="quiet-button" value="close">Reicht</button></form>
+        </div>
+
+        <form id="horizonParkForm" class="stack-form horizon-park" hidden>
+          <label><span>Was beschäftigt dich gerade?</span><textarea id="horizonParkText" rows="3" maxlength="1800" required></textarea></label>
+          <button class="primary-button" type="submit">Für später parken</button>
+          <p id="horizonParkSaved" class="holding-saved" hidden>Geparkt. Für jetzt musst du damit nichts weiter machen.</p>
+        </form>
+
+        <button id="horizonRestart" class="quiet-button horizon-restart" type="button">Anderen Horizont wählen</button>
+      </section>
+    </div>
   </dialog>
 
   <dialog id="breathDialog" class="dialog breath-dialog">
