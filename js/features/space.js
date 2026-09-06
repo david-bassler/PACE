@@ -91,10 +91,25 @@ function renderEveningKeeps() {
 
 function addPark(event) {
   event.preventDefault(); const text = $('parkText').value.trim(); if (!text) return;
-  data.parked.push({ id: uid('park'), createdAt: nowIso(), text, next: $('parkNext').value.trim(), resume: $('parkResume').value.trim(), status: 'open', updatedAt: nowIso() });
+  addParkedFromTool(text, { next: $('parkNext').value.trim(), resume: $('parkResume').value.trim() });
   $('parkForm').reset();
-  persist();
   announce(isConnected() ? 'Lokal geparkt · wird mit Google synchronisiert.' : 'Lokal geparkt · wartet auf Google.', 'good');
+}
+
+export function addParkedFromTool(text, { next = '', resume = '' } = {}) {
+  const value = String(text || '').trim();
+  if (!value) return false;
+  data.parked.push({
+    id: uid('park'),
+    createdAt: nowIso(),
+    text: value,
+    next: String(next || '').trim(),
+    resume: String(resume || '').trim(),
+    status: 'open',
+    updatedAt: nowIso()
+  });
+  persist();
+  return true;
 }
 
 function addKeep(event) {
