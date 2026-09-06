@@ -426,7 +426,8 @@ export function initWellbeingFeature() {
   $('anchorForm').addEventListener('submit', submitAnchor);
   $('anchorCancel').addEventListener('click', clearAnchorForm);
   $('openAnchorChooser').addEventListener('click', openAnchorChooser);
-  $('openAnchorsFromStuck').addEventListener('click', () => { $('stuckDialog').close(); openAnchorChooser(); });
+  $('openPerspectiveAnchors').addEventListener('click', () => { $('perspectiveDialog').close(); openAnchorChooser(); });
+  $('openAnchorsFromStuck').addEventListener('click', () => { $('stuckDialog').close(); openDialog('perspectiveDialog'); });
   $('anchorNextExample').addEventListener('click', () => {
     const anchor = data.anchors.find(item => item.id === currentAnchorId);
     if (anchor) renderAnchorEvent(anchor);
