@@ -198,24 +198,24 @@
       </section>
       <section class="dialog-section">
         <div class="section-head"><div><h3>Resonanzbibliothek & Erinnerungsanker</h3><p id="resonanceLibrarySummary" class="hint">Noch keine Resonanzbibliothek synchronisiert.</p></div><button id="openAnchorChooser" class="secondary-button" type="button">Erinnerungsanker öffnen</button></div>
-        <p class="hint">Kategorien sind keine festen App-Spalten. Ereignisse verweisen auf frei benennbare Tags; Erinnerungsanker kombinieren diese Tags. Tags können später umbenannt, ergänzt oder pausiert werden, ohne die Ereignisse neu zu strukturieren.</p>
+        <p class="hint">Kategorien sind keine festen App-Spalten. Ereignisse verweisen auf frei benennbare Schlagwörter; Erinnerungsanker kombinieren diese Schlagwörter. Schlagwörter können später umbenannt, ergänzt oder pausiert werden, ohne die Ereignisse neu zu strukturieren.</p>
 
         <h4>Erinnerungsanker</h4>
         <div id="anchorConfigList" class="library-list"></div>
         <form id="anchorForm" class="stack-form">
           <label><span>Titel</span><input id="anchorName" maxlength="220" placeholder="z. B. Menschen waren gut zu mir" required></label>
           <label><span>Kurze Einordnung <small>(optional)</small></span><textarea id="anchorDescription" rows="2" maxlength="1200" placeholder="Was soll dieser Anker wieder zugänglich machen?"></textarea></label>
-          <fieldset><legend>Passende Tags</legend><div id="anchorTagChoices" class="check-chip-row"></div></fieldset>
-          <label><span>Trefferregel</span><select id="anchorMatchMode"><option value="any">mindestens einer der Tags</option><option value="all">alle gewählten Tags</option></select></label>
+          <fieldset><legend>Passende Schlagwörter</legend><div id="anchorTagChoices" class="check-chip-row"></div></fieldset>
+          <label><span>Trefferregel</span><select id="anchorMatchMode"><option value="any">mindestens eines der Schlagwörter</option><option value="all">alle gewählten Schlagwörter</option></select></label>
           <div class="form-actions"><button id="anchorSubmit" class="primary-button" type="submit">Erinnerungsanker anlegen</button><button id="anchorCancel" class="secondary-button" type="button" hidden>Abbrechen</button></div>
         </form>
 
-        <h4>Tags</h4>
+        <h4>Schlagwörter</h4>
         <div id="resonanceTagList" class="library-list"></div>
         <form id="resonanceTagForm" class="stack-form">
           <label><span>Name</span><input id="resonanceTagName" maxlength="180" required></label>
           <label><span>Beschreibung <small>(optional)</small></span><textarea id="resonanceTagDescription" rows="2" maxlength="900"></textarea></label>
-          <div class="form-actions"><button id="resonanceTagSubmit" class="primary-button" type="submit">Tag anlegen</button><button id="resonanceTagCancel" class="secondary-button" type="button" hidden>Abbrechen</button></div>
+          <div class="form-actions"><button id="resonanceTagSubmit" class="primary-button" type="submit">Schlagwort anlegen</button><button id="resonanceTagCancel" class="secondary-button" type="button" hidden>Abbrechen</button></div>
         </form>
         <p class="hint">Für den Erstimport kann die vorbereitete CSV direkt in das private Sheet-Tab <strong>Resonanzbibliothek</strong> kopiert werden.</p>
       </section>
