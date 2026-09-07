@@ -1,5 +1,20 @@
 import { $, openDialog } from '../core/ui.js';
-import { connectGoogle, createSpreadsheet, ensureSheets, getConfig, isConnected, onGoogleConnection, onGoogleStatus, setConfig, sheetUrl } from '../core/google.js';
+import {
+  connectGoogle,
+  createSpreadsheet,
+  ensureSheets,
+  getAccessToken,
+  getConfig,
+  inferPickerAppId,
+  isConnected,
+  onGoogleConnection,
+  onGoogleStatus,
+  setConfig,
+  setTrackingSpreadsheet,
+  sheetUrl,
+  trackingSheetUrl
+} from '../core/google.js';
+import { pickSpreadsheet } from '../core/google-picker.js';
 import { onSyncState, refreshSyncState, syncAll } from '../core/sync.js';
 import { importPrivateTSV } from './day.js';
 
@@ -8,14 +23,29 @@ let installPrompt = null;
 
 function renderConnection() {
   const connected = isConnected();
+  const config = getConfig();
+
   $('createSheet').disabled = !connected;
-  $('setupSheet').disabled = !connected || !getConfig().sheetId;
-  $('syncNow').disabled = !connected || !getConfig().sheetId;
-  $('importPrivate').disabled = !connected || !getConfig().sheetId;
+  $('setupSheet').disabled = !connected || !config.sheetId;
+  $('syncNow').disabled = !connected || !config.sheetId;
+  $('importPrivate').disabled = !connected || !config.sheetId;
+  $('pickTrackingSheet').disabled = !connected;
+
   const link = $('sheetLink');
   const url = sheetUrl();
   link.hidden = !url;
   if (url) link.href = url;
+
+  const trackingLink = $('trackingSheetLink');
+  const trackingUrl = trackingSheetUrl();
+  trackingLink.hidden = !trackingUrl;
+  if (trackingUrl) trackingLink.href = trackingUrl;
+
+  const choice = $('trackingSheetChoice');
+  choice.textContent = config.trackingSheetId
+    ? `${config.trackingSheetName || 'Tracking-Tabelle'} · ${config.trackingSheetId}`
+    : 'Noch keine Tracking-Tabelle ausgewählt.';
+  choice.className = `status-box${config.trackingSheetId ? ' good' : ''}`;
 }
 
 function status(text, kind = '') {
@@ -25,6 +55,25 @@ function status(text, kind = '') {
 }
 
 export function setExtraSheetsProvider(provider) { extraSheetsProvider = provider || (() => ({})); }
+
+function inputConfig() {
+  const clientId = $('clientIdInput').value.trim();
+  const pickerAppId = $('pickerAppIdInput').value.trim() || inferPickerAppId(clientId);
+
+  return {
+    clientId,
+    sheetId: $('sheetIdInput').value,
+    pickerApiKey: $('pickerApiKeyInput').value,
+    pickerAppId
+  };
+}
+
+function fillConfigInputs(config = getConfig()) {
+  $('clientIdInput').value = config.clientId || '';
+  $('sheetIdInput').value = config.sheetId || '';
+  $('pickerApiKeyInput').value = config.pickerApiKey || '';
+  $('pickerAppIdInput').value = config.pickerAppId || inferPickerAppId(config.clientId);
+}
 
 async function fullSync() {
   await ensureSheets(extraSheetsProvider());
@@ -57,36 +106,68 @@ export function initSettings() {
     if (connected) fullSync().catch(error => status(error.message, 'bad'));
   });
 
-  const config = getConfig();
-  $('clientIdInput').value = config.clientId || '';
-  $('sheetIdInput').value = config.sheetId || '';
+  fillConfigInputs();
   renderConnection();
 
   $('settingsButton').addEventListener('click', () => {
-    const current = getConfig();
-    $('clientIdInput').value = current.clientId || '';
-    $('sheetIdInput').value = current.sheetId || '';
+    fillConfigInputs();
     renderConnection();
     openDialog('settingsDialog');
   });
 
   $('saveGoogleConfig').addEventListener('click', () => {
-    const saved = setConfig({ clientId: $('clientIdInput').value, sheetId: $('sheetIdInput').value });
-    $('sheetIdInput').value = saved.sheetId;
-    status('Einstellungen gespeichert. Client-ID und Sheet-ID bleiben lokal erhalten.');
+    const saved = setConfig(inputConfig());
+    fillConfigInputs(saved);
+    status('Google-Einstellungen gespeichert. IDs und Picker-Konfiguration bleiben lokal erhalten.');
     renderConnection();
   });
 
   $('googleConnect').addEventListener('click', () => {
     try {
-      setConfig({ clientId: $('clientIdInput').value, sheetId: $('sheetIdInput').value });
+      const saved = setConfig(inputConfig());
+      fillConfigInputs(saved);
       connectGoogle();
     } catch (error) { status(error.message, 'bad'); }
   });
 
+
+  $('pickTrackingSheet').addEventListener('click', async () => {
+    try {
+      let saved = setConfig(inputConfig());
+      const appId = saved.pickerAppId || inferPickerAppId(saved.clientId);
+      if (!saved.pickerAppId && appId) {
+        saved = setConfig({ pickerAppId: appId });
+        fillConfigInputs(saved);
+      }
+
+      const selected = await pickSpreadsheet({
+        accessToken: getAccessToken(),
+        apiKey: saved.pickerApiKey,
+        appId
+      });
+
+      if (!selected) {
+        status('Tabellenauswahl abgebrochen.');
+        return;
+      }
+
+      const next = setTrackingSpreadsheet({ id: selected.id, name: selected.name });
+      fillConfigInputs(next);
+      renderConnection();
+      status(`Tracking-Tabelle „${selected.name || selected.id}“ ausgewählt. Sie bleibt getrennt vom PACE-Backend.`, 'good');
+    } catch (error) {
+      status(error.message, 'bad');
+    }
+  });
+
+  $('clientIdInput').addEventListener('change', () => {
+    if ($('pickerAppIdInput').value.trim()) return;
+    $('pickerAppIdInput').value = inferPickerAppId($('clientIdInput').value);
+  });
+
   $('createSheet').addEventListener('click', async () => {
     try {
-      const saved = setConfig({ clientId: $('clientIdInput').value, sheetId: $('sheetIdInput').value });
+      const saved = setConfig(inputConfig());
       if (saved.sheetId && !confirm('Es ist bereits eine Spreadsheet-ID eingetragen. Wirklich ein neues PACE-Sheet anlegen?')) return;
       const created = await createSpreadsheet(extraSheetsProvider());
       $('sheetIdInput').value = created.sheetId;
