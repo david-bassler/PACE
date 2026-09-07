@@ -137,7 +137,7 @@ Die ausgewählte Datei-ID und der Dateiname werden lokal in IndexedDB gespeicher
 
 ## Flexible Tabellen-Erfassung – erster Umsetzungsstand
 
-PACE kann bereits eine private, geräteübergreifend synchronisierbare Erfassungskonfiguration verwalten:
+PACE kann eine private, geräteübergreifend synchronisierbare Erfassungskonfiguration verwalten und Einträge in die über den Google Picker ausgewählte Tracking-Tabelle schreiben:
 
 - Gruppen mit Titel, Icon und Reihenfolge
 - einzelne Felder mit optionaler Gruppenzuordnung
@@ -145,9 +145,18 @@ PACE kann bereits eine private, geräteübergreifend synchronisierbare Erfassung
 - vorläufige Eingabetypen wie Text, Uhrzeit + Text, Uhrzeit, Zahl und Ja/Nein
 - Schreibmodus „mit Zeilenumbruch anhängen“ oder „ersetzen“
 - dynamische Schnell-Erfassungsoberfläche aus dieser Konfiguration
-- Schreibplan-Vorschau, damit Ziel und Format getestet werden können
+- neue Felder verwenden standardmäßig das Tabellenblatt `Tage`, können aber weiterhin auf andere Tabs zeigen
 
-Der Zugriff auf die bestehende Tracking-Datei ist über den **Google Picker** vorbereitet: PACE speichert die ausgewählte Tracking-Spreadsheet-ID getrennt vom privaten PACE-Backend. Das eigentliche Auflösen von `Tage` + stabiler Spalten-ID + heutiger Zielzeile und das anschließende Schreiben sind der nächste Schritt. Bis dahin verändert die Erfassungsoberfläche die bestehende Tracking-Tabelle weiterhin nicht.
+Beim Speichern liest PACE die ausgewählte Tracking-Datei direkt:
+
+1. Ziel-Tabellenblatt prüfen.
+2. In der ersten Spalte die eindeutige Zeile mit `ID` finden.
+3. Die konfigurierte stabile Spalten-ID in die aktuelle Spaltenposition auflösen.
+4. Über die Spreadsheet-Zeitzone die heutige Datenzeile in der ersten Spalte finden.
+5. Vorhandenen Zellinhalt lesen und je nach Schreibmodus ersetzen oder mit Zeilenumbruch ergänzen.
+6. Die Zielzellen gemeinsam über einen Google-Sheets-Batch-Schreibaufruf aktualisieren.
+
+PACE schreibt bewusst **nicht**, wenn die ID-Zeile, eine konfigurierte Spalten-ID oder die heutige Datenzeile fehlt bzw. mehrdeutig ist. Doppelte IDs werden ebenfalls blockiert; es gibt keine Ersatzspalte. Formelzellen werden nicht überschrieben.
 
 ## Bestehende private TSV importieren
 
