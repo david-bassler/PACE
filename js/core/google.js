@@ -7,18 +7,31 @@ export const BASE_SHEETS = {
   Tage: ['Datum','Tagesform','Kompetenz','Kompetenz_erledigt','Fortschritt','Fortschritt_erledigt','Reserve','Reserve_erledigt','Resonanz','Resonanz_erledigt','Feststecken_Anzahl','Abend_Fortschritt','Abend_Resonanz','Abend_Reserve','Abgeschlossen_um','Aktualisiert_um']
 };
 
+const CONFIG_DEFAULTS = {
+  clientId: '',
+  sheetId: '',
+  pickerApiKey: '',
+  pickerAppId: '',
+  trackingSheetId: '',
+  trackingSheetName: ''
+};
+
 function migrateConfig() {
   const current = loadJSON(KEYS.config, null);
-  if (current?.clientId || current?.sheetId) return { clientId: '', sheetId: '', ...current };
+  if (current?.clientId || current?.sheetId || current?.trackingSheetId) {
+    return { ...CONFIG_DEFAULTS, ...current };
+  }
+
   for (const key of KEYS.legacyConfig) {
     const legacy = loadJSON(key, null);
     if (legacy?.clientId || legacy?.sheetId) {
-      const migrated = { clientId: '', sheetId: '', ...legacy };
+      const migrated = { ...CONFIG_DEFAULTS, ...legacy };
       saveJSON(KEYS.config, migrated);
       return migrated;
     }
   }
-  return { clientId: '', sheetId: '' };
+
+  return { ...CONFIG_DEFAULTS };
 }
 
 let config = migrateConfig();
@@ -38,7 +51,13 @@ let knownTitles = null;
 const ensuredHeaders = new Map();
 
 export function getConfig() { return { ...config }; }
+export function getAccessToken() { return accessToken; }
 export function isConnected() { return Boolean(accessToken); }
+
+export function inferPickerAppId(clientId = config.clientId) {
+  const match = String(clientId || '').trim().match(/^(\d+)-/);
+  return match?.[1] || '';
+}
 
 export function onGoogleStatus(listener) { statusListener = listener || (() => {}); }
 export function onGoogleConnection(listener) { connectionListener = listener || (() => {}); }
@@ -49,17 +68,33 @@ function resetSheetCache() {
   ensuredHeaders.clear();
 }
 
+function spreadsheetId(value) {
+  const raw = String(value || '').trim();
+  const match = raw.match(/\/spreadsheets\/d\/([A-Za-z0-9_-]+)/);
+  return match ? match[1] : raw;
+}
+
 export function setConfig(next) {
-  const rawSheet = (next.sheetId || '').trim();
-  const match = rawSheet.match(/\/spreadsheets\/d\/([A-Za-z0-9_-]+)/);
   const previousSheetId = config.sheetId;
+  const merged = { ...CONFIG_DEFAULTS, ...config, ...next };
+
   config = {
-    clientId: (next.clientId || '').trim(),
-    sheetId: match ? match[1] : rawSheet
+    ...merged,
+    clientId: String(merged.clientId || '').trim(),
+    sheetId: spreadsheetId(merged.sheetId),
+    pickerApiKey: String(merged.pickerApiKey || '').trim(),
+    pickerAppId: String(merged.pickerAppId || '').trim(),
+    trackingSheetId: spreadsheetId(merged.trackingSheetId),
+    trackingSheetName: String(merged.trackingSheetName || '').trim()
   };
+
   saveJSON(KEYS.config, config);
   if (config.sheetId !== previousSheetId) resetSheetCache();
   return getConfig();
+}
+
+export function setTrackingSpreadsheet({ id, name = '' }) {
+  return setConfig({ trackingSheetId: id, trackingSheetName: name });
 }
 
 function gisReady() {
@@ -321,4 +356,10 @@ export async function upsertRow(title, headers, keyIndex, keyValue, row) {
 
 export function sheetUrl() {
   return config.sheetId ? `https://docs.google.com/spreadsheets/d/${config.sheetId}/edit` : '';
+}
+
+export function trackingSheetUrl() {
+  return config.trackingSheetId
+    ? `https://docs.google.com/spreadsheets/d/${config.trackingSheetId}/edit`
+    : '';
 }

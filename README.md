@@ -117,6 +117,24 @@ Es wird **kein Client Secret** verwendet. Die Client-ID und Spreadsheet-ID werde
 6. Mit Google verbinden.
 7. Ein neues PACE-Sheet anlegen oder die vorhandene Spreadsheet-ID verwenden.
 
+### Google Picker für die bestehende Tracking-Tabelle
+
+PACE verwendet für die bestehende Tracking-Tabelle wie vereinbart den **Google Picker**. Das PACE-Backend und die Tracking-Tabelle haben getrennte Spreadsheet-IDs; dadurch kann ein vorhandenes Tabellenblatt wie `Tage` nicht mit dem PACE-internen `Tage`-Tab kollidieren.
+
+Der OAuth-Scope bleibt dabei unverändert:
+
+`https://www.googleapis.com/auth/drive.file`
+
+Für den Picker zusätzlich:
+
+1. **Google Picker API** und **Google Drive API** im selben Cloud-Projekt aktivieren.
+2. Einen Website-API-Key anlegen und auf die benötigten APIs beschränken.
+3. Bei den Website-Referrern `https://david-bassler.github.io/*` und `https://docs.google.com/*` zulassen. Der zweite Referrer ist nötig, weil der Picker in einem `docs.google.com`-iframe läuft.
+4. API-Key und Cloud-Projektnummer in PACE eintragen. PACE kann die Projektnummer meist aus dem numerischen Präfix der OAuth Client-ID ableiten.
+5. Nach der Google-Verbindung **Tracking-Tabelle auswählen** drücken und die gewünschte Google-Tabelle im Picker wählen.
+
+Die ausgewählte Datei-ID und der Dateiname werden lokal in IndexedDB gespeichert. Der Picker zeigt nur Google-Tabellen und verwendet wegen des eingeschränkten `drive.file`-Scopes die Listenansicht ohne Thumbnail-Abhängigkeit.
+
 ## Flexible Tabellen-Erfassung – erster Umsetzungsstand
 
 PACE kann bereits eine private, geräteübergreifend synchronisierbare Erfassungskonfiguration verwalten:
@@ -129,7 +147,7 @@ PACE kann bereits eine private, geräteübergreifend synchronisierbare Erfassung
 - dynamische Schnell-Erfassungsoberfläche aus dieser Konfiguration
 - Schreibplan-Vorschau, damit Ziel und Format getestet werden können
 
-Noch **nicht** implementiert ist der Zugriff auf die bestehende Tracking-Tabelle. Dafür wird später wie vereinbart der **Google Picker** ergänzt. Bis dahin verändert die neue Erfassungsoberfläche die bestehende Tracking-Tabelle nicht.
+Der Zugriff auf die bestehende Tracking-Datei ist über den **Google Picker** vorbereitet: PACE speichert die ausgewählte Tracking-Spreadsheet-ID getrennt vom privaten PACE-Backend. Das eigentliche Auflösen von `Tage` + stabiler Spalten-ID + heutiger Zielzeile und das anschließende Schreiben sind der nächste Schritt. Bis dahin verändert die Erfassungsoberfläche die bestehende Tracking-Tabelle weiterhin nicht.
 
 ## Bestehende private TSV importieren
 

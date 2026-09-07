@@ -711,9 +711,21 @@
     <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
     <div><p class="micro">PRIVATES BACKEND</p><h2>Google Sheets</h2><p class="hint">Persönliche Inhalte bleiben im privaten Sheet und lokal im Browser. Die öffentliche PWA enthält keine persönlichen Vorschläge.</p>
       <label class="field-label"><span>OAuth Client-ID</span><input id="clientIdInput" type="text" autocomplete="off" placeholder="…apps.googleusercontent.com"></label>
-      <label class="field-label"><span>Spreadsheet-ID</span><input id="sheetIdInput" type="text" autocomplete="off" placeholder="ID aus der Sheets-URL"></label>
+      <label class="field-label"><span>PACE-Backend Spreadsheet-ID</span><input id="sheetIdInput" type="text" autocomplete="off" placeholder="ID aus der Sheets-URL"></label>
+
+      <div class="install-area">
+        <h3>Bestehende Tracking-Tabelle</h3>
+        <p class="hint">Wie vereinbart wählt PACE die bestehende Tabelle über den Google Picker aus. Der OAuth-Scope bleibt <code>drive.file</code>; die ausgewählte Tabelle wird getrennt vom PACE-Backend gespeichert.</p>
+        <label class="field-label"><span>Google Picker API-Key</span><input id="pickerApiKeyInput" type="text" autocomplete="off" placeholder="AIza…"></label>
+        <label class="field-label"><span>Cloud-Projektnummer</span><input id="pickerAppIdInput" type="text" inputmode="numeric" autocomplete="off" placeholder="z. B. 123456789012"></label>
+        <p class="hint">Im Google-Cloud-Projekt müssen Google Picker API und Google Drive API aktiviert sein. Für einen Website-API-Key empfiehlt Google als Referrer auch <code>https://docs.google.com/*</code>, weil der Picker dort im iframe läuft.</p>
+        <p id="trackingSheetChoice" class="status-box">Noch keine Tracking-Tabelle ausgewählt.</p>
+        <div class="settings-actions"><button id="pickTrackingSheet" class="secondary-button" type="button" disabled>Tracking-Tabelle auswählen</button></div>
+        <a id="trackingSheetLink" class="sheet-link" href="#" target="_blank" rel="noopener" hidden>Tracking-Tabelle öffnen ↗</a>
+      </div>
+
       <div class="settings-actions"><button id="saveGoogleConfig" class="secondary-button" type="button">Einstellungen speichern</button><button id="googleConnect" class="primary-button" type="button">Mit Google verbinden</button><button id="createSheet" class="secondary-button" type="button" disabled>Neues PACE-Sheet anlegen</button><button id="setupSheet" class="secondary-button" type="button" disabled>Sheet einrichten / prüfen</button><button id="syncNow" class="secondary-button" type="button" disabled>Jetzt synchronisieren</button><button id="importPrivate" class="secondary-button" type="button" disabled>Private TSV importieren</button><input id="privateTsvInput" type="file" accept=".tsv,text/tab-separated-values,text/plain" hidden></div>
-      <p id="googleStatus" class="status-box" aria-live="polite">Nicht verbunden. Lokale Speicherung ist aktiv.</p><a id="sheetLink" class="sheet-link" href="#" target="_blank" rel="noopener" hidden>Sheet öffnen ↗</a>
+      <p id="googleStatus" class="status-box" aria-live="polite">Nicht verbunden. Lokale Speicherung ist aktiv.</p><a id="sheetLink" class="sheet-link" href="#" target="_blank" rel="noopener" hidden>PACE-Backend öffnen ↗</a>
       <div class="install-area"><h3>Installation</h3><p class="hint">Auf Android kann PACE als App installiert werden.</p><button id="installButton" class="secondary-button" type="button" hidden>PACE installieren</button></div>
     </div>
   </dialog>
