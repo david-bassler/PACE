@@ -2,7 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { actionableProgressEntries } from '../js/features/progress-domain.js';
-import { buildTrackingWritePlan } from '../js/features/tracking-domain.js';
+import {
+  applyTrackingWriteMode,
+  buildTrackingWritePlan,
+  dateKeyInTimeZone,
+  findTrackingDateRow,
+  findTrackingIdRow,
+  resolveTrackingColumns
+} from '../js/features/tracking-domain.js';
 import { holdingPointsForStatement, completedHoldingSituations } from '../js/features/holding-domain.js';
 import { matchingResonanceEvents, chooseAnchorEvent } from '../js/features/wellbeing-domain.js';
 
@@ -61,6 +68,44 @@ test('tracking write plan trims values and omits empty inputs', () => {
     writeMode: 'append_newline',
     value: 'Wert'
   }]);
+});
+
+test('tracking layout resolves the ID row and stable columns fail closed', () => {
+  assert.equal(findTrackingIdRow([['Kopf'], [' id '], ['07.09.2026']]), 2);
+  assert.deepEqual(
+    resolveTrackingColumns(['ID', '10', '20', '30'], ['20', '10']),
+    { 10: 2, 20: 3 }
+  );
+
+  assert.throws(
+    () => resolveTrackingColumns(['ID', '10', '10'], ['10']),
+    /mehrfach/
+  );
+  assert.throws(
+    () => resolveTrackingColumns(['ID', '10'], ['99']),
+    /fehlt/
+  );
+});
+
+test('tracking finds today from Google date serials and spreadsheet timezone', () => {
+  assert.equal(
+    dateKeyInTimeZone(new Date('2026-09-07T22:30:00Z'), 'Europe/Berlin'),
+    '2026-09-08'
+  );
+  assert.equal(
+    findTrackingDateRow([['ID'], ['Kopf'], [46272], ['08.09.2026']], '2026-09-07', { afterRow: 1 }),
+    3
+  );
+  assert.throws(
+    () => findTrackingDateRow([['ID'], [46272], ['7.9.2026']], '2026-09-07', { afterRow: 1 }),
+    /mehrere/
+  );
+});
+
+test('tracking append mode preserves the existing cell and adds a newline', () => {
+  assert.equal(applyTrackingWriteMode('08:10 Kaffee', '11:35 Kaffee'), '08:10 Kaffee\n11:35 Kaffee');
+  assert.equal(applyTrackingWriteMode('', '11:35 Kaffee'), '11:35 Kaffee');
+  assert.equal(applyTrackingWriteMode('alt', 'neu', 'replace'), 'neu');
 });
 
 test('holding selectors follow active links, active points and order', () => {

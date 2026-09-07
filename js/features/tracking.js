@@ -13,6 +13,7 @@ import {
   sortTrackingItems as sortItems
 } from './tracking-data.js';
 import { buildTrackingWritePlan } from './tracking-domain.js';
+import { writeTrackingPlan } from './tracking-sheet.js';
 
 export { trackingSheetSpecs, buildTrackingWritePlan };
 
@@ -176,8 +177,8 @@ function renderQuickActions() {
 
   const count = fields.length;
   summary.textContent = count
-    ? `${count} Erfassungsfeld${count === 1 ? '' : 'er'} konfiguriert. Das Schreiben in die bestehende Tracking-Tabelle wird erst mit der späteren Picker-Anbindung aktiviert.`
-    : 'Noch keine Erfassungsfelder konfiguriert. Die bestehende Tracking-Tabelle wird noch nicht verändert.';
+    ? `${count} Erfassungsfeld${count === 1 ? '' : 'er'} konfiguriert. Einträge werden nach Google-Verbindung direkt in die ausgewählte Tracking-Tabelle geschrieben.`
+    : 'Noch keine Erfassungsfelder konfiguriert.';
 }
 
 function actionButton(icon, title, meta, handler) {
@@ -298,6 +299,7 @@ function clearFieldForm() {
   $('trackingFieldForm')?.reset();
   refreshGroupSelect('');
   if ($('trackingFieldOrder')) $('trackingFieldOrder').value = String(nextOrder(activeFields()));
+  if ($('trackingFieldSheetTab')) $('trackingFieldSheetTab').value = 'Tage';
   if ($('trackingFieldInputType')) $('trackingFieldInputType').value = 'text';
   if ($('trackingFieldWriteMode')) $('trackingFieldWriteMode').value = 'append_newline';
   if ($('trackingFieldSubmit')) $('trackingFieldSubmit').textContent = 'Feld anlegen';
@@ -458,6 +460,10 @@ function inputControl(field) {
 
 function openEntry(title, icon, fields) {
   currentEntryFields = [...fields].sort(sortItems);
+  const form = $('trackingEntryForm');
+  form.querySelector('.micro').textContent = 'SCHNELLERFASSUNG';
+  form.querySelector('.hint').textContent = 'PACE schreibt in die ausgewählte Tracking-Tabelle. Anhängen erhält vorhandenen Zellinhalt und ergänzt den neuen Eintrag mit Zeilenumbruch.';
+  form.querySelector('button[type="submit"]').textContent = 'In Tracking-Tabelle speichern';
   $('trackingEntryTitle').textContent = `${icon ? `${icon} ` : ''}${title}`;
   $('trackingEntryFields').innerHTML = '';
   $('trackingWritePreview').innerHTML = '';
@@ -477,24 +483,21 @@ function readEntryValue(field) {
   return wrapper.querySelector('[data-part="value"]')?.value.trim() || '';
 }
 
-function previewEntry(event) {
-  event.preventDefault();
-  const values = Object.fromEntries(currentEntryFields.map(field => [field.id, readEntryValue(field)]));
-  const plan = buildTrackingWritePlan(currentEntryFields, values);
+function renderEntryPlan(plan) {
   const box = $('trackingWritePreview');
   box.innerHTML = '';
   box.hidden = false;
 
   if (!plan.length) {
     box.appendChild(emptyMessage('Noch keine Eingabe.'));
-    return;
+    return false;
   }
 
   const incomplete = plan.filter(item => !item.sheetTab || !item.columnId);
   if (incomplete.length) {
     const warning = document.createElement('p');
     warning.className = 'tracking-preview-warning';
-    warning.textContent = 'Mindestens ein Ziel ist noch nicht vollständig konfiguriert.';
+    warning.textContent = 'Mindestens ein Ziel ist noch nicht vollständig konfiguriert. Es wurde nichts geschrieben.';
     box.appendChild(warning);
   }
 
@@ -511,6 +514,40 @@ function previewEntry(event) {
     value.textContent = item.value;
     row.append(strong, target, value);
     box.appendChild(row);
+  }
+
+  return incomplete.length === 0;
+}
+
+async function submitEntry(event) {
+  event.preventDefault();
+  const values = Object.fromEntries(currentEntryFields.map(field => [field.id, readEntryValue(field)]));
+  const plan = buildTrackingWritePlan(currentEntryFields, values);
+  if (!renderEntryPlan(plan)) return;
+
+  const submit = $('trackingEntryForm').querySelector('button[type="submit"]');
+  const previousLabel = submit.textContent;
+  submit.disabled = true;
+  submit.textContent = 'Speichere …';
+
+  try {
+    const result = await writeTrackingPlan(plan);
+    const [year, month, day] = result.dateKey.split('-');
+    $('trackingEntryDialog').close();
+    announce(
+      `${result.fieldCount} ${result.fieldCount === 1 ? 'Eintrag' : 'Einträge'} für ${day}.${month}.${year} gespeichert.`,
+      'good'
+    );
+  } catch (error) {
+    const box = $('trackingWritePreview');
+    const warning = document.createElement('p');
+    warning.className = 'tracking-preview-warning';
+    warning.textContent = error?.message || 'Die Tracking-Tabelle konnte nicht beschrieben werden.';
+    box.prepend(warning);
+    announce(warning.textContent, 'bad');
+  } finally {
+    submit.disabled = false;
+    submit.textContent = previousLabel;
   }
 }
 
@@ -529,7 +566,7 @@ export function initTrackingFeature() {
   $('trackingGroupCancel').addEventListener('click', clearGroupForm);
   $('trackingFieldForm').addEventListener('submit', submitField);
   $('trackingFieldCancel').addEventListener('click', clearFieldForm);
-  $('trackingEntryForm').addEventListener('submit', previewEntry);
+  $('trackingEntryForm').addEventListener('submit', submitEntry);
   document.querySelectorAll('.emoji-picker-open').forEach(button => {
     button.addEventListener('click', () => openEmojiPicker(button.dataset.emojiTarget));
   });

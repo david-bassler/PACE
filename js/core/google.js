@@ -184,8 +184,48 @@ function api(url, options = {}) {
   return run;
 }
 
+function sheetsUrlFor(targetSpreadsheetId, path = '') {
+  const id = spreadsheetId(targetSpreadsheetId);
+  if (!id) throw new Error('Keine Spreadsheet-ID angegeben.');
+  return `https://sheets.googleapis.com/v4/spreadsheets/${id}${path}`;
+}
+
 function sheetsUrl(path = '') {
-  return `https://sheets.googleapis.com/v4/spreadsheets/${config.sheetId}${path}`;
+  return sheetsUrlFor(config.sheetId, path);
+}
+
+function valuesQuery(options = {}) {
+  const params = new URLSearchParams();
+  params.set('majorDimension', 'ROWS');
+  if (options.valueRenderOption) params.set('valueRenderOption', options.valueRenderOption);
+  if (options.dateTimeRenderOption) params.set('dateTimeRenderOption', options.dateTimeRenderOption);
+  return params;
+}
+
+export async function getSpreadsheetMetadata(targetSpreadsheetId) {
+  const fields = encodeURIComponent('properties.timeZone,sheets.properties.title');
+  return api(`${sheetsUrlFor(targetSpreadsheetId)}?fields=${fields}`);
+}
+
+export async function readSpreadsheetValues(targetSpreadsheetId, range, options = {}) {
+  const params = valuesQuery(options);
+  return api(sheetsUrlFor(targetSpreadsheetId, `/values/${encodeURIComponent(range)}?${params.toString()}`));
+}
+
+export async function batchGetSpreadsheetValues(targetSpreadsheetId, ranges, options = {}) {
+  if (!ranges.length) return [];
+  const params = valuesQuery(options);
+  for (const range of ranges) params.append('ranges', range);
+  const data = await api(sheetsUrlFor(targetSpreadsheetId, `/values:batchGet?${params.toString()}`));
+  return data.valueRanges || [];
+}
+
+export async function batchWriteSpreadsheetValues(targetSpreadsheetId, data) {
+  if (!data.length) return null;
+  return api(sheetsUrlFor(targetSpreadsheetId, '/values:batchUpdate'), {
+    method: 'POST',
+    body: JSON.stringify({ valueInputOption: 'RAW', data })
+  });
 }
 
 export async function createSpreadsheet(extraSheets = {}) {
