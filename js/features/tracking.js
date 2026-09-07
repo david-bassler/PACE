@@ -534,8 +534,11 @@ async function submitEntry(event) {
     const result = await writeTrackingPlan(plan);
     const [year, month, day] = result.dateKey.split('-');
     $('trackingEntryDialog').close();
+    const dateNote = result.filledDateCount
+      ? ` ${result.filledDateCount} fehlende Datumszeile${result.filledDateCount === 1 ? '' : 'n'} ergänzt.`
+      : '';
     announce(
-      `${result.fieldCount} ${result.fieldCount === 1 ? 'Eintrag' : 'Einträge'} für ${day}.${month}.${year} gespeichert.`,
+      `${result.fieldCount} ${result.fieldCount === 1 ? 'Eintrag' : 'Einträge'} für ${day}.${month}.${year} gespeichert.${dateNote}`,
       'good'
     );
   } catch (error) {

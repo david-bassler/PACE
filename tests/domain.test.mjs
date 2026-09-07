@@ -8,7 +8,9 @@ import {
   dateKeyInTimeZone,
   findTrackingDateRow,
   findTrackingIdRow,
-  resolveTrackingColumns
+  planTrackingDateBackfill,
+  resolveTrackingColumns,
+  trackingDateSerial
 } from '../js/features/tracking-domain.js';
 import { holdingPointsForStatement, completedHoldingSituations } from '../js/features/holding-domain.js';
 import { matchingResonanceEvents, chooseAnchorEvent } from '../js/features/wellbeing-domain.js';
@@ -99,6 +101,49 @@ test('tracking finds today from Google date serials and spreadsheet timezone', (
   assert.throws(
     () => findTrackingDateRow([['ID'], [46272], ['7.9.2026']], '2026-09-07', { afterRow: 1 }),
     /mehrere/
+  );
+});
+
+test('tracking fills every missing calendar day through today', () => {
+  const fill = planTrackingDateBackfill(
+    [
+      ['ID'],
+      ['Kopf'],
+      [trackingDateSerial('2026-09-05')],
+      [],
+      []
+    ],
+    '2026-09-07',
+    { afterRow: 1 }
+  );
+
+  assert.equal(fill.dateRow, 5);
+  assert.equal(fill.previousDateRow, 3);
+  assert.deepEqual(fill.missingDates, [
+    { row: 4, dateKey: '2026-09-06', serial: trackingDateSerial('2026-09-06') },
+    { row: 5, dateKey: '2026-09-07', serial: trackingDateSerial('2026-09-07') }
+  ]);
+});
+
+test('tracking date backfill leaves an existing today row untouched', () => {
+  const fill = planTrackingDateBackfill(
+    [['ID'], [trackingDateSerial('2026-09-06')], [trackingDateSerial('2026-09-07')]],
+    '2026-09-07',
+    { afterRow: 1 }
+  );
+
+  assert.equal(fill.dateRow, 3);
+  assert.deepEqual(fill.missingDates, []);
+});
+
+test('tracking date backfill refuses to overwrite content in column A', () => {
+  assert.throws(
+    () => planTrackingDateBackfill(
+      [['ID'], [trackingDateSerial('2026-09-05')], ['Notiz']],
+      '2026-09-07',
+      { afterRow: 1 }
+    ),
+    /bereits Inhalt/
   );
 });
 

@@ -203,8 +203,18 @@ function valuesQuery(options = {}) {
 }
 
 export async function getSpreadsheetMetadata(targetSpreadsheetId) {
-  const fields = encodeURIComponent('properties.timeZone,sheets.properties.title');
+  const fields = encodeURIComponent(
+    'properties.timeZone,sheets.properties.sheetId,sheets.properties.title,sheets.properties.gridProperties.rowCount'
+  );
   return api(`${sheetsUrlFor(targetSpreadsheetId)}?fields=${fields}`);
+}
+
+export async function batchUpdateSpreadsheet(targetSpreadsheetId, requests) {
+  if (!requests.length) return null;
+  return api(sheetsUrlFor(targetSpreadsheetId, ':batchUpdate'), {
+    method: 'POST',
+    body: JSON.stringify({ requests })
+  });
 }
 
 export async function readSpreadsheetValues(targetSpreadsheetId, range, options = {}) {
