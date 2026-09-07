@@ -77,41 +77,133 @@ export function dateKeyInTimeZone(date = new Date(), timeZone = 'UTC') {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
-function serialForDateKey(dateKey) {
+function utcMsForDateKey(dateKey) {
   const match = String(dateKey).match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return NaN;
   const [, year, month, day] = match;
-  const epoch = Date.UTC(1899, 11, 30);
-  return Math.round((Date.UTC(Number(year), Number(month) - 1, Number(day)) - epoch) / 86400000);
+  const ms = Date.UTC(Number(year), Number(month) - 1, Number(day));
+  const actual = new Date(ms).toISOString().slice(0, 10);
+  return actual === dateKey ? ms : NaN;
+}
+
+export function trackingDateSerial(dateKey) {
+  const ms = utcMsForDateKey(dateKey);
+  if (!Number.isFinite(ms)) return NaN;
+  return Math.round((ms - Date.UTC(1899, 11, 30)) / 86400000);
+}
+
+function dateKeyForSerial(serial) {
+  const value = Number(serial);
+  if (!Number.isFinite(value)) return '';
+  const wholeDays = Math.floor(value + 1e-9);
+  return new Date(Date.UTC(1899, 11, 30) + wholeDays * 86400000).toISOString().slice(0, 10);
 }
 
 function stringDateKey(value) {
   const raw = normalizedCell(value);
   let match = raw.match(/^(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})$/);
   if (match) {
-    return `${match[1]}-${String(match[2]).padStart(2, '0')}-${String(match[3]).padStart(2, '0')}`;
+    const key = `${match[1]}-${String(match[2]).padStart(2, '0')}-${String(match[3]).padStart(2, '0')}`;
+    return Number.isFinite(utcMsForDateKey(key)) ? key : '';
   }
 
   match = raw.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);
   if (match) {
-    return `${match[3]}-${String(match[2]).padStart(2, '0')}-${String(match[1]).padStart(2, '0')}`;
+    const key = `${match[3]}-${String(match[2]).padStart(2, '0')}-${String(match[1]).padStart(2, '0')}`;
+    return Number.isFinite(utcMsForDateKey(key)) ? key : '';
   }
 
   return '';
 }
 
-export function trackingDateMatches(value, dateKey) {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return Math.floor(value + 1e-9) === serialForDateKey(dateKey);
-  }
+export function trackingDateKey(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) return dateKeyForSerial(value);
 
   const raw = normalizedCell(value);
-  if (!raw) return false;
+  if (!raw) return '';
   if (/^-?\d+(?:\.\d+)?$/.test(raw) && Number.isFinite(Number(raw))) {
-    return Math.floor(Number(raw) + 1e-9) === serialForDateKey(dateKey);
+    return dateKeyForSerial(Number(raw));
   }
 
-  return stringDateKey(raw) === dateKey;
+  return stringDateKey(raw);
+}
+
+export function trackingDateMatches(value, dateKey) {
+  return trackingDateKey(value) === dateKey;
+}
+
+function nextDateKey(dateKey) {
+  const ms = utcMsForDateKey(dateKey);
+  if (!Number.isFinite(ms)) return '';
+  return new Date(ms + 86400000).toISOString().slice(0, 10);
+}
+
+export function planTrackingDateBackfill(firstColumnValues = [], dateKey, { afterRow = 0 } = {}) {
+  if (!Number.isFinite(utcMsForDateKey(dateKey))) {
+    throw new Error(`Ungültiges Zieldatum: ${dateKey}`);
+  }
+
+  const datedRows = [];
+  firstColumnValues.forEach((row, index) => {
+    const rowNumber = index + 1;
+    if (rowNumber <= afterRow) return;
+    const key = trackingDateKey(cellValue(row));
+    if (key) datedRows.push({ row: rowNumber, dateKey: key });
+  });
+
+  const todayMatches = datedRows.filter(item => item.dateKey === dateKey);
+  if (todayMatches.length > 1) {
+    throw new Error(`Für ${dateKey} wurden mehrere Datenzeilen gefunden. PACE schreibt erst, wenn das Datum eindeutig ist.`);
+  }
+  if (todayMatches.length === 1) {
+    return {
+      dateRow: todayMatches[0].row,
+      previousDateRow: null,
+      previousDateKey: '',
+      missingDates: []
+    };
+  }
+
+  const earlier = datedRows.filter(item => item.dateKey < dateKey);
+  if (!earlier.length) {
+    throw new Error(`Für ${dateKey} fehlt eine frühere Datenzeile, an die PACE anschließen könnte.`);
+  }
+
+  const previousDateKey = earlier.reduce(
+    (latest, item) => item.dateKey > latest ? item.dateKey : latest,
+    earlier[0].dateKey
+  );
+  const previousMatches = earlier.filter(item => item.dateKey === previousDateKey);
+  if (previousMatches.length > 1) {
+    throw new Error(`Das letzte vorhandene Datum ${previousDateKey} kommt mehrfach vor. PACE ergänzt keine Tage, solange es nicht eindeutig ist.`);
+  }
+
+  const previous = previousMatches[0];
+  const missingDates = [];
+  let nextKey = nextDateKey(previousDateKey);
+  let row = previous.row + 1;
+
+  while (nextKey && nextKey <= dateKey) {
+    const existing = normalizedCell(cellValue(firstColumnValues[row - 1]));
+    if (existing) {
+      throw new Error(`PACE müsste A${row} für ${nextKey} verwenden, dort steht aber bereits Inhalt. Es wurde nichts ergänzt.`);
+    }
+
+    missingDates.push({
+      row,
+      dateKey: nextKey,
+      serial: trackingDateSerial(nextKey)
+    });
+    row += 1;
+    nextKey = nextDateKey(nextKey);
+  }
+
+  return {
+    dateRow: previous.row + missingDates.length,
+    previousDateRow: previous.row,
+    previousDateKey,
+    missingDates
+  };
 }
 
 export function findTrackingDateRow(firstColumnValues = [], dateKey, { afterRow = 0 } = {}) {

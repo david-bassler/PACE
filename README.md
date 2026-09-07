@@ -152,11 +152,11 @@ Beim Speichern liest PACE die ausgewählte Tracking-Datei direkt:
 1. Ziel-Tabellenblatt prüfen.
 2. In der ersten Spalte die eindeutige Zeile mit `ID` finden.
 3. Die konfigurierte stabile Spalten-ID in die aktuelle Spaltenposition auflösen.
-4. Über die Spreadsheet-Zeitzone die heutige Datenzeile in der ersten Spalte finden.
+4. Über die Spreadsheet-Zeitzone das heutige Datum bestimmen. Fehlt die heutige Datenzeile, ergänzt PACE ab dem letzten vorhandenen Datum alle fehlenden Kalendertage in Spalte A bis einschließlich heute.
 5. Vorhandenen Zellinhalt lesen und je nach Schreibmodus ersetzen oder mit Zeilenumbruch ergänzen.
-6. Die Zielzellen gemeinsam über einen Google-Sheets-Batch-Schreibaufruf aktualisieren.
+6. Datumsauffüllung und Zielzellen gemeinsam über einen atomaren Google-Sheets-Batch aktualisieren.
 
-PACE schreibt bewusst **nicht**, wenn die ID-Zeile, eine konfigurierte Spalten-ID oder die heutige Datenzeile fehlt bzw. mehrdeutig ist. Doppelte IDs werden ebenfalls blockiert; es gibt keine Ersatzspalte. Formelzellen werden nicht überschrieben.
+Für neu ergänzte Datumszellen übernimmt PACE das Zellformat des letzten vorhandenen Datums. PACE schreibt bewusst **nicht**, wenn die ID-Zeile oder eine konfigurierte Spalten-ID fehlt bzw. mehrdeutig ist, das letzte vorhandene Datum mehrfach vorkommt oder eine zum Auffüllen benötigte Zelle in Spalte A bereits Inhalt bzw. eine Formel enthält. Doppelte IDs werden ebenfalls blockiert; es gibt keine Ersatzspalte. Formelzellen werden nicht überschrieben.
 
 ## Bestehende private TSV importieren
 

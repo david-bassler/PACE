@@ -1,6 +1,6 @@
 import {
   batchGetSpreadsheetValues,
-  batchWriteSpreadsheetValues,
+  batchUpdateSpreadsheet,
   columnName,
   getConfig,
   getSpreadsheetMetadata
@@ -8,8 +8,8 @@ import {
 import {
   applyTrackingWriteMode,
   dateKeyInTimeZone,
-  findTrackingDateRow,
   findTrackingIdRow,
+  planTrackingDateBackfill,
   resolveTrackingColumns
 } from './tracking-domain.js';
 
@@ -38,9 +38,40 @@ function validatePlan(plan) {
   }
 }
 
-function targetRange(item, layout) {
+function targetCell(item, layout, sheetProperties) {
   const column = layout.columns[item.columnId];
-  return sheetRange(item.sheetTab, `${columnName(column)}${layout.dateRow}`);
+  return {
+    range: sheetRange(item.sheetTab, `${columnName(column)}${layout.dateRow}`),
+    sheetId: sheetProperties.sheetId,
+    row: layout.dateRow,
+    column
+  };
+}
+
+function cellGridRange(sheetId, row, column) {
+  return {
+    sheetId,
+    startRowIndex: row - 1,
+    endRowIndex: row,
+    startColumnIndex: column - 1,
+    endColumnIndex: column
+  };
+}
+
+function updateCellRequest(sheetId, row, column, userEnteredValue) {
+  return {
+    updateCells: {
+      range: cellGridRange(sheetId, row, column),
+      rows: [{ values: [{ userEnteredValue }] }],
+      fields: 'userEnteredValue'
+    }
+  };
+}
+
+function hasFormula(valueRange) {
+  return (valueRange?.values || []).some(row =>
+    (row || []).some(value => typeof value === 'string' && value.startsWith('='))
+  );
 }
 
 export async function writeTrackingPlan(plan, { now = new Date() } = {}) {
@@ -52,11 +83,18 @@ export async function writeTrackingPlan(plan, { now = new Date() } = {}) {
   }
 
   const metadata = await getSpreadsheetMetadata(config.trackingSheetId);
-  const knownTabs = new Set((metadata.sheets || []).map(sheet => sheet.properties?.title).filter(Boolean));
+  const sheetByTitle = new Map(
+    (metadata.sheets || [])
+      .map(sheet => sheet.properties)
+      .filter(properties => properties?.title)
+      .map(properties => [properties.title, properties])
+  );
   const tabs = unique(plan.map(item => item.sheetTab));
 
   for (const tab of tabs) {
-    if (!knownTabs.has(tab)) throw new Error(`Tabellenblatt „${tab}“ existiert in der ausgewählten Tracking-Tabelle nicht.`);
+    if (!sheetByTitle.has(tab)) {
+      throw new Error(`Tabellenblatt „${tab}“ existiert in der ausgewählten Tracking-Tabelle nicht.`);
+    }
   }
 
   const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
@@ -70,11 +108,13 @@ export async function writeTrackingPlan(plan, { now = new Date() } = {}) {
   });
 
   const layouts = new Map();
+  const backfills = new Map();
   tabs.forEach((tab, index) => {
     const rows = firstColumns[index]?.values || [];
     const idRow = findTrackingIdRow(rows);
-    const dateRow = findTrackingDateRow(rows, dateKey, { afterRow: idRow });
-    layouts.set(tab, { idRow, dateRow, columns: {} });
+    const datePlan = planTrackingDateBackfill(rows, dateKey, { afterRow: idRow });
+    layouts.set(tab, { idRow, dateRow: datePlan.dateRow, columns: {} });
+    backfills.set(tab, datePlan);
   });
 
   const idRanges = tabs.map(tab => {
@@ -92,9 +132,32 @@ export async function writeTrackingPlan(plan, { now = new Date() } = {}) {
     layouts.get(tab).columns = resolveTrackingColumns(row, requiredIds);
   });
 
-  const rangeByField = new Map();
-  for (const item of plan) rangeByField.set(item.fieldId, targetRange(item, layouts.get(item.sheetTab)));
-  const targetRanges = unique([...rangeByField.values()]);
+  const fillTabs = tabs.filter(tab => backfills.get(tab).missingDates.length);
+  if (fillTabs.length) {
+    const fillRanges = fillTabs.map(tab => {
+      const missing = backfills.get(tab).missingDates;
+      return sheetRange(tab, `A${missing[0].row}:A${missing.at(-1).row}`);
+    });
+    const formulaChecks = await batchGetSpreadsheetValues(config.trackingSheetId, fillRanges, {
+      valueRenderOption: 'FORMULA',
+      dateTimeRenderOption: 'SERIAL_NUMBER'
+    });
+
+    formulaChecks.forEach((valueRange, index) => {
+      if (hasFormula(valueRange)) {
+        throw new Error(`In ${fillRanges[index]} liegt bereits mindestens eine Formel. PACE überschreibt dort keine Zellen.`);
+      }
+    });
+  }
+
+  const targetByField = new Map();
+  const targetMetaByRange = new Map();
+  for (const item of plan) {
+    const target = targetCell(item, layouts.get(item.sheetTab), sheetByTitle.get(item.sheetTab));
+    targetByField.set(item.fieldId, target);
+    targetMetaByRange.set(target.range, target);
+  }
+  const targetRanges = unique([...targetMetaByRange.keys()]);
 
   const existingRanges = await batchGetSpreadsheetValues(config.trackingSheetId, targetRanges, {
     valueRenderOption: 'FORMULA',
@@ -112,32 +175,95 @@ export async function writeTrackingPlan(plan, { now = new Date() } = {}) {
 
   const results = [];
   for (const item of plan) {
-    const range = rangeByField.get(item.fieldId);
-    const nextValue = applyTrackingWriteMode(currentByRange.get(range), item.value, item.writeMode);
-    currentByRange.set(range, nextValue);
+    const target = targetByField.get(item.fieldId);
+    const nextValue = applyTrackingWriteMode(currentByRange.get(target.range), item.value, item.writeMode);
+    currentByRange.set(target.range, nextValue);
     results.push({
       fieldId: item.fieldId,
       title: item.title,
       sheetTab: item.sheetTab,
       columnId: item.columnId,
-      range,
+      range: target.range,
       writeMode: item.writeMode
     });
   }
 
-  const writes = targetRanges.map(range => ({
-    range,
-    majorDimension: 'ROWS',
-    values: [[currentByRange.get(range)]]
-  }));
+  const requests = [];
 
-  await batchWriteSpreadsheetValues(config.trackingSheetId, writes);
+  for (const tab of fillTabs) {
+    const properties = sheetByTitle.get(tab);
+    const datePlan = backfills.get(tab);
+    const firstMissing = datePlan.missingDates[0];
+    const lastMissing = datePlan.missingDates.at(-1);
+    const rowCount = Number(properties.gridProperties?.rowCount || 0);
+
+    if (lastMissing.row > rowCount) {
+      requests.push({
+        appendDimension: {
+          sheetId: properties.sheetId,
+          dimension: 'ROWS',
+          length: lastMissing.row - rowCount
+        }
+      });
+    }
+
+    requests.push({
+      copyPaste: {
+        source: cellGridRange(properties.sheetId, datePlan.previousDateRow, 1),
+        destination: {
+          sheetId: properties.sheetId,
+          startRowIndex: firstMissing.row - 1,
+          endRowIndex: lastMissing.row,
+          startColumnIndex: 0,
+          endColumnIndex: 1
+        },
+        pasteType: 'PASTE_FORMAT',
+        pasteOrientation: 'NORMAL'
+      }
+    });
+
+    requests.push({
+      updateCells: {
+        range: {
+          sheetId: properties.sheetId,
+          startRowIndex: firstMissing.row - 1,
+          endRowIndex: lastMissing.row,
+          startColumnIndex: 0,
+          endColumnIndex: 1
+        },
+        rows: datePlan.missingDates.map(item => ({
+          values: [{ userEnteredValue: { numberValue: item.serial } }]
+        })),
+        fields: 'userEnteredValue'
+      }
+    });
+  }
+
+  for (const range of targetRanges) {
+    const target = targetMetaByRange.get(range);
+    requests.push(
+      updateCellRequest(
+        target.sheetId,
+        target.row,
+        target.column,
+        { stringValue: String(currentByRange.get(range) ?? '') }
+      )
+    );
+  }
+
+  await batchUpdateSpreadsheet(config.trackingSheetId, requests);
+
+  const filledDateCount = fillTabs.reduce(
+    (sum, tab) => sum + backfills.get(tab).missingDates.length,
+    0
+  );
 
   return {
     dateKey,
     timeZone,
     fieldCount: plan.length,
-    cellCount: writes.length,
+    cellCount: targetRanges.length,
+    filledDateCount,
     results
   };
 }
