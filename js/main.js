@@ -34,7 +34,8 @@ async function boot() {
     breath,
     holding,
     horizon,
-    navigation
+    navigation,
+    setupTransfer
   ] = await Promise.all([
     import('./features/day.js'),
     import('./features/settings.js'),
@@ -46,7 +47,8 @@ async function boot() {
     import('./features/breath.js'),
     import('./features/holding.js'),
     import('./features/horizon.js'),
-    import('./features/navigation.js')
+    import('./features/navigation.js'),
+    import('./features/setup-transfer.js')
   ]);
 
   day.initDayFeature();
@@ -71,6 +73,7 @@ async function boot() {
     ...holding.holdingSheetSpecs
   }));
   settings.initSettings();
+  setupTransfer.initSetupTransferFeature();
   initServiceWorker();
 }
 
