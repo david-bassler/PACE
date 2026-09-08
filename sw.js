@@ -1,4 +1,4 @@
-const CACHE = 'pace-v32';
+const CACHE = 'pace-v33';
 const ASSETS = [
   './', './index.html', './style.css', './manifest.webmanifest', './icon.svg', './icon-maskable.svg',
   './js/main.js', './js/core/storage.js', './js/core/ui.js', './js/core/google.js', './js/core/google-picker.js', './js/core/sync.js', './js/core/collections.js',
@@ -9,7 +9,8 @@ const ASSETS = [
   './js/features/tracking.js', './js/features/tracking-data.js', './js/features/tracking-domain.js', './js/features/tracking-sheet.js',
   './js/features/breath.js',
   './js/features/holding.js', './js/features/holding-data.js', './js/features/holding-domain.js',
-  './js/features/horizon.js', './js/features/navigation.js'
+  './js/features/horizon.js', './js/features/navigation.js',
+  './js/features/setup-transfer.js', './js/features/setup-transfer-domain.js'
 ];
 
 self.addEventListener('install', event => {
