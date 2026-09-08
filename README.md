@@ -135,17 +135,19 @@ Für den Picker zusätzlich:
 
 Die ausgewählte Datei-ID und der Dateiname werden lokal in IndexedDB gespeichert. Der Picker zeigt nur Google-Tabellen und verwendet wegen des eingeschränkten `drive.file`-Scopes die Listenansicht ohne Thumbnail-Abhängigkeit.
 
-## Flexible Tabellen-Erfassung – erster Umsetzungsstand
+## Flexible Tabellen-Erfassung
 
 PACE kann eine private, geräteübergreifend synchronisierbare Erfassungskonfiguration verwalten und Einträge in die über den Google Picker ausgewählte Tracking-Tabelle schreiben:
 
 - Gruppen mit Titel, Icon und Reihenfolge
 - einzelne Felder mit optionaler Gruppenzuordnung
 - Ziel über **Tabellenblatt + stabile Spalten-ID** statt Spaltenbuchstaben
-- vorläufige Eingabetypen wie Text, Uhrzeit + Text, Uhrzeit, Zahl und Ja/Nein
+- Eingabetypen Text, Uhrzeit + Text, Uhrzeit, Zahl und Ja/Nein
 - Schreibmodus „mit Zeilenumbruch anhängen“ oder „ersetzen“
 - dynamische Schnell-Erfassungsoberfläche aus dieser Konfiguration
 - neue Felder verwenden standardmäßig das Tabellenblatt `Tage`, können aber weiterhin auf andere Tabs zeigen
+
+Die Tracking-Tabelle wird zentral unter **Einstellungen → Google Sheets** ausgewählt. Unter **Erfassung konfigurieren** werden nur Gruppen und Felder gepflegt; dort gibt es bewusst keinen zweiten Picker.
 
 Beim Speichern liest PACE die ausgewählte Tracking-Datei direkt:
 
