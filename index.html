@@ -699,6 +699,32 @@
     </div>
   </dialog>
 
+  <dialog id="setupTransferDialog" class="dialog qr-dialog">
+    <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
+    <div class="qr-dialog-body">
+      <p class="micro">GERÄT EINRICHTEN</p>
+      <h2>PACE-Einstellungen übertragen</h2>
+      <p class="hint">Scanne diesen QR-Code auf deinem anderen Gerät. PACE übernimmt dort die dauerhafte Konfiguration; mit Google meldest du dich auf dem neuen Gerät anschließend separat an.</p>
+      <div id="setupQrCode" class="qr-code" aria-live="polite"></div>
+      <p id="setupQrSummary" class="subtle"></p>
+      <p class="setup-transfer-warning">Der QR enthält API-Key und Spreadsheet-IDs. Zeige ihn nur auf eigenen bzw. vertrauenswürdigen Geräten.</p>
+    </div>
+  </dialog>
+
+  <dialog id="setupImportDialog" class="dialog">
+    <form method="dialog"><button id="setupImportCancel" class="dialog-close" value="close" aria-label="Nicht übernehmen">×</button></form>
+    <div>
+      <p class="micro">GERÄT EINRICHTEN</p>
+      <h2>PACE-Einstellungen übernehmen?</h2>
+      <p class="hint">Die Daten werden nur lokal in diesem Browser gespeichert. Ein Google Access-Token ist nicht im QR enthalten.</p>
+      <div id="setupImportSummary" class="setup-import-summary"></div>
+      <div class="choice-actions">
+        <button id="setupImportApply" class="primary-button" type="button">Einstellungen übernehmen</button>
+        <form method="dialog"><button class="quiet-button" value="close">Nicht übernehmen</button></form>
+      </div>
+    </div>
+  </dialog>
+
   <dialog id="settingsDialog" class="dialog settings-dialog">
     <form method="dialog"><button class="dialog-close" value="close" aria-label="Schließen">×</button></form>
     <div><p class="micro">PRIVATES BACKEND</p><h2>Google Sheets</h2><p class="hint">Persönliche Inhalte bleiben im privaten Sheet und lokal im Browser. Die öffentliche PWA enthält keine persönlichen Vorschläge.</p>
@@ -714,6 +740,12 @@
         <p id="trackingSheetChoice" class="status-box">Noch keine Tracking-Tabelle ausgewählt.</p>
         <div class="settings-actions"><button id="pickTrackingSheet" class="secondary-button" type="button" disabled>Tracking-Tabelle auswählen</button></div>
         <a id="trackingSheetLink" class="sheet-link" href="#" target="_blank" rel="noopener" hidden>Tracking-Tabelle öffnen ↗</a>
+      </div>
+
+      <div class="install-area">
+        <h3>Auf anderes Gerät übertragen</h3>
+        <p class="hint">Erzeugt einen Einrichtungs-QR für deine gespeicherten Google- und Sheet-Einstellungen. Der Google Access-Token wird nicht übertragen.</p>
+        <button id="openSetupTransfer" class="secondary-button" type="button">Einrichtungs-QR anzeigen</button>
       </div>
 
       <div class="settings-actions"><button id="saveGoogleConfig" class="secondary-button" type="button">Einstellungen speichern</button><button id="googleConnect" class="primary-button" type="button">Mit Google verbinden</button><button id="createSheet" class="secondary-button" type="button" disabled>Neues PACE-Sheet anlegen</button><button id="setupSheet" class="secondary-button" type="button" disabled>Sheet einrichten / prüfen</button><button id="syncNow" class="secondary-button" type="button" disabled>Jetzt synchronisieren</button><button id="importPrivate" class="secondary-button" type="button" disabled>Private TSV importieren</button><input id="privateTsvInput" type="file" accept=".tsv,text/tab-separated-values,text/plain" hidden></div>
