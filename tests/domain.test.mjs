@@ -14,6 +14,38 @@ import {
 } from '../js/features/tracking-domain.js';
 import { holdingPointsForStatement, completedHoldingSituations } from '../js/features/holding-domain.js';
 import { matchingResonanceEvents, chooseAnchorEvent } from '../js/features/wellbeing-domain.js';
+import { decodeSetupConfig, encodeSetupConfig } from '../js/features/setup-transfer-domain.js';
+
+test('setup QR round-trips only durable PACE configuration', () => {
+  const encoded = encodeSetupConfig({
+    clientId: '123-apps.googleusercontent.com',
+    sheetId: 'pace-sheet',
+    pickerApiKey: 'AIza-test',
+    pickerAppId: '123',
+    trackingSheetId: 'tracking-sheet',
+    trackingSheetName: 'Mein Tagebuch',
+    accessToken: 'must-not-transfer'
+  });
+
+  const decoded = decodeSetupConfig(encoded);
+  assert.deepEqual(decoded, {
+    clientId: '123-apps.googleusercontent.com',
+    sheetId: 'pace-sheet',
+    pickerApiKey: 'AIza-test',
+    pickerAppId: '123',
+    trackingSheetId: 'tracking-sheet',
+    trackingSheetName: 'Mein Tagebuch'
+  });
+  assert.equal(decodeURIComponent(encoded).includes('must-not-transfer'), false);
+});
+
+test('setup QR rejects malformed or unsupported payloads', () => {
+  assert.throws(() => decodeSetupConfig('not-json'), /nicht gelesen/);
+  assert.throws(
+    () => decodeSetupConfig(encodeURIComponent(JSON.stringify({ v: 99, c: { c: 'x' } }))),
+    /nicht unterstützt/
+  );
+});
 
 test('progress clarification actions become actionable instead of the task itself', () => {
   const item = {
