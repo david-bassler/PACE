@@ -109,6 +109,13 @@ export function initSettings() {
   fillConfigInputs();
   renderConnection();
 
+  window.addEventListener('pace:config-imported', () => {
+    fillConfigInputs();
+    renderConnection();
+    refreshSyncState();
+    status('Einrichtung übernommen. Bitte auf diesem Gerät einmal mit Google verbinden.', 'good');
+  });
+
   $('settingsButton').addEventListener('click', () => {
     fillConfigInputs();
     renderConnection();

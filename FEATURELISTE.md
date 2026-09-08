@@ -1144,6 +1144,14 @@ Aktueller Weg:
 - mehrere Tabellenblätter können dadurch parallel als Ziele verschiedener Felder verwendet werden
 - die Auswahl der Tracking-Tabelle liegt zentral unter **Einstellungen → Google Sheets**; unter **Erfassung konfigurieren** werden nur Gruppen und Felder gepflegt
 
+### Geräte-Einrichtung per QR
+
+PACE kann die dauerhafte technische Einrichtung als QR-Code auf ein anderes eigenes Gerät übertragen. Übertragen werden nur OAuth Client-ID, PACE-Spreadsheet-ID, Picker API-Key, Cloud-Projektnummer sowie ID und Name der ausgewählten Tracking-Tabelle.
+
+Der **Google Access-Token wird niemals übertragen**. Das Zielgerät bestätigt den Import ausdrücklich und verbindet sich danach selbst mit Google. Die Transferdaten werden im URL-Fragment transportiert und nach Übernahme oder Abbruch aus der URL entfernt.
+
+Der QR ist deshalb eine Einrichtungsabkürzung, kein Ersatz für Google-Authentifizierung. Weil er API-Key und Spreadsheet-IDs enthält, soll die Oberfläche klar darauf hinweisen, ihn nur auf eigenen bzw. vertrauenswürdigen Geräten zu zeigen.
+
 ### Heutige Datenzeile
 
 PACE bestimmt das heutige Datum anhand der Zeitzone der ausgewählten Tracking-Tabelle. Fehlt die heutige Datenzeile, ergänzt PACE ab dem letzten vorhandenen Datum alle fehlenden Kalendertage in Spalte A bis einschließlich heute und übernimmt dabei das Zellformat des letzten vorhandenen Datums.

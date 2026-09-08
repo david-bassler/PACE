@@ -135,6 +135,14 @@ Für den Picker zusätzlich:
 
 Die ausgewählte Datei-ID und der Dateiname werden lokal in IndexedDB gespeichert. Der Picker zeigt nur Google-Tabellen und verwendet wegen des eingeschränkten `drive.file`-Scopes die Listenansicht ohne Thumbnail-Abhängigkeit.
 
+### Einrichtung auf ein anderes Gerät übertragen
+
+Unter **Einstellungen → Google Sheets → Auf anderes Gerät übertragen** kann PACE einen Einrichtungs-QR erzeugen. Er enthält ausschließlich die dauerhafte Konfiguration: OAuth Client-ID, PACE-Spreadsheet-ID, Picker API-Key, Cloud-Projektnummer sowie ID und Name der ausgewählten Tracking-Tabelle.
+
+Der QR enthält **keinen Google Access-Token**. Auf dem neuen Gerät fragt PACE vor dem Import nach Bestätigung, speichert die Konfiguration lokal in IndexedDB und entfernt die Transferdaten danach aus der URL. Anschließend ist auf dem neuen Gerät einmal **Mit Google verbinden** nötig.
+
+Die Transferdaten liegen ausschließlich im URL-Fragment (`#pace-setup=…`); dieses Fragment wird beim Öffnen nicht an GitHub Pages gesendet. Da der QR trotzdem API-Key und Spreadsheet-IDs enthält, sollte er nur auf eigenen bzw. vertrauenswürdigen Geräten gezeigt werden.
+
 ## Flexible Tabellen-Erfassung
 
 PACE kann eine private, geräteübergreifend synchronisierbare Erfassungskonfiguration verwalten und Einträge in die über den Google Picker ausgewählte Tracking-Tabelle schreiben:
