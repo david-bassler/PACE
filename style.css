@@ -75,3 +75,8 @@
 .horizon-custom{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}.horizon-result-copy{margin:10px 0 0;line-height:1.55;color:#3c5964}.horizon-working{margin:14px 0 0;padding:12px 13px;border-left:4px solid #7d9da2;border-radius:11px;background:#eef5f4;color:#315864;font-weight:700;line-height:1.45}.horizon-result-actions{margin-top:18px;align-items:center}.horizon-result-actions form{display:inline}.horizon-park{margin-top:16px;padding-top:15px;border-top:1px solid var(--line)}.horizon-restart{margin-top:12px}
 #horizonCurrentSummary{margin:10px 0 0;color:#728289}
 @media(max-width:520px){.horizon-result-actions{display:grid}.horizon-result-actions>*{width:100%}.horizon-result-actions form button{width:100%}}
+
+
+/* Device setup transfer */
+.setup-transfer-warning{margin:14px auto 0;max-width:430px;padding:10px 12px;border-radius:12px;background:#f7f3e8;color:#6f6242;font-size:.84rem;line-height:1.45;text-align:left}.setup-import-summary{display:grid;gap:7px;margin:16px 0;padding:12px;border:1px solid var(--line);border-radius:14px;background:#f6f9f8}.setup-import-row{display:flex;justify-content:space-between;gap:12px;align-items:baseline}.setup-import-row strong{color:#294c59}.setup-import-row span{color:#6f8289;text-align:right;overflow-wrap:anywhere}
+@media(max-width:520px){.setup-import-row{align-items:flex-start;flex-direction:column;gap:2px}.setup-import-row span{text-align:left}}
