@@ -125,5 +125,8 @@ export function initSetupTransferFeature() {
   $('setupImportApply').addEventListener('click', applyIncomingSetup);
   $('setupImportCancel').addEventListener('click', cancelIncomingSetup);
   $('setupImportDialog').addEventListener('cancel', cancelIncomingSetup);
+  $('setupImportDialog').addEventListener('close', () => {
+    if (pendingImport) cancelIncomingSetup();
+  });
   detectIncomingSetup();
 }
