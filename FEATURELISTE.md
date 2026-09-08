@@ -1035,9 +1035,9 @@ Damit bleibt die Funktion der bisherigen Tabelle als **verlässlicher einzelner 
 
 ## 11. Flexible Tabellen-Erfassung ohne Codeänderungen
 
-Wenn PACE laufende Daten in die bestehende Tabelle schreiben soll, darf die Zuordnung **nicht fest im Code verdrahtet** sein.
+Für laufende Daten in der bestehenden Tabelle darf die Zuordnung **nicht fest im Code verdrahtet** sein.
 
-Ziel ist eine konfigurierbare Erfassungsschicht: Änderungen an der Tabelle sollen möglichst über die App-Konfiguration abbildbar sein, ohne jedes Mal JavaScript anzupassen.
+PACE verwendet dafür eine konfigurierbare Erfassungsschicht: Änderungen an der Tabelle sollen möglichst über die App-Konfiguration abbildbar sein, ohne jedes Mal JavaScript anzupassen.
 
 ### Stabile Spalten-IDs statt Spaltenbuchstaben
 
@@ -1080,7 +1080,7 @@ Beispielhafte Konfiguration:
 - Format: Uhrzeit + Text
 - Schreibmodus: weitere Einträge mit Zeilenumbruch anhängen
 
-Die genaue Semantik von Formaten wird später festgelegt. Beispielsweise kann **Uhrzeit** standardmäßig die aktuelle Zeit vorschlagen, aber weiterhin änderbar sein. Solche Details sollen als eigene Konfigurationsoptionen modelliert werden und nicht in einem undurchsichtigen Format-String verschwinden.
+Aktuell unterstützt PACE **Text**, **Uhrzeit + Text**, **Uhrzeit**, **Zahl** und **Ja/Nein**. Uhrzeit-Felder werden mit der aktuellen Zeit vorbelegt und bleiben änderbar. Weitere Eingabeoptionen sollen weiterhin als explizite Konfiguration modelliert werden und nicht in einem undurchsichtigen Format-String verschwinden.
 
 ### Unterschied zwischen Eingabeformat und Schreibmodus
 
@@ -1121,7 +1121,7 @@ Ein Feld darf auch allein ohne Gruppe existieren.
 
 ### Ein Ort für die Konfiguration
 
-Die Konfiguration selbst soll privat gespeichert und über PACE bearbeitbar sein. Sie sollte geräteübergreifend verfügbar sein, also voraussichtlich ebenfalls im privaten Google Sheet liegen.
+Die Konfiguration selbst wird privat gespeichert, über PACE bearbeitet und über das PACE-Backend geräteübergreifend synchronisiert.
 
 Wichtig ist dabei die Trennung:
 
@@ -1132,30 +1132,33 @@ Damit kann sich die bestehende Tabelle weiterentwickeln, ohne dass ihre konkrete
 
 ### Zugriff auf die bestehende Tracking-Tabelle: Google Picker
 
-Sobald dieses Feature tatsächlich umgesetzt wird, soll die bestehende Tracking-Tabelle **nicht über einen pauschal breiteren Google-Scope** zugänglich gemacht werden.
+PACE greift auf die bestehende Tracking-Tabelle **nicht über einen pauschal breiteren Google-Scope** zu. Der OAuth-Scope bleibt `drive.file`.
 
-Geplanter Weg:
+Aktueller Weg:
 
-- den bisherigen engen Zugriff möglichst beibehalten
-- die bestehende Tracking-Tabelle einmal bewusst über den **Google Picker** auswählen
-- PACE erhält damit gezielt Zugriff auf genau diese ausgewählte Datei
-- anschließend wird die Spreadsheet-ID der verbundenen Tracking-Tabelle gespeichert
-- zusätzlich muss innerhalb dieser Google-Sheets-Datei das konkrete **Tabellenblatt / Sheet-Tab** ausgewählt und gespeichert werden, in das PACE lesen bzw. schreiben soll
-- die Konfiguration eines Feldes bezieht sich deshalb nicht nur auf eine Spalten-ID, sondern mindestens auf **Spreadsheet + Sheet-Tab + stabile Spalten-ID**
-- wenn mehrere Tabellenblätter relevant werden, soll die Zuordnung pro Erfassungsfeld oder Erfassungsgruppe flexibel konfigurierbar sein
-- in den Einstellungen soll klar sichtbar sein, welche Tabelle als **PACE-Daten** und welche als **Tracking-Tabelle** verbunden ist und welches Tabellenblatt verwendet wird
+- die bestehende Tracking-Tabelle wird bewusst über den **Google Picker** ausgewählt
+- PACE erhält damit gezielt Zugriff auf diese ausgewählte Datei
+- PACE-Backend und Tracking-Tabelle bleiben getrennte Spreadsheet-Dateien
+- Datei-ID und Dateiname der Tracking-Tabelle werden lokal in der jeweiligen PACE-Installation gespeichert
+- das konkrete **Tabellenblatt / Sheet-Tab** und die **stabile Spalten-ID** werden pro Erfassungsfeld konfiguriert und mit der privaten Erfassungskonfiguration synchronisiert
+- mehrere Tabellenblätter können dadurch parallel als Ziele verschiedener Felder verwendet werden
+- die Auswahl der Tracking-Tabelle liegt zentral unter **Einstellungen → Google Sheets**; unter **Erfassung konfigurieren** werden nur Gruppen und Felder gepflegt
 
-**Umsetzungshinweis:** Beim Beginn der Implementierung dieses Features den Nutzer ausdrücklich daran erinnern, dass hierfür die **Picker-Variante** vereinbart wurde, bevor OAuth-/Berechtigungslogik geändert wird.
+### Heutige Datenzeile
+
+PACE bestimmt das heutige Datum anhand der Zeitzone der ausgewählten Tracking-Tabelle. Fehlt die heutige Datenzeile, ergänzt PACE ab dem letzten vorhandenen Datum alle fehlenden Kalendertage in Spalte A bis einschließlich heute und übernimmt dabei das Zellformat des letzten vorhandenen Datums.
+
+Auch hier gilt **fail closed**: Wenn das letzte Datum mehrdeutig ist, eine benötigte Zelle in Spalte A bereits Inhalt enthält oder eine Formel überschrieben würde, schreibt PACE nicht.
 
 ### Grundprinzip
 
-PACE soll nicht versuchen, die bestehende Tabelle durch eine starre neue Datenstruktur zu ersetzen.
+PACE versucht nicht, die bestehende Tabelle durch eine starre neue Datenstruktur zu ersetzen.
 
-Stattdessen soll es zunächst eine **konfigurierbare Eingabeoberfläche vor die bewährte Tabelle setzen**:
+Es setzt eine **konfigurierbare Eingabeoberfläche vor die bewährte Tabelle**:
 
 **Erfassungsgruppe / Feld → stabile Spalten-ID → aktuelle Spaltenposition → heutige Tabellenzeile**
 
-Die App übernimmt damit Komfort, Gruppierung und Eingabelogik, während die Tabelle vorerst der bestehende verlässliche Datenspeicher bleiben kann.
+Die App übernimmt damit Komfort, Gruppierung und Eingabelogik, während die Tabelle der bestehende verlässliche Datenspeicher bleibt.
 
 ## Leitfrage für jedes neue Feature
 

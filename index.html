@@ -619,15 +619,7 @@
     <div>
       <p class="micro">TABELLENERFASSUNG</p>
       <h2>Erfassung konfigurieren</h2>
-      <p class="hint">Hier wird nur die flexible Eingabeoberfläche eingerichtet. Die bestehende Tracking-Tabelle wird noch nicht beschrieben; die Verbindung folgt später über den vereinbarten Google Picker.</p>
-
-      <section class="tracking-connection-placeholder">
-        <div>
-          <strong>Tracking-Tabelle</strong>
-          <p>Noch nicht verbunden. Die Picker-Anbindung kommt in einem späteren Schritt.</p>
-        </div>
-        <button class="secondary-button" type="button" disabled>Tracking-Tabelle auswählen · später</button>
-      </section>
+      <p class="hint">Hier richtest du Gruppen und Felder für die Schnellerfassung ein. Die Tracking-Tabelle selbst wird unter „Einstellungen → Google Sheets“ ausgewählt.</p>
 
       <section class="dialog-section">
         <h3>Gruppen</h3>
@@ -646,13 +638,13 @@
 
       <section class="dialog-section">
         <h3>Felder</h3>
-        <p class="hint">Jedes Feld verweist später über Tabellenblatt + stabile Spalten-ID auf die bestehende Tabelle. Spaltenbuchstaben werden bewusst nicht gespeichert.</p>
+        <p class="hint">Jedes Feld verweist über Tabellenblatt + stabile Spalten-ID auf die ausgewählte Tracking-Tabelle. Spaltenbuchstaben werden bewusst nicht gespeichert.</p>
         <div id="trackingFieldList" class="tracking-config-list"></div>
         <form id="trackingFieldForm" class="stack-form">
           <label><span>Titel</span><input id="trackingFieldTitle" maxlength="180" required></label>
           <div class="emoji-field"><label for="trackingFieldIcon">Icon <small>(optional)</small></label><div class="emoji-input-row"><input id="trackingFieldIcon" maxlength="16" placeholder="z. B. ☕"><button class="emoji-picker-open" type="button" data-emoji-target="trackingFieldIcon" aria-label="Emoji für Feld auswählen">Emoji wählen</button></div></div>
           <label><span>Gruppe <small>(optional)</small></span><select id="trackingFieldGroup"></select></label>
-          <label><span>Tabellenblatt / Sheet-Tab</span><input id="trackingFieldSheetTab" maxlength="180" placeholder="z. B. 2026"></label>
+          <label><span>Tabellenblatt / Sheet-Tab</span><input id="trackingFieldSheetTab" maxlength="180" placeholder="z. B. Tage"></label>
           <label><span>Stabile Spalten-ID</span><input id="trackingFieldColumnId" maxlength="80" inputmode="numeric" placeholder="ID aus der fortlaufenden ID-Zeile"></label>
           <label><span>Eingabeformat</span>
             <select id="trackingFieldInputType">
