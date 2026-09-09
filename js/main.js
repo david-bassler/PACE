@@ -31,6 +31,7 @@ async function boot() {
     space,
     share,
     tracking,
+    quickCapture,
     breath,
     holding,
     horizon,
@@ -44,6 +45,7 @@ async function boot() {
     import('./features/space.js'),
     import('./features/share.js'),
     import('./features/tracking.js'),
+    import('./features/quick-capture.js'),
     import('./features/breath.js'),
     import('./features/holding.js'),
     import('./features/horizon.js'),
@@ -57,6 +59,7 @@ async function boot() {
   space.initSpaceFeature();
   share.initShareFeature();
   tracking.initTrackingFeature();
+  quickCapture.initQuickCaptureFeature();
   breath.initBreathFeature();
   holding.initHoldingFeature();
   horizon.initHorizonFeature({
