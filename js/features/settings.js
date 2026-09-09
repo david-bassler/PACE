@@ -56,36 +56,36 @@ function status(text, kind = '') {
 
 function renderHomeGoogle({ state = 'local', error = null, connected = isConnected() } = {}) {
   const button = $('homeGoogleConnect');
-  const label = $('homeGoogleLabel');
-  if (!button || !label) return;
+  const icon = $('homeGoogleIcon');
+  if (!button || !icon) return;
 
-  let text = 'Google verbinden';
+  let symbol = '↗';
   let title = getConfig().clientId
     ? 'Mit Google verbinden'
     : 'Google-Verbindung einrichten';
 
   if (connected) {
-    text = 'Google verbunden';
+    symbol = '✓';
     title = getConfig().sheetId
       ? 'Mit Google verbunden · klicken, um jetzt zu synchronisieren'
       : 'Mit Google verbunden · PACE-Backend noch nicht eingerichtet';
   }
 
   if (state === 'syncing') {
-    text = 'Synchronisiere …';
+    symbol = '↻';
     title = 'Synchronisierung läuft';
   } else if (state === 'pending' && connected) {
-    text = 'Sync ausstehend';
+    symbol = '…';
     title = 'Lokale Änderungen warten auf Synchronisierung · klicken, um jetzt zu synchronisieren';
   } else if (state === 'synced' && connected) {
-    text = 'Synchronisiert';
+    symbol = '✓';
     title = 'Mit Google Sheets synchronisiert · klicken, um jetzt zu synchronisieren';
   } else if (state === 'error') {
-    text = connected ? 'Sync-Fehler' : 'Google verbinden';
+    symbol = '!';
     title = error?.message || 'Synchronisierung fehlgeschlagen';
   }
 
-  label.textContent = text;
+  icon.textContent = symbol;
   button.title = title;
   button.setAttribute('aria-label', title);
   button.disabled = state === 'syncing';
