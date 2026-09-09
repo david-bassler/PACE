@@ -4,9 +4,11 @@ import { markDirty, registerSync } from '../core/sync.js';
 import { buildTrackingWritePlan, getTrackingConfig } from './tracking.js';
 import { writeTrackingPlan } from './tracking-sheet.js';
 import {
+  createSelectionQuickCaptureCommand,
   findQuickCaptureCommand,
   quickCaptureMatches,
-  removeQuickCaptureLine
+  removeQuickCapturePrefix,
+  removeQuickCaptureSelection
 } from './quick-capture-domain.js';
 
 const QUEUE_KEY = 'pace-quick-capture-queue-v1';
@@ -23,6 +25,8 @@ let activeIndex = 0;
 let currentCommand = null;
 let currentMatches = [];
 let statusTimer = null;
+let rememberedSelection = null;
+let rememberedSelectionTimer = null;
 
 function saveQueue() {
   saveJSON(QUEUE_KEY, queue);
@@ -46,6 +50,26 @@ function flashStatus(message, delay = 2600) {
     if (queue.length) showPendingStatus();
     else status.textContent = '';
   }, delay);
+}
+
+function clearRememberedSelection() {
+  clearTimeout(rememberedSelectionTimer);
+  rememberedSelectionTimer = null;
+  rememberedSelection = null;
+}
+
+function rememberSelection() {
+  if (!textarea || currentCommand?.mode === 'selection') return;
+  const command = createSelectionQuickCaptureCommand(
+    textarea.value,
+    textarea.selectionStart,
+    textarea.selectionEnd
+  );
+  if (!command) return;
+
+  clearRememberedSelection();
+  rememberedSelection = { ...command, source: textarea.value };
+  rememberedSelectionTimer = setTimeout(clearRememberedSelection, 1600);
 }
 
 async function flushQueue() {
@@ -91,6 +115,8 @@ function installStyles() {
     .quick-capture-suggestion:hover,.quick-capture-suggestion.active{background:#edf4f3}
     .quick-capture-suggestion-icon{width:28px;height:28px;flex:0 0 auto;border-radius:8px;background:#f2f6f5;display:grid;place-items:center;font-size:1.08rem}
     .quick-capture-suggestion-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+    .quick-capture-query{padding:7px 9px 6px;color:#6b8189;font-size:.76rem;font-weight:750;letter-spacing:.03em}
+    .quick-capture-empty{padding:9px;color:#71858d;font-size:.84rem}
     .quick-capture-status{min-height:1.05em;margin:5px 4px 0;color:#6d828a;font-size:.76rem;line-height:1.35}
   `;
   document.head.appendChild(style);
@@ -175,7 +201,10 @@ function caretCoordinates(input, position) {
 function positionSuggestions() {
   if (!textarea || !editorWrap || !suggestions || suggestions.hidden) return;
 
-  const caret = caretCoordinates(textarea, textarea.selectionStart);
+  const anchorPosition = currentCommand?.mode === 'selection'
+    ? currentCommand.selectionEnd
+    : textarea.selectionStart;
+  const caret = caretCoordinates(textarea, anchorPosition);
   const textareaRect = textarea.getBoundingClientRect();
   const wrapRect = editorWrap.getBoundingClientRect();
   const popupWidth = Math.min(310, Math.max(220, editorWrap.clientWidth - 8));
@@ -207,16 +236,20 @@ function updateActiveSuggestion() {
 async function chooseField(field) {
   if (!textarea || !currentCommand || !field) return;
 
-  // Snapshot both command and source before yielding to IndexedDB. Otherwise
-  // rapid typing can change currentCommand while this selection is still
-  // being persisted, causing the next line to be removed by the previous save.
   const command = { ...currentCommand };
   const sourceAtSelection = textarea.value;
-  const selectedLine = sourceAtSelection.slice(command.lineStart, command.lineEnd);
+  const selectedSource = command.mode === 'selection'
+    ? sourceAtSelection.slice(command.selectionStart, command.selectionEnd)
+    : '';
+  const prefixSource = command.mode === 'prefix'
+    ? sourceAtSelection.slice(0, command.lineEnd)
+    : '';
   const payload = command.payload;
 
-  if (!payload) {
-    flashStatus('Vor dem ,,Kürzel fehlt noch der eigentliche Eintrag.');
+  if (!payload.trim()) {
+    flashStatus(command.mode === 'selection'
+      ? 'Die Markierung enthält keinen speicherbaren Text.'
+      : 'Vor dem ,,Kürzel fehlt noch der eigentliche Eintrag.');
     return;
   }
 
@@ -244,15 +277,20 @@ async function chooseField(field) {
   saveQueue();
   await flushStorage();
 
-  // Only remove the line we actually selected. Text typed after that line may
-  // already exist and is deliberately preserved.
-  if (textarea.value.slice(command.lineStart, command.lineEnd) === selectedLine) {
-    const removal = removeQuickCaptureLine(textarea.value, command);
+  if (command.mode === 'selection') {
+    if (textarea.value.slice(command.selectionStart, command.selectionEnd) === selectedSource) {
+      const removal = removeQuickCaptureSelection(textarea.value, command);
+      textarea.value = removal.text;
+      textarea.setSelectionRange(removal.cursor, removal.cursor);
+    }
+  } else if (textarea.value.slice(0, command.lineEnd) === prefixSource) {
+    const removal = removeQuickCapturePrefix(textarea.value, command);
     textarea.value = removal.text;
     textarea.setSelectionRange(removal.cursor, removal.cursor);
   }
 
   hideSuggestions();
+  clearRememberedSelection();
 
   const icon = field.icon ? `${field.icon} ` : '';
   flashStatus(`${icon}${field.title} lokal gespeichert.`);
@@ -260,30 +298,34 @@ async function chooseField(field) {
   textarea.focus();
 }
 
-function renderSuggestions() {
-  if (!textarea || !suggestions) return;
-  if (textarea.selectionStart !== textarea.selectionEnd) {
-    hideSuggestions();
-    return;
-  }
-
-  const command = findQuickCaptureCommand(textarea.value, textarea.selectionStart);
-  if (!command) {
-    hideSuggestions();
-    return;
-  }
+function renderCommandSuggestions(command) {
+  if (!textarea || !suggestions || !command) return;
 
   const config = getTrackingConfig();
   const matches = quickCaptureMatches(config.fields || [], command.query, MAX_SUGGESTIONS);
-  if (!matches.length) {
-    hideSuggestions();
-    return;
-  }
 
   currentCommand = command;
   currentMatches = matches;
-  activeIndex = Math.min(activeIndex, matches.length - 1);
+  activeIndex = matches.length ? Math.min(activeIndex, matches.length - 1) : 0;
   suggestions.innerHTML = '';
+
+  if (command.mode === 'selection') {
+    const query = document.createElement('div');
+    query.className = 'quick-capture-query';
+    query.textContent = `,,${command.query || '…'} · nur Markierung`;
+    suggestions.appendChild(query);
+  }
+
+  if (!matches.length) {
+    if (command.mode !== 'selection') {
+      hideSuggestions();
+      return;
+    }
+    const empty = document.createElement('div');
+    empty.className = 'quick-capture-empty';
+    empty.textContent = 'Keine passende Aktion.';
+    suggestions.appendChild(empty);
+  }
 
   for (const [index, field] of matches.entries()) {
     const button = document.createElement('button');
@@ -315,7 +357,115 @@ function renderSuggestions() {
   positionSuggestions();
 }
 
+function activateRememberedSelectionCommand() {
+  if (!textarea || !rememberedSelection) return false;
+
+  const memory = rememberedSelection;
+  const before = memory.source.slice(0, memory.selectionStart);
+  const after = memory.source.slice(memory.selectionEnd);
+  const oneComma = `${before},${after}`;
+  const twoCommas = `${before},,${after}`;
+
+  if (textarea.value === oneComma) {
+    clearTimeout(rememberedSelectionTimer);
+    rememberedSelectionTimer = setTimeout(clearRememberedSelection, 1600);
+    hideSuggestions();
+    return true;
+  }
+
+  if (textarea.value !== twoCommas) {
+    clearRememberedSelection();
+    return false;
+  }
+
+  textarea.value = memory.source;
+  textarea.setSelectionRange(memory.selectionStart, memory.selectionEnd);
+  clearRememberedSelection();
+
+  const command = {
+    mode: 'selection',
+    selectionStart: memory.selectionStart,
+    selectionEnd: memory.selectionEnd,
+    query: '',
+    payload: memory.payload
+  };
+  renderCommandSuggestions(command);
+  return true;
+}
+
+function renderSuggestions() {
+  if (!textarea || !suggestions) return;
+  if (currentCommand?.mode === 'selection') return;
+
+  if (textarea.selectionStart !== textarea.selectionEnd) {
+    hideSuggestions();
+    rememberSelection();
+    return;
+  }
+
+  const command = findQuickCaptureCommand(textarea.value, textarea.selectionStart);
+  if (!command) {
+    hideSuggestions();
+    return;
+  }
+
+  renderCommandSuggestions(command);
+}
+
+function handleInput() {
+  if (activateRememberedSelectionCommand()) return;
+  renderSuggestions();
+}
+
 function handleKeydown(event) {
+  if (currentCommand?.mode === 'selection') {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      hideSuggestions();
+      return;
+    }
+
+    if (event.key === 'ArrowDown' && currentMatches.length) {
+      event.preventDefault();
+      activeIndex = (activeIndex + 1) % currentMatches.length;
+      updateActiveSuggestion();
+      return;
+    }
+
+    if (event.key === 'ArrowUp' && currentMatches.length) {
+      event.preventDefault();
+      activeIndex = (activeIndex - 1 + currentMatches.length) % currentMatches.length;
+      updateActiveSuggestion();
+      return;
+    }
+
+    if ((event.key === 'Enter' || event.key === 'Tab') && currentMatches.length) {
+      event.preventDefault();
+      chooseField(currentMatches[activeIndex]).catch(error => {
+        announce(error?.message || 'Der Eintrag konnte nicht lokal gespeichert werden.', 'bad');
+      });
+      return;
+    }
+
+    if (event.key === 'Backspace') {
+      event.preventDefault();
+      renderCommandSuggestions({
+        ...currentCommand,
+        query: currentCommand.query.slice(0, -1)
+      });
+      return;
+    }
+
+    if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault();
+      renderCommandSuggestions({
+        ...currentCommand,
+        query: currentCommand.query + event.key
+      });
+    }
+    return;
+  }
+
   if (!suggestions || suggestions.hidden || !currentMatches.length) return;
 
   if (event.key === 'ArrowDown') {
@@ -352,9 +502,11 @@ export function initQuickCaptureFeature() {
   installStyles();
   if (!createEditor()) return;
 
-  textarea.addEventListener('input', renderSuggestions);
+  textarea.addEventListener('input', handleInput);
+  textarea.addEventListener('select', rememberSelection);
   textarea.addEventListener('click', renderSuggestions);
   textarea.addEventListener('keyup', event => {
+    if (currentCommand?.mode === 'selection') return;
     if (!['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'].includes(event.key)) renderSuggestions();
   });
   textarea.addEventListener('keydown', handleKeydown);
