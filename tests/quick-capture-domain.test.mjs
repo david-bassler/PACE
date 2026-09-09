@@ -2,20 +2,23 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  createSelectionQuickCaptureCommand,
   findQuickCaptureCommand,
   quickCaptureMatches,
-  removeQuickCaptureLine
+  removeQuickCapturePrefix,
+  removeQuickCaptureSelection
 } from '../js/features/quick-capture-domain.js';
 
-test('finds a lower-case quick capture command at the end of a line', () => {
-  const text = '10:13 Brötchen ,,e';
+test('finds a lower-case quick capture command and captures everything before it', () => {
+  const text = 'Erste Zeile\n10:13 Brötchen ,,e';
   assert.deepEqual(findQuickCaptureCommand(text, text.length), {
-    lineStart: 0,
+    mode: 'prefix',
+    lineStart: 12,
     lineEnd: text.length,
-    triggerStart: 15,
+    triggerStart: 27,
     caret: text.length,
     query: 'e',
-    payload: '10:13 Brötchen'
+    payload: 'Erste Zeile\n10:13 Brötchen'
   });
 });
 
@@ -43,21 +46,36 @@ test('does not activate a command when text follows the caret on the same line',
   assert.equal(findQuickCaptureCommand(text, caret), null);
 });
 
-test('removes the selected middle line including its trailing newline', () => {
-  const text = 'oben\n10:13 Brötchen ,,e\nunten';
-  const caret = text.indexOf('\nunten');
+test('removes everything through the command line while preserving later text', () => {
+  const text = 'Erste Zeile\n10:13 Brötchen ,,e\nSpäter';
+  const caret = text.indexOf('\nSpäter');
   const command = findQuickCaptureCommand(text, caret);
-  assert.deepEqual(removeQuickCaptureLine(text, command), {
-    text: 'oben\nunten',
-    cursor: 5
+  assert.deepEqual(removeQuickCapturePrefix(text, command), {
+    text: 'Später',
+    cursor: 0
   });
 });
 
-test('removes the last line without leaving an extra trailing newline', () => {
-  const text = 'oben\n10:13 Brötchen ,,e';
-  const command = findQuickCaptureCommand(text, text.length);
-  assert.deepEqual(removeQuickCaptureLine(text, command), {
-    text: 'oben',
-    cursor: 4
+test('creates a command from exactly the selected text', () => {
+  const text = 'vorher markierter Text nachher';
+  const start = text.indexOf('markierter');
+  const end = text.indexOf(' nachher');
+  assert.deepEqual(createSelectionQuickCaptureCommand(text, start, end), {
+    mode: 'selection',
+    selectionStart: start,
+    selectionEnd: end,
+    query: '',
+    payload: 'markierter Text'
+  });
+});
+
+test('removes only the selected text after dispatch', () => {
+  const text = 'vorher markierter Text nachher';
+  const start = text.indexOf('markierter');
+  const end = text.indexOf(' nachher');
+  const command = createSelectionQuickCaptureCommand(text, start, end);
+  assert.deepEqual(removeQuickCaptureSelection(text, command), {
+    text: 'vorher  nachher',
+    cursor: start
   });
 });
