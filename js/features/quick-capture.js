@@ -49,25 +49,31 @@ function flashStatus(message, delay = 2600) {
 }
 
 async function flushQueue() {
-  let synced = 0;
+  if (!queue.length) return;
 
-  while (queue.length) {
-    const entry = queue[0];
-    if (!entry?.plan || !entry?.createdAt) {
-      throw new Error('Ein lokaler Schnellerfassungs-Eintrag ist unvollständig und wurde nicht synchronisiert.');
-    }
+  const batch = queue
+    .filter(entry => entry?.plan && entry?.createdAt)
+    .map(entry => ({ ...entry, plan: { ...entry.plan } }));
 
-    await writeTrackingPlan([entry.plan], { now: new Date(entry.createdAt) });
-    queue.shift();
-    saveQueue();
-    await flushStorage();
-    synced += 1;
-    showPendingStatus();
+  if (batch.length !== queue.length) {
+    throw new Error('Ein lokaler Schnellerfassungs-Eintrag ist unvollständig und wurde nicht synchronisiert.');
   }
 
-  if (synced) {
-    flashStatus(`${synced} ${synced === 1 ? 'Eintrag' : 'Einträge'} in die Tracking-Tabelle synchronisiert.`);
-  }
+  // Entries created before one sync pass are written together. This matters
+  // especially when several quick captures append to the same target cell:
+  // writeTrackingPlan can then fold them into one deterministic cell update
+  // instead of relying on an immediate read-after-write from Google Sheets.
+  await writeTrackingPlan(batch.map(entry => entry.plan), {
+    now: new Date(batch[0].createdAt)
+  });
+
+  const syncedIds = new Set(batch.map(entry => entry.id));
+  queue = queue.filter(entry => !syncedIds.has(entry.id));
+  saveQueue();
+  await flushStorage();
+  showPendingStatus();
+
+  flashStatus(`${batch.length} ${batch.length === 1 ? 'Eintrag' : 'Einträge'} in die Tracking-Tabelle synchronisiert.`);
 }
 
 function installStyles() {
@@ -201,7 +207,14 @@ function updateActiveSuggestion() {
 async function chooseField(field) {
   if (!textarea || !currentCommand || !field) return;
 
-  const payload = currentCommand.payload;
+  // Snapshot both command and source before yielding to IndexedDB. Otherwise
+  // rapid typing can change currentCommand while this selection is still
+  // being persisted, causing the next line to be removed by the previous save.
+  const command = { ...currentCommand };
+  const sourceAtSelection = textarea.value;
+  const selectedLine = sourceAtSelection.slice(command.lineStart, command.lineEnd);
+  const payload = command.payload;
+
   if (!payload) {
     flashStatus('Vor dem ,,Kürzel fehlt noch der eigentliche Eintrag.');
     return;
@@ -231,9 +244,14 @@ async function chooseField(field) {
   saveQueue();
   await flushStorage();
 
-  const removal = removeQuickCaptureLine(textarea.value, currentCommand);
-  textarea.value = removal.text;
-  textarea.setSelectionRange(removal.cursor, removal.cursor);
+  // Only remove the line we actually selected. Text typed after that line may
+  // already exist and is deliberately preserved.
+  if (textarea.value.slice(command.lineStart, command.lineEnd) === selectedLine) {
+    const removal = removeQuickCaptureLine(textarea.value, command);
+    textarea.value = removal.text;
+    textarea.setSelectionRange(removal.cursor, removal.cursor);
+  }
+
   hideSuggestions();
 
   const icon = field.icon ? `${field.icon} ` : '';
