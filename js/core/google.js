@@ -36,6 +36,8 @@ function migrateConfig() {
 
 let config = migrateConfig();
 let accessToken = '';
+let accessTokenExpiresAt = 0;
+let tokenExpiryTimer = null;
 let tokenClient = null;
 let statusListener = () => {};
 let connectionListener = () => {};
@@ -51,8 +53,50 @@ let knownTitles = null;
 const ensuredHeaders = new Map();
 
 export function getConfig() { return { ...config }; }
-export function getAccessToken() { return accessToken; }
-export function isConnected() { return Boolean(accessToken); }
+
+function clearAccessToken({ notify = false } = {}) {
+  accessToken = '';
+  accessTokenExpiresAt = 0;
+  clearTimeout(tokenExpiryTimer);
+  tokenExpiryTimer = null;
+
+  if (notify) {
+    connectionListener(false);
+    statusListener('Google-Zugriff ist abgelaufen. Zum Synchronisieren bitte erneut verbinden.');
+  }
+}
+
+function accessTokenIsValid() {
+  if (!accessToken) return false;
+  if (!accessTokenExpiresAt || Date.now() < accessTokenExpiresAt) return true;
+  clearAccessToken({ notify: true });
+  return false;
+}
+
+function rememberAccessToken(response) {
+  accessToken = response.access_token || '';
+  const expiresInSeconds = Number(response.expires_in);
+  accessTokenExpiresAt = accessToken && Number.isFinite(expiresInSeconds) && expiresInSeconds > 0
+    ? Date.now() + expiresInSeconds * 1000
+    : 0;
+
+  clearTimeout(tokenExpiryTimer);
+  tokenExpiryTimer = null;
+
+  if (accessTokenExpiresAt) {
+    tokenExpiryTimer = setTimeout(() => {
+      if (accessToken && Date.now() >= accessTokenExpiresAt) clearAccessToken({ notify: true });
+    }, Math.max(0, accessTokenExpiresAt - Date.now()));
+  }
+}
+
+export function getAccessToken() {
+  return accessTokenIsValid() ? accessToken : '';
+}
+
+export function isConnected() {
+  return accessTokenIsValid();
+}
 
 export function inferPickerAppId(clientId = config.clientId) {
   const match = String(clientId || '').trim().match(/^(\d+)-/);
@@ -76,6 +120,7 @@ function spreadsheetId(value) {
 
 export function setConfig(next) {
   const previousSheetId = config.sheetId;
+  const previousClientId = config.clientId;
   const merged = { ...CONFIG_DEFAULTS, ...config, ...next };
 
   config = {
@@ -90,6 +135,10 @@ export function setConfig(next) {
 
   saveJSON(KEYS.config, config);
   if (config.sheetId !== previousSheetId) resetSheetCache();
+  if (config.clientId !== previousClientId) {
+    tokenClient = null;
+    clearAccessToken();
+  }
   return getConfig();
 }
 
@@ -114,13 +163,20 @@ export function connectGoogle() {
           statusListener(`Google-Anmeldung fehlgeschlagen: ${response.error}`, 'bad');
           return;
         }
-        accessToken = response.access_token || '';
-        connectionListener(true);
-        statusListener('Verbunden. Der Access Token bleibt nur im Arbeitsspeicher.', 'good');
+        rememberAccessToken(response);
+        connectionListener(Boolean(accessToken));
+        statusListener(
+          accessTokenExpiresAt
+            ? 'Verbunden. Der Access Token bleibt nur im Arbeitsspeicher und wird nach Ablauf erneut angefordert.'
+            : 'Verbunden. Der Access Token bleibt nur im Arbeitsspeicher.',
+          'good'
+        );
       }
     });
   }
-  tokenClient.requestAccessToken({ prompt: 'consent' });
+  // Existing consent is reused when possible. Google can still show account
+  // selection or another interaction if the browser session requires it.
+  tokenClient.requestAccessToken({ prompt: '' });
 }
 
 function sleep(ms) {
@@ -139,7 +195,7 @@ function retryDelay(response, attempt) {
 }
 
 async function apiAttempt(url, options = {}) {
-  if (!accessToken) throw new Error('Bitte zuerst mit Google verbinden.');
+  if (!accessTokenIsValid()) throw new Error('Bitte zuerst mit Google verbinden.');
   const headers = { ...(options.headers || {}), Authorization: `Bearer ${accessToken}` };
   if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
 
@@ -147,8 +203,7 @@ async function apiAttempt(url, options = {}) {
     const response = await fetch(url, { ...options, headers });
 
     if (response.status === 401) {
-      accessToken = '';
-      connectionListener(false);
+      clearAccessToken({ notify: true });
       throw new Error('Google-Zugriff ist abgelaufen. Bitte erneut verbinden.');
     }
 
