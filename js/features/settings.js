@@ -54,6 +54,43 @@ function status(text, kind = '') {
   el.className = `status-box${kind ? ` ${kind}` : ''}`;
 }
 
+function renderHomeGoogle({ state = 'local', error = null, connected = isConnected() } = {}) {
+  const button = $('homeGoogleConnect');
+  const label = $('homeGoogleLabel');
+  if (!button || !label) return;
+
+  let text = 'Google verbinden';
+  let title = getConfig().clientId
+    ? 'Mit Google verbinden'
+    : 'Google-Verbindung einrichten';
+
+  if (connected) {
+    text = 'Google verbunden';
+    title = getConfig().sheetId
+      ? 'Mit Google verbunden · klicken, um jetzt zu synchronisieren'
+      : 'Mit Google verbunden · PACE-Backend noch nicht eingerichtet';
+  }
+
+  if (state === 'syncing') {
+    text = 'Synchronisiere …';
+    title = 'Synchronisierung läuft';
+  } else if (state === 'pending' && connected) {
+    text = 'Sync ausstehend';
+    title = 'Lokale Änderungen warten auf Synchronisierung · klicken, um jetzt zu synchronisieren';
+  } else if (state === 'synced' && connected) {
+    text = 'Synchronisiert';
+    title = 'Mit Google Sheets synchronisiert · klicken, um jetzt zu synchronisieren';
+  } else if (state === 'error') {
+    text = connected ? 'Sync-Fehler' : 'Google verbinden';
+    title = error?.message || 'Synchronisierung fehlgeschlagen';
+  }
+
+  label.textContent = text;
+  button.title = title;
+  button.setAttribute('aria-label', title);
+  button.disabled = state === 'syncing';
+}
+
 export function setExtraSheetsProvider(provider) { extraSheetsProvider = provider || (() => ({})); }
 
 function inputConfig() {
@@ -83,6 +120,7 @@ async function fullSync() {
 export function initSettings() {
   onGoogleStatus(status);
   onSyncState(({ state, error, connected }) => {
+    renderHomeGoogle({ state, error, connected });
     const dot = $('syncDot');
     dot.className = `sync-dot${state === 'synced' ? ' synced' : state === 'error' ? ' error' : ['pending','syncing'].includes(state) ? ' pending' : ''}`;
     dot.title = state === 'synced'
@@ -135,6 +173,38 @@ export function initSettings() {
       fillConfigInputs(saved);
       connectGoogle();
     } catch (error) { status(error.message, 'bad'); }
+  });
+
+  $('homeGoogleConnect').addEventListener('click', async () => {
+    const config = getConfig();
+
+    if (!config.clientId) {
+      fillConfigInputs(config);
+      renderConnection();
+      status('Für die erste Google-Verbindung bitte einmal die OAuth Client-ID eintragen.', '');
+      openDialog('settingsDialog');
+      return;
+    }
+
+    try {
+      if (!isConnected()) {
+        connectGoogle();
+        return;
+      }
+
+      if (!config.sheetId) {
+        fillConfigInputs(config);
+        renderConnection();
+        status('Google ist verbunden. Bitte einmal das PACE-Backend einrichten.', '');
+        openDialog('settingsDialog');
+        return;
+      }
+
+      await fullSync();
+      status('Synchronisiert.', 'good');
+    } catch (error) {
+      status(error.message, 'bad');
+    }
   });
 
 
