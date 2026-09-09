@@ -78,7 +78,7 @@ function installStyles() {
   style.textContent = `
     .quick-capture-shell{position:relative;z-index:16;margin:0 0 14px}
     .quick-capture-editor-wrap{position:relative}
-    .quick-capture-textarea{display:block;width:100%;min-height:82px;max-height:48vh;resize:vertical;border:1px solid rgba(23,63,95,.2);border-radius:16px;background:rgba(255,255,255,.84);box-shadow:0 7px 22px rgba(23,63,95,.07);padding:12px 13px;color:var(--ink);font-size:16px;line-height:1.45}
+    .quick-capture-textarea{display:block;width:100%;min-height:82px;resize:vertical;border:1px solid rgba(23,63,95,.2);border-radius:16px;background:rgba(255,255,255,.84);box-shadow:0 7px 22px rgba(23,63,95,.07);padding:12px 13px;color:var(--ink);font-size:16px;line-height:1.45}
     .quick-capture-textarea::placeholder{color:#7a8e95}
     .quick-capture-suggestions{position:absolute;z-index:40;width:min(310px,calc(100% - 8px));max-height:270px;overflow:auto;border:1px solid #c7d6d9;border-radius:13px;background:#fff;box-shadow:0 14px 38px rgba(20,49,61,.2);padding:4px}
     .quick-capture-suggestion{width:100%;min-height:43px;border:0;border-radius:9px;background:#fff;color:#294d5b;padding:7px 9px;display:flex;align-items:center;gap:9px;text-align:left;cursor:pointer}
