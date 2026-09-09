@@ -17,6 +17,31 @@ Die zentrale Frage für Features ist:
 
 > Erhöht das die Wahrscheinlichkeit eines guten Tages – oder erhöht es vor allem den Druck, einen guten Tag produzieren zu müssen?
 
+## PACE als dynamisches System
+
+PACE ist nicht als Sammlung von vier unabhängigen Tagesaufgaben gedacht. Die vier Bereiche können sich gegenseitig verstärken oder schwächen.
+
+Ein nützliches Arbeitsmodell ist:
+
+- **C schafft Spielraum:** Reserve bedeutet nicht nur freie Zeit, sondern auch verfügbare Energie, Aufmerksamkeit und Entscheidungsspielraum.
+- **P stabilisiert Wirksamkeit:** Kompetenz entsteht dort, wo etwas verstanden, gelöst, erklärt oder wirksam beeinflusst werden kann.
+- **A reduziert offene Schleifen:** Echter Fortschritt verändert einen realen Zustand; bloße Aktivität kann dagegen zusätzliche offene Enden erzeugen.
+- **E braucht Verfügbarkeit:** Resonanz lässt sich nicht herstellen. Sie wird wahrscheinlicher, wenn Aufmerksamkeit nicht vollständig von Problemlösung, Antizipation oder Selbstregulation gebunden ist.
+
+Daraus ergibt sich auch eine mögliche **Anti-PACE-Spirale** unter Belastung:
+
+```text
+Blockade → P↓
+→ mehr Lösungsversuche → C↓
+→ andere Dinge bleiben offen → A↓
+→ Aufmerksamkeit ist vollständig gebunden → E kaum möglich
+→ die nächste kleine Reibung kann unverhältnismäßig viel auslösen
+```
+
+Die wichtige Konsequenz für das Produktdesign ist: PACE soll eine solche Spirale nicht durch zusätzlichen Optimierungsdruck verstärken. In belasteten Situationen kann deshalb **Verkleinern, Parken, Reserve schützen oder eine Schleife bewusst verlassen** hilfreicher sein als noch eine weitere P/A/C/E-Aktivität.
+
+Dieses Modell ist eine praktische Heuristik, keine klinische Theorie und keine behauptete lineare Kausalität. Es beschreibt, warum dieselbe objektive Anforderung an unterschiedlichen Tagen sehr verschieden wirken kann und warum kleine Reibungen besonders dann relevant werden, wenn bereits wenig Reserve vorhanden ist.
+
 ## Modularer Aufbau
 
 PACE bleibt eine Zero-Build-PWA aus nativen ES-Modulen. Die Grenzen sind bewusst klein gehalten:
