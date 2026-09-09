@@ -12,7 +12,7 @@ test('finds a lower-case quick capture command at the end of a line', () => {
   assert.deepEqual(findQuickCaptureCommand(text, text.length), {
     lineStart: 0,
     lineEnd: text.length,
-    triggerStart: 16,
+    triggerStart: 15,
     caret: text.length,
     query: 'e',
     payload: '10:13 Brötchen'
