@@ -13,25 +13,44 @@ export function findQuickCaptureCommand(text, caretPosition) {
   let lineEnd = source.indexOf('\n', caret);
   if (lineEnd < 0) lineEnd = source.length;
 
-  // Only treat the trigger as a command while the caret is at the effective
-  // end of the line. This prevents a command in the middle of existing text
-  // from accidentally consuming the whole line.
+  // The command itself still has to be on the current line. Its payload,
+  // however, deliberately reaches all the way back to the start of the
+  // textarea so a multi-line note can be dispatched in one action.
   if (source.slice(caret, lineEnd).trim()) return null;
 
   const beforeCaret = source.slice(lineStart, caret);
   const relativeTrigger = beforeCaret.lastIndexOf(',,');
   if (relativeTrigger < 0) return null;
 
+  const triggerStart = lineStart + relativeTrigger;
   const query = normalize(beforeCaret.slice(relativeTrigger + 2));
-  const payload = source.slice(lineStart, lineStart + relativeTrigger).trim();
+  const payload = source.slice(0, triggerStart).trim();
 
   return {
+    mode: 'prefix',
     lineStart,
     lineEnd,
-    triggerStart: lineStart + relativeTrigger,
+    triggerStart,
     caret,
     query,
     payload
+  };
+}
+
+export function createSelectionQuickCaptureCommand(text, selectionStart, selectionEnd) {
+  const source = String(text ?? '');
+  const numericStart = Number(selectionStart);
+  const numericEnd = Number(selectionEnd);
+  const start = Number.isFinite(numericStart) ? Math.max(0, Math.min(source.length, numericStart)) : 0;
+  const end = Number.isFinite(numericEnd) ? Math.max(start, Math.min(source.length, numericEnd)) : start;
+  if (start === end) return null;
+
+  return {
+    mode: 'selection',
+    selectionStart: start,
+    selectionEnd: end,
+    query: '',
+    payload: source.slice(start, end)
   };
 }
 
@@ -68,18 +87,25 @@ export function quickCaptureMatches(fields = [], query = '', limit = 8) {
     .map(item => item.field);
 }
 
-export function removeQuickCaptureLine(text, command) {
+export function removeQuickCapturePrefix(text, command) {
   const source = String(text ?? '');
   if (!command) return { text: source, cursor: source.length };
 
-  let start = Math.max(0, Number(command.lineStart) || 0);
-  let end = Math.max(start, Number(command.lineEnd) || start);
+  let end = Math.max(0, Number(command.lineEnd) || 0);
+  if (end < source.length && source[end] === '\n') end += 1;
 
-  if (end < source.length && source[end] === '\n') {
-    end += 1;
-  } else if (start > 0 && source[start - 1] === '\n') {
-    start -= 1;
-  }
+  return {
+    text: source.slice(end),
+    cursor: 0
+  };
+}
+
+export function removeQuickCaptureSelection(text, command) {
+  const source = String(text ?? '');
+  if (!command) return { text: source, cursor: source.length };
+
+  const start = Math.max(0, Math.min(source.length, Number(command.selectionStart) || 0));
+  const end = Math.max(start, Math.min(source.length, Number(command.selectionEnd) || start));
 
   return {
     text: source.slice(0, start) + source.slice(end),
