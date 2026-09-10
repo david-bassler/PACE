@@ -168,6 +168,38 @@ test('tracking date backfill leaves an existing today row untouched', () => {
   assert.deepEqual(fill.missingDates, []);
 });
 
+test('tracking date backfill accepts matching day-of-month placeholders', () => {
+  const fill = planTrackingDateBackfill(
+    [
+      ['ID'],
+      [trackingDateSerial('2026-08-07')],
+      ['8'],
+      [9],
+      ['10']
+    ],
+    '2026-08-10',
+    { afterRow: 1 }
+  );
+
+  assert.equal(fill.dateRow, 5);
+  assert.deepEqual(fill.missingDates, [
+    { row: 3, dateKey: '2026-08-08', serial: trackingDateSerial('2026-08-08') },
+    { row: 4, dateKey: '2026-08-09', serial: trackingDateSerial('2026-08-09') },
+    { row: 5, dateKey: '2026-08-10', serial: trackingDateSerial('2026-08-10') }
+  ]);
+});
+
+test('tracking date backfill still rejects a mismatching day placeholder', () => {
+  assert.throws(
+    () => planTrackingDateBackfill(
+      [['ID'], [trackingDateSerial('2026-09-05')], ['9']],
+      '2026-09-06',
+      { afterRow: 1 }
+    ),
+    /bereits Inhalt/
+  );
+});
+
 test('tracking date backfill refuses to overwrite content in column A', () => {
   assert.throws(
     () => planTrackingDateBackfill(
