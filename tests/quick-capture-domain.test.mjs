@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   createSelectionQuickCaptureCommand,
   findQuickCaptureCommand,
+  insertQuickCaptureText,
   quickCaptureMatches,
   removeQuickCapturePrefix,
   removeQuickCaptureSelection
@@ -78,4 +79,29 @@ test('removes only the selected text after dispatch', () => {
     text: 'vorher  nachher',
     cursor: start
   });
+});
+
+test('inserts toolbar text exactly at the current caret', () => {
+  assert.deepEqual(
+    insertQuickCaptureText('Kaffee trinken', '06:47 ', 7),
+    { text: 'Kaffee 06:47 trinken', cursor: 13 }
+  );
+});
+
+test('inserts toolbar text at the beginning of an empty editor', () => {
+  assert.deepEqual(
+    insertQuickCaptureText('', '06:47 '),
+    { text: '06:47 ', cursor: 6 }
+  );
+});
+
+test('without an active caret toolbar text starts a new line', () => {
+  assert.deepEqual(
+    insertQuickCaptureText('Erste Zeile', '06:47 '),
+    { text: 'Erste Zeile\n06:47 ', cursor: 18 }
+  );
+  assert.deepEqual(
+    insertQuickCaptureText('Erste Zeile\n', '06:47 '),
+    { text: 'Erste Zeile\n06:47 ', cursor: 18 }
+  );
 });
