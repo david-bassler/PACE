@@ -191,7 +191,7 @@ Beim Speichern liest PACE die ausgewählte Tracking-Datei direkt:
 5. Vorhandenen Zellinhalt lesen und je nach Schreibmodus ersetzen oder mit Zeilenumbruch ergänzen.
 6. Datumsauffüllung und Zielzellen gemeinsam über einen atomaren Google-Sheets-Batch aktualisieren.
 
-Für neu ergänzte Datumszellen übernimmt PACE das Zellformat des letzten vorhandenen Datums. PACE schreibt bewusst **nicht**, wenn die ID-Zeile oder eine konfigurierte Spalten-ID fehlt bzw. mehrdeutig ist, das letzte vorhandene Datum mehrfach vorkommt oder eine zum Auffüllen benötigte Zelle in Spalte A bereits Inhalt bzw. eine Formel enthält. Doppelte IDs werden ebenfalls blockiert; es gibt keine Ersatzspalte. Formelzellen werden nicht überschrieben.
+Für neu ergänzte Datumszellen übernimmt PACE das Zellformat des letzten vorhandenen Datums. Bereits vorbereitete reine Tageszahlen in Spalte A (z. B. `8`, `9`, `10`) gelten als Platzhalter und dürfen durch das vollständige Datum ersetzt werden, **wenn die Zahl genau zum einzutragenden Kalendertag passt**. PACE schreibt weiterhin bewusst **nicht**, wenn die ID-Zeile oder eine konfigurierte Spalten-ID fehlt bzw. mehrdeutig ist, das letzte vorhandene Datum mehrfach vorkommt oder eine zum Auffüllen benötigte Zelle in Spalte A anderen Inhalt bzw. eine Formel enthält. Doppelte IDs werden ebenfalls blockiert; es gibt keine Ersatzspalte. Formelzellen werden nicht überschrieben.
 
 ## Bestehende private TSV importieren
 
