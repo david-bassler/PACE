@@ -3,6 +3,7 @@ import { insertQuickCaptureText } from './quick-capture-domain.js';
 let textarea = null;
 let toolbar = null;
 let clockButton = null;
+let semicolonButton = null;
 let capturedCaret = null;
 
 function formatCurrentTime(now = new Date()) {
@@ -66,6 +67,12 @@ function installStyles() {
       stroke-linecap:round;
       stroke-linejoin:round;
     }
+    .quick-capture-toolbar-glyph{
+      font-size:1.35rem;
+      line-height:1;
+      font-weight:650;
+      transform:translateY(-1px);
+    }
   `;
   document.head.appendChild(style);
 }
@@ -77,12 +84,12 @@ function captureCaret() {
     : null;
 }
 
-function insertTime() {
+function insertText(text) {
   if (!textarea) return;
 
   const result = insertQuickCaptureText(
     textarea.value,
-    formatCurrentTime(),
+    text,
     capturedCaret
   );
 
@@ -91,6 +98,14 @@ function insertTime() {
   textarea.setSelectionRange(result.cursor, result.cursor);
   capturedCaret = result.cursor;
   textarea.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function insertTime() {
+  insertText(formatCurrentTime());
+}
+
+function insertSemicolon() {
+  insertText(';');
 }
 
 function createToolbar() {
@@ -110,11 +125,23 @@ function createToolbar() {
   clockButton.title = 'Aktuelle Uhrzeit einfügen';
   clockButton.setAttribute('aria-label', 'Aktuelle Uhrzeit einfügen');
   clockButton.appendChild(createClockIcon());
-
   clockButton.addEventListener('pointerdown', captureCaret);
   clockButton.addEventListener('click', insertTime);
 
-  toolbar.appendChild(clockButton);
+  semicolonButton = document.createElement('button');
+  semicolonButton.type = 'button';
+  semicolonButton.className = 'quick-capture-toolbar-button';
+  semicolonButton.title = 'Semikolon einfügen';
+  semicolonButton.setAttribute('aria-label', 'Semikolon einfügen');
+  const semicolon = document.createElement('span');
+  semicolon.className = 'quick-capture-toolbar-glyph';
+  semicolon.setAttribute('aria-hidden', 'true');
+  semicolon.textContent = ';';
+  semicolonButton.appendChild(semicolon);
+  semicolonButton.addEventListener('pointerdown', captureCaret);
+  semicolonButton.addEventListener('click', insertSemicolon);
+
+  toolbar.append(clockButton, semicolonButton);
   shell.insertBefore(toolbar, editorWrap);
   return true;
 }
