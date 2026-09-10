@@ -32,6 +32,7 @@ async function boot() {
     share,
     tracking,
     quickCapture,
+    quickCaptureToolbar,
     sunTimes,
     breath,
     holding,
@@ -47,6 +48,7 @@ async function boot() {
     import('./features/share.js'),
     import('./features/tracking.js'),
     import('./features/quick-capture.js'),
+    import('./features/quick-capture-toolbar.js'),
     import('./features/sun-times.js'),
     import('./features/breath.js'),
     import('./features/holding.js'),
@@ -62,6 +64,7 @@ async function boot() {
   share.initShareFeature();
   tracking.initTrackingFeature();
   quickCapture.initQuickCaptureFeature();
+  quickCaptureToolbar.initQuickCaptureToolbarFeature();
   sunTimes.initSunTimesFeature();
   breath.initBreathFeature();
   holding.initHoldingFeature();
