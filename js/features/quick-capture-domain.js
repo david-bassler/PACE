@@ -54,6 +54,31 @@ export function createSelectionQuickCaptureCommand(text, selectionStart, selecti
   };
 }
 
+export function insertQuickCaptureText(text, insertion, caretPosition = null) {
+  const source = String(text ?? '');
+  const value = String(insertion ?? '');
+  const numericCaret = Number(caretPosition);
+  const hasCaret = caretPosition !== null && caretPosition !== undefined && Number.isFinite(numericCaret);
+
+  let position;
+  let prefix = '';
+
+  if (hasCaret) {
+    position = Math.max(0, Math.min(source.length, numericCaret));
+  } else if (!source) {
+    position = 0;
+  } else {
+    position = source.length;
+    if (!source.endsWith('\n')) prefix = '\n';
+  }
+
+  const inserted = `${prefix}${value}`;
+  return {
+    text: source.slice(0, position) + inserted + source.slice(position),
+    cursor: position + inserted.length
+  };
+}
+
 function matchScore(title, query) {
   if (!query) return 4;
   const normalized = normalize(title);
