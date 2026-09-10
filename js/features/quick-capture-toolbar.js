@@ -36,6 +36,7 @@ function installStyles() {
     .quick-capture-toolbar{
       min-height:46px;
       display:flex;
+      flex-wrap:wrap;
       align-items:center;
       gap:7px;
       margin:0 0 6px;
@@ -73,6 +74,11 @@ function installStyles() {
       font-weight:650;
       transform:translateY(-1px);
     }
+    .quick-capture-toolbar-digit{
+      font-size:1rem;
+      font-weight:720;
+      line-height:1;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -108,6 +114,24 @@ function insertSemicolon() {
   insertText(';');
 }
 
+function createDigitButton(digit) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'quick-capture-toolbar-button';
+  button.title = `${digit} einfügen`;
+  button.setAttribute('aria-label', `${digit} einfügen`);
+
+  const label = document.createElement('span');
+  label.className = 'quick-capture-toolbar-digit';
+  label.setAttribute('aria-hidden', 'true');
+  label.textContent = digit;
+  button.appendChild(label);
+
+  button.addEventListener('pointerdown', captureCaret);
+  button.addEventListener('click', () => insertText(digit));
+  return button;
+}
+
 function createToolbar() {
   textarea = document.querySelector('.quick-capture-textarea');
   const shell = document.querySelector('.quick-capture-shell');
@@ -141,7 +165,8 @@ function createToolbar() {
   semicolonButton.addEventListener('pointerdown', captureCaret);
   semicolonButton.addEventListener('click', insertSemicolon);
 
-  toolbar.append(clockButton, semicolonButton);
+  const digitButtons = [...'0123456789'].map(createDigitButton);
+  toolbar.append(clockButton, semicolonButton, ...digitButtons);
   shell.insertBefore(toolbar, editorWrap);
   return true;
 }
