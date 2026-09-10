@@ -1,4 +1,4 @@
-import { flushStorage, loadJSON, nowIso, saveJSON, uid } from '../core/storage.js';
+import { flushStorage, loadJSON, loadValue, nowIso, saveJSON, saveValue, uid } from '../core/storage.js';
 import { announce } from '../core/ui.js';
 import { markDirty, registerSync } from '../core/sync.js';
 import { buildTrackingWritePlan, getTrackingConfig } from './tracking.js';
@@ -12,6 +12,7 @@ import {
 } from './quick-capture-domain.js';
 
 const QUEUE_KEY = 'pace-quick-capture-queue-v1';
+const DRAFT_KEY = 'pace-quick-capture-draft-v1';
 const MAX_SUGGESTIONS = 8;
 
 let queue = loadJSON(QUEUE_KEY, []);
@@ -30,6 +31,11 @@ let rememberedSelectionTimer = null;
 
 function saveQueue() {
   saveJSON(QUEUE_KEY, queue);
+}
+
+function saveDraft() {
+  if (!textarea) return;
+  saveValue(DRAFT_KEY, textarea.value);
 }
 
 function pendingLabel() {
@@ -141,6 +147,7 @@ function createEditor() {
   textarea.setAttribute('aria-autocomplete', 'list');
   textarea.setAttribute('aria-expanded', 'false');
   textarea.autocomplete = 'off';
+  textarea.value = loadValue(DRAFT_KEY, '') || '';
 
   suggestions = document.createElement('div');
   suggestions.className = 'quick-capture-suggestions';
@@ -289,6 +296,8 @@ async function chooseField(field) {
     textarea.setSelectionRange(removal.cursor, removal.cursor);
   }
 
+  saveDraft();
+  await flushStorage();
   hideSuggestions();
   clearRememberedSelection();
 
@@ -413,7 +422,11 @@ function renderSuggestions() {
 }
 
 function handleInput() {
-  if (activateRememberedSelectionCommand()) return;
+  if (activateRememberedSelectionCommand()) {
+    saveDraft();
+    return;
+  }
+  saveDraft();
   renderSuggestions();
 }
 
