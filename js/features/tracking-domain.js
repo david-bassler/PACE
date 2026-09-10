@@ -138,6 +138,14 @@ function nextDateKey(dateKey) {
   return new Date(ms + 86400000).toISOString().slice(0, 10);
 }
 
+function matchingDayPlaceholder(value, dateKey) {
+  const raw = normalizedCell(value);
+  if (!/^\d{1,2}$/.test(raw)) return false;
+
+  const day = Number(dateKey.slice(8, 10));
+  return Number(raw) === day;
+}
+
 export function planTrackingDateBackfill(firstColumnValues = [], dateKey, { afterRow = 0 } = {}) {
   if (!Number.isFinite(utcMsForDateKey(dateKey))) {
     throw new Error(`Ungültiges Zieldatum: ${dateKey}`);
@@ -185,7 +193,7 @@ export function planTrackingDateBackfill(firstColumnValues = [], dateKey, { afte
 
   while (nextKey && nextKey <= dateKey) {
     const existing = normalizedCell(cellValue(firstColumnValues[row - 1]));
-    if (existing) {
+    if (existing && !matchingDayPlaceholder(existing, nextKey)) {
       throw new Error(`PACE müsste A${row} für ${nextKey} verwenden, dort steht aber bereits Inhalt. Es wurde nichts ergänzt.`);
     }
 
