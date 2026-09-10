@@ -79,6 +79,24 @@ function installStyles() {
       font-weight:720;
       line-height:1;
     }
+    @media (max-width:520px){
+      .quick-capture-toolbar{
+        min-height:40px;
+        display:grid;
+        grid-template-columns:repeat(12,minmax(0,1fr));
+        gap:3px;
+        padding:3px 4px;
+      }
+      .quick-capture-toolbar-button{
+        width:100%;
+        min-width:0;
+        height:32px;
+        border-radius:8px;
+      }
+      .quick-capture-toolbar-button svg{width:17px;height:17px}
+      .quick-capture-toolbar-glyph{font-size:1.08rem}
+      .quick-capture-toolbar-digit{font-size:.88rem}
+    }
   `;
   document.head.appendChild(style);
 }
