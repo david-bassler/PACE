@@ -18,9 +18,21 @@ let cache = new Map();
 let db = null;
 let localStorageFallback = false;
 let writeQueue = Promise.resolve();
+let storageErrors = [];
 
 function cloneFallback(value) {
   return typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value));
+}
+
+function asError(error, fallback = 'Lokales Speichern fehlgeschlagen.') {
+  if (error instanceof Error) return error;
+  return new Error(String(error || fallback));
+}
+
+function rememberStorageError(error) {
+  const normalized = asError(error);
+  storageErrors.push(normalized);
+  console.error('PACE: local storage write failed.', normalized);
 }
 
 function transactionDone(transaction) {
@@ -133,24 +145,36 @@ async function initializeStorage() {
 
 function queueWrite(operation) {
   if (localStorageFallback) {
-    try { operation(null); } catch (error) { console.error('PACE: local storage write failed.', error); }
+    try {
+      const result = operation(null);
+      if (result && typeof result.catch === 'function') result.catch(rememberStorageError);
+    } catch (error) {
+      rememberStorageError(error);
+    }
     return;
   }
 
-  writeQueue = writeQueue
-    .then(async () => {
+  // Jeder Schreibvorgang darf den folgenden nicht blockieren. Fehler werden
+  // aber separat gemerkt, damit flushStorage() sie an kritische Aufrufer wie
+  // die Schnellerfassung weitergeben kann. So darf Eingabetext erst
+  // verschwinden, wenn die lokale Sicherung wirklich bestätigt ist.
+  writeQueue = writeQueue.then(async () => {
+    try {
       if (!db) throw new Error('IndexedDB is not initialized.');
       await operation(db);
-    })
-    .catch(error => {
-      console.error('PACE: IndexedDB write failed.', error);
-    });
+    } catch (error) {
+      rememberStorageError(error);
+    }
+  });
 }
 
 function persistValue(key, value) {
   if (localStorageFallback) {
-    try { localStorage.setItem(key, value); }
-    catch (error) { console.error('PACE: localStorage fallback write failed.', error); }
+    try {
+      localStorage.setItem(key, value);
+    } catch (error) {
+      rememberStorageError(error);
+    }
     return;
   }
 
@@ -177,7 +201,11 @@ export function removeValue(key) {
   cache.delete(key);
 
   if (localStorageFallback) {
-    try { localStorage.removeItem(key); } catch {}
+    try {
+      localStorage.removeItem(key);
+    } catch (error) {
+      rememberStorageError(error);
+    }
     return;
   }
 
@@ -204,6 +232,12 @@ export function saveJSON(key, value) {
 
 export async function flushStorage() {
   await writeQueue;
+  if (!storageErrors.length) return;
+
+  const errors = storageErrors;
+  storageErrors = [];
+  const detail = errors[0]?.message ? ` ${errors[0].message}` : '';
+  throw new Error(`Lokales Speichern konnte nicht bestätigt werden. Der Eingabetext bleibt erhalten.${detail}`);
 }
 
 export function dateKey(date = new Date()) {
