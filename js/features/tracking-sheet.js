@@ -22,7 +22,9 @@ import {
   journalEventIds,
   journalEventToRow,
   journalTargetKey,
+  journalValueHash,
   noteCoversEvents,
+  noteMatchesMaterializedValue,
   operationItemId,
   parsePaceNote,
   replayJournalEvents,
@@ -176,7 +178,13 @@ async function ensureJournalSheet(spreadsheetId, metadata) {
   if (!existing.length) {
     await batchUpdateSpreadsheet(spreadsheetId, [{
       updateCells: {
-        range: cellGridRange(properties.sheetId, 1, 1),
+        range: {
+          sheetId: properties.sheetId,
+          startRowIndex: 0,
+          endRowIndex: 1,
+          startColumnIndex: 0,
+          endColumnIndex: JOURNAL_HEADERS.length
+        },
         rows: [{ values: JOURNAL_HEADERS.map(value => ({ userEnteredValue: { stringValue: value } })) }],
         fields: 'userEnteredValue'
       }
@@ -257,7 +265,7 @@ function targetCellState(cells, target) {
 async function resolveTargets(events, metadata, spreadsheetId) {
   const grouped = groupJournalEvents(events);
   const targetEvents = [...grouped.entries()].map(([key, items]) => ({ key, items, sample: items[0] }));
-  if (!targetEvents.length) return { targets: new Map(), backfillRequests: [] };
+  if (!targetEvents.length) return { targets: new Map(), backfillRequests: [], filledDateCount: 0 };
 
   const sheetByTitle = new Map(
     (metadata.sheets || [])
@@ -319,13 +327,11 @@ async function resolveTargets(events, metadata, spreadsheetId) {
   });
 
   const formulaRanges = [];
-  const chunkRefs = [];
   for (const tab of tabs) {
     for (const chunk of tabState.get(tab).chunks) {
       const first = chunk.missingDates[0];
       const last = chunk.missingDates.at(-1);
       formulaRanges.push(sheetRange(tab, `A${first.row}:A${last.row}`));
-      chunkRefs.push({ tab, chunk });
     }
   }
   if (formulaRanges.length) {
@@ -340,12 +346,14 @@ async function resolveTargets(events, metadata, spreadsheetId) {
   }
 
   const backfillRequests = [];
+  let filledDateCount = 0;
   for (const tab of tabs) {
     const properties = sheetByTitle.get(tab);
     let rowCount = Number(properties.gridProperties?.rowCount || 0);
     for (const chunk of tabState.get(tab).chunks) {
       const first = chunk.missingDates[0];
       const last = chunk.missingDates.at(-1);
+      filledDateCount += chunk.missingDates.length;
       if (last.row > rowCount) {
         backfillRequests.push({
           appendDimension: { sheetId: properties.sheetId, dimension: 'ROWS', length: last.row - rowCount }
@@ -400,7 +408,7 @@ async function resolveTargets(events, metadata, spreadsheetId) {
     });
   }
 
-  return { targets, backfillRequests };
+  return { targets, backfillRequests, filledDateCount };
 }
 
 function rebaseEvent(target, currentValue, existingEvents) {
@@ -423,7 +431,7 @@ function rebaseEvent(target, currentValue, existingEvents) {
 }
 
 function prepareMaterialization(target, events, cell) {
-  const { userNote, meta } = parsePaceNote(cell.note);
+  const { userNote } = parsePaceNote(cell.note);
   const expected = replayJournalEvents(events, applyTrackingWriteMode);
   return {
     expected,
@@ -431,7 +439,7 @@ function prepareMaterialization(target, events, cell) {
       version: 2,
       targetKey: target.key,
       appliedEventIds: journalEventIds(events),
-      materializedValue: expected
+      materializedHash: journalValueHash(expected)
     })
   };
 }
@@ -456,9 +464,7 @@ async function verifyMaterialized(spreadsheetId, targets, expectedByKey) {
   for (const target of targets) {
     const cell = targetCellState(cells, target);
     const meta = parsePaceNote(cell.note).meta;
-    if (!meta || String(meta.materializedValue ?? '') !== String(expectedByKey.get(target.key) ?? '')) {
-      noteMismatches.push(target);
-    }
+    if (!meta || !noteMatchesMaterializedValue(meta, expectedByKey.get(target.key))) noteMismatches.push(target);
   }
   if (noteMismatches.length) {
     throw new Error('Der Zellwert wurde geschrieben, aber die Integritätsmarkierung konnte nicht bestätigt werden. Die lokale Operation bleibt erhalten.');
@@ -567,19 +573,35 @@ async function writeTrackingPlanLocked(plan, { now = new Date(), operationId = '
     throw new Error('Das Remote-Integritätsjournal hat die Operation nicht bestätigt. Die lokale Kopie bleibt erhalten.');
   }
 
-  const relevantEvents = journalEvents.filter(event => currentTargetKeys.includes(journalTargetKey(event)));
-  const finalResolved = await resolveTargets(relevantEvents, metadata, config.trackingSheetId);
+  let relevantEvents = journalEvents.filter(event => currentTargetKeys.includes(journalTargetKey(event)));
+  let finalResolved = await resolveTargets(relevantEvents, metadata, config.trackingSheetId);
   if (finalResolved.backfillRequests.length) {
     await batchUpdateSpreadsheet(config.trackingSheetId, finalResolved.backfillRequests);
   }
-  await materializeTargets(config.trackingSheetId, relevantEvents, finalResolved.targets, currentTargetKeys);
+
+  // Zwei kurze Konvergenzrunden fangen den häufigsten Mehrgeräte-Race ab: Falls
+  // zwischen Journal-Read und Materialisierung auf einem zweiten Gerät noch ein
+  // Event angehängt wurde, wird es direkt in denselben Zellstand aufgenommen.
+  for (let round = 0; round < 3; round += 1) {
+    await materializeTargets(config.trackingSheetId, relevantEvents, finalResolved.targets, currentTargetKeys);
+    const latest = await readJournal(config.trackingSheetId);
+    const latestRelevant = latest.filter(event => currentTargetKeys.includes(journalTargetKey(event)));
+    const beforeSignature = journalEventIds(relevantEvents).join('\u001f');
+    const afterSignature = journalEventIds(latestRelevant).join('\u001f');
+    if (beforeSignature === afterSignature) break;
+    relevantEvents = latestRelevant;
+    finalResolved = await resolveTargets(relevantEvents, metadata, config.trackingSheetId);
+    if (finalResolved.backfillRequests.length) {
+      await batchUpdateSpreadsheet(config.trackingSheetId, finalResolved.backfillRequests);
+    }
+  }
 
   return {
     dateKey: targetDate,
     timeZone,
     fieldCount: plan.length,
     cellCount: currentTargetKeys.length,
-    filledDateCount: resolved.backfillRequests.length ? 1 : 0,
+    filledDateCount: resolved.filledDateCount,
     operationId: stableOperationId,
     results: candidates.map(event => ({
       fieldId: event.fieldId,
@@ -632,7 +654,7 @@ async function repairTrackingJournalLocked() {
 
     if (shouldRebaseExternalEdit({ currentValue: cell.value, noteMeta: parsed.meta, existingEvents: targetEvents })) {
       rebases.push(rebaseEvent(target, cell.value, targetEvents));
-    } else if (String(cell.value) !== String(parsed.meta.materializedValue ?? '') && !noteCoversEvents(parsed.meta, targetEvents)) {
+    } else if (!noteMatchesMaterializedValue(parsed.meta, cell.value) && !noteCoversEvents(parsed.meta, targetEvents)) {
       // Unvollständig materialisierte Remote-Ereignisse werden unten aus dem Journal neu aufgebaut.
     }
   }
