@@ -112,6 +112,30 @@ export function replayJournalEvents(events = [], applyWriteMode) {
   return value;
 }
 
+function journalEventFingerprint(event) {
+  return [
+    event.eventId,
+    event.operationId,
+    event.createdAt,
+    event.eventType || 'item',
+    event.targetDate,
+    event.sheetTab,
+    event.columnId,
+    event.fieldId,
+    event.title,
+    event.writeMode || 'append_newline',
+    event.value,
+    event.baselineValue,
+    event.source
+  ].map(text).join('\u001f');
+}
+
+export function journalEventsHash(events = []) {
+  return journalValueHash(
+    dedupeJournalEvents(events).map(journalEventFingerprint).join('\u001e')
+  );
+}
+
 export function parsePaceNote(note = '') {
   const raw = text(note);
   const start = raw.indexOf(NOTE_START);
@@ -154,6 +178,14 @@ export function noteReferencesUnknownEvents(meta, events = []) {
   return meta.appliedEventIds.map(text).some(id => id && !known.has(id));
 }
 
+export function noteMatchesJournalEvents(meta, events = []) {
+  if (!meta?.appliedEventsHash || !Array.isArray(meta.appliedEventIds)) return true;
+  const applied = new Set(meta.appliedEventIds.map(text));
+  const previouslyApplied = dedupeJournalEvents(events)
+    .filter(event => applied.has(text(event.eventId)));
+  return text(meta.appliedEventsHash) === journalEventsHash(previouslyApplied);
+}
+
 export function noteMatchesMaterializedValue(meta, currentValue) {
   if (!meta) return false;
   if (meta.materializedHash) return text(meta.materializedHash) === journalValueHash(currentValue);
@@ -172,6 +204,13 @@ export function shouldRebaseExternalEdit({ currentValue, noteMeta, existingEvent
   // darf PACE die sichtbare Zelle keinesfalls aus dem verkürzten Journal neu bauen.
   if (noteReferencesUnknownEvents(noteMeta, existingEvents)) {
     throw new Error('Die Tracking-Zelle verweist auf ein Remote-Ereignis, das im Integritätsjournal fehlt. PACE überschreibt die Zelle vorsichtshalber nicht.');
+  }
+
+  // Ab v2.1 enthält die Zellnotiz zusätzlich einen Hash über Inhalt und Reihenfolge
+  // aller zum damaligen Zeitpunkt materialisierten Journal-Ereignisse. Damit wird
+  // nicht nur Löschen, sondern auch nachträgliches Ändern oder Umsortieren erkannt.
+  if (!noteMatchesJournalEvents(noteMeta, existingEvents)) {
+    throw new Error('Bereits materialisierte Ereignisse im Integritätsjournal wurden verändert oder umsortiert. PACE überschreibt die Tracking-Zelle vorsichtshalber nicht.');
   }
 
   const covers = noteCoversEvents(noteMeta, existingEvents);
