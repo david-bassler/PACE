@@ -47,6 +47,21 @@ export function reconcileCaptureJournal(journal = [], queue = [], now = Date.now
   });
 }
 
+export function removeConfirmedQueueCopies(queue = [], journal = []) {
+  const confirmedIds = new Set(
+    journal
+      .filter(entry => entry?.state === 'confirmed' && entry?.queueId)
+      .map(entry => entry.queueId)
+  );
+  const removedIds = queue
+    .filter(entry => confirmedIds.has(entry?.id))
+    .map(entry => entry.id);
+  return {
+    queue: queue.filter(entry => !confirmedIds.has(entry?.id)),
+    removedIds
+  };
+}
+
 export function needsRecovery(entry, now = Date.now(), graceMs = 3500) {
   if (!entry || entry.state !== 'captured') return false;
   const created = new Date(entry.createdAt).getTime();
