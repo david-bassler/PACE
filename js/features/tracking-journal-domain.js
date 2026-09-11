@@ -158,8 +158,20 @@ export function noteMatchesMaterializedValue(meta, currentValue) {
 }
 
 export function shouldRebaseExternalEdit({ currentValue, noteMeta, existingEvents } = {}) {
-  if (!noteMeta || !noteCoversEvents(noteMeta, existingEvents)) return false;
-  return !noteMatchesMaterializedValue(noteMeta, currentValue);
+  if (!noteMeta) return false;
+  const covers = noteCoversEvents(noteMeta, existingEvents);
+  const matchesMaterialized = noteMatchesMaterializedValue(noteMeta, currentValue);
+
+  // Wenn die Note älter als das Remote-Journal ist, ist ein unveränderter
+  // Zellwert eindeutig: PACE darf die fehlenden Journal-Events nachziehen.
+  // Weicht der Zellwert gleichzeitig ab, ist nicht unterscheidbar, ob eine
+  // manuelle Änderung oder ein ungewöhnlicher Teilzustand vorliegt. Fail closed:
+  // lieber sichtbar blockieren als einen fremden Zellinhalt überschreiben.
+  if (!covers && !matchesMaterialized) {
+    throw new Error('Die Tracking-Zelle wurde geändert, während noch nicht alle Remote-Ereignisse materialisiert waren. PACE überschreibt diesen mehrdeutigen Zustand nicht automatisch.');
+  }
+
+  return covers && !matchesMaterialized;
 }
 
 export function canRecoverMissingNote({ currentValue, existingEvents, applyWriteMode } = {}) {
