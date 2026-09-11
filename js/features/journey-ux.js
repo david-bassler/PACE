@@ -35,6 +35,12 @@ function actionHaystack(button) {
   return normalize(`${ownText} ${members}`);
 }
 
+function setVisible(element, visible, display = '') {
+  if (!element) return;
+  element.hidden = !visible;
+  element.style.display = visible ? display : 'none';
+}
+
 function installTrackingFilter() {
   const box = document.getElementById('trackingQuickActions');
   if (!box || document.querySelector('.tracking-action-filter')) return;
@@ -52,7 +58,7 @@ function installTrackingFilter() {
   const empty = document.createElement('p');
   empty.className = 'tracking-action-filter-empty';
   empty.textContent = 'Keine passende Erfassung gefunden.';
-  empty.hidden = true;
+  setVisible(empty, false);
 
   label.appendChild(input);
   box.before(label);
@@ -64,11 +70,11 @@ function installTrackingFilter() {
 
     for (const button of box.querySelectorAll('.tracking-action')) {
       const matches = !query || actionHaystack(button).includes(query);
-      button.hidden = !matches;
+      setVisible(button, matches);
       if (matches) visible += 1;
     }
 
-    empty.hidden = !query || visible > 0;
+    setVisible(empty, Boolean(query) && visible === 0);
   };
 
   input.addEventListener('input', applyFilter);
@@ -115,7 +121,7 @@ function rememberDecimals(values) {
   const next = [...loadRecentDecimals()];
   for (const rawValue of values) {
     const value = String(rawValue || '').replace('.', ',');
-    if (!/^\-?\d+,\d+$/.test(value)) continue;
+    if (!/^-?\d+,\d+$/.test(value)) continue;
     const existing = next.indexOf(value);
     if (existing >= 0) next.splice(existing, 1);
     next.unshift(value);
@@ -142,8 +148,8 @@ function installDecimalSuggestions() {
 
   const row = document.createElement('div');
   row.className = 'quick-capture-decimals';
-  row.hidden = true;
   row.setAttribute('aria-label', 'Dezimalwert-Vorschläge');
+  setVisible(row, false, 'flex');
 
   const label = document.createElement('span');
   label.className = 'quick-capture-decimals-label';
@@ -156,13 +162,13 @@ function installDecimalSuggestions() {
 
   const render = () => {
     if (textarea.selectionStart !== textarea.selectionEnd) {
-      row.hidden = true;
+      setVisible(row, false, 'flex');
       return;
     }
 
     const context = findDecimalContext(textarea.value, textarea.selectionStart);
     if (!context) {
-      row.hidden = true;
+      setVisible(row, false, 'flex');
       return;
     }
 
@@ -192,7 +198,7 @@ function installDecimalSuggestions() {
       choices.appendChild(button);
     }
 
-    row.hidden = matches.length === 0;
+    setVisible(row, matches.length > 0, 'flex');
   };
 
   const rememberCurrentText = () => rememberDecimals(extractDecimals(textarea.value));
@@ -227,7 +233,7 @@ function installStyles() {
     }
     .tracking-action-filter input:focus{outline:2px solid rgba(23,63,95,.18);outline-offset:2px}
     .tracking-action-filter-empty{margin:8px 2px 0;color:#71858d;font-size:.84rem}
-    .quick-capture-decimals{display:flex;align-items:center;gap:7px;margin:6px 3px 0;min-height:34px;flex-wrap:wrap}
+    .quick-capture-decimals{align-items:center;gap:7px;margin:6px 3px 0;min-height:34px;flex-wrap:wrap}
     .quick-capture-decimals-label{color:#6d828a;font-size:.74rem;font-weight:700}
     .quick-capture-decimal-choices{display:flex;gap:6px;flex-wrap:wrap}
     .quick-capture-decimal{
