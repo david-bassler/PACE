@@ -12,12 +12,19 @@ export function sameCapture(entry, queueEntry) {
 }
 
 export function reconcileCaptureJournal(journal = [], queue = [], now = Date.now()) {
+  const existingQueueIds = new Set(queue.map(item => item?.id).filter(Boolean));
+  const usedQueueIds = new Set(
+    journal
+      .map(entry => entry?.queueId)
+      .filter(id => id && existingQueueIds.has(id))
+  );
+
   return journal.map(raw => {
     const entry = { ...raw };
     if (entry.state === 'confirmed') return entry;
 
     if (entry.queueId) {
-      const stillQueued = queue.some(item => item?.id === entry.queueId);
+      const stillQueued = existingQueueIds.has(entry.queueId);
       if (!stillQueued && entry.state === 'queued') {
         entry.state = 'confirmed';
         entry.confirmedAt = new Date(now).toISOString();
@@ -25,8 +32,13 @@ export function reconcileCaptureJournal(journal = [], queue = [], now = Date.now
       return entry;
     }
 
-    const match = queue.find(item => sameCapture(entry, item));
+    const match = queue.find(item =>
+      item?.id &&
+      !usedQueueIds.has(item.id) &&
+      sameCapture(entry, item)
+    );
     if (match) {
+      usedQueueIds.add(match.id);
       entry.queueId = match.id;
       entry.state = 'queued';
       entry.queuedAt = new Date(now).toISOString();
