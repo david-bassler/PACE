@@ -9,7 +9,9 @@ import {
   journalEventFromRow,
   journalEventToRow,
   journalTargetKey,
+  journalValueHash,
   noteCoversEvents,
+  noteMatchesMaterializedValue,
   parsePaceNote,
   replayJournalEvents,
   shouldRebaseExternalEdit
@@ -81,20 +83,30 @@ test('PACE note preserves an existing user note', () => {
   const note = formatPaceNote('eigene Notiz', {
     version: 2,
     appliedEventIds: ['op-1:0'],
-    materializedValue: '10:13'
+    materializedHash: journalValueHash('10:13')
   });
   const parsed = parsePaceNote(note);
   assert.equal(parsed.userNote, 'eigene Notiz');
   assert.deepEqual(parsed.meta.appliedEventIds, ['op-1:0']);
+  assert.equal(noteMatchesMaterializedValue(parsed.meta, '10:13'), true);
+  assert.equal(noteMatchesMaterializedValue(parsed.meta, '10:14'), false);
+  assert.equal(note.includes('"materializedValue"'), false);
 });
 
 test('manual edit is rebased only when note covered all known remote events', () => {
   const events = [item('op-1:0', '10:13')];
-  const complete = { appliedEventIds: ['op-1:0'], materializedValue: '10:13' };
+  const complete = { appliedEventIds: ['op-1:0'], materializedHash: journalValueHash('10:13') };
   assert.equal(shouldRebaseExternalEdit({ currentValue: '10:15', noteMeta: complete, existingEvents: events }), true);
+  assert.equal(shouldRebaseExternalEdit({ currentValue: '10:13', noteMeta: complete, existingEvents: events }), false);
 
-  const incomplete = { appliedEventIds: [], materializedValue: '' };
+  const incomplete = { appliedEventIds: [], materializedHash: journalValueHash('') };
   assert.equal(shouldRebaseExternalEdit({ currentValue: '10:15', noteMeta: incomplete, existingEvents: events }), false);
+});
+
+test('legacy note materializedValue remains readable during transition', () => {
+  const meta = { appliedEventIds: ['op-1:0'], materializedValue: '10:13' };
+  assert.equal(noteMatchesMaterializedValue(meta, '10:13'), true);
+  assert.equal(noteMatchesMaterializedValue(meta, '10:14'), false);
 });
 
 test('missing note is only auto-recoverable from baseline or fully replayed value', () => {
