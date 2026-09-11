@@ -8,9 +8,11 @@ import {
   formatPaceNote,
   journalEventFromRow,
   journalEventToRow,
+  journalEventsHash,
   journalTargetKey,
   journalValueHash,
   noteCoversEvents,
+  noteMatchesJournalEvents,
   noteMatchesMaterializedValue,
   noteReferencesUnknownEvents,
   parsePaceNote,
@@ -81,14 +83,17 @@ test('a rebase preserves a manual change before later events', () => {
 });
 
 test('PACE note preserves an existing user note', () => {
+  const events = [item('op-1:0', '10:13')];
   const note = formatPaceNote('eigene Notiz', {
     version: 2,
     appliedEventIds: ['op-1:0'],
+    appliedEventsHash: journalEventsHash(events),
     materializedHash: journalValueHash('10:13')
   });
   const parsed = parsePaceNote(note);
   assert.equal(parsed.userNote, 'eigene Notiz');
   assert.deepEqual(parsed.meta.appliedEventIds, ['op-1:0']);
+  assert.equal(noteMatchesJournalEvents(parsed.meta, events), true);
   assert.equal(noteMatchesMaterializedValue(parsed.meta, '10:13'), true);
   assert.equal(noteMatchesMaterializedValue(parsed.meta, '10:14'), false);
   assert.equal(note.includes('"materializedValue"'), false);
@@ -96,15 +101,21 @@ test('PACE note preserves an existing user note', () => {
 
 test('manual edit is rebased only when note covered all known remote events', () => {
   const events = [item('op-1:0', '10:13')];
-  const complete = { appliedEventIds: ['op-1:0'], materializedHash: journalValueHash('10:13') };
+  const complete = {
+    appliedEventIds: ['op-1:0'],
+    appliedEventsHash: journalEventsHash(events),
+    materializedHash: journalValueHash('10:13')
+  };
   assert.equal(shouldRebaseExternalEdit({ currentValue: '10:15', noteMeta: complete, existingEvents: events }), true);
   assert.equal(shouldRebaseExternalEdit({ currentValue: '10:13', noteMeta: complete, existingEvents: events }), false);
 });
 
 test('stale note plus changed cell fails closed instead of overwriting an ambiguous state', () => {
   const events = [item('op-1:0', '10:13'), item('op-2:0', '10:45')];
+  const staleEvents = [events[0]];
   const stale = {
     appliedEventIds: ['op-1:0'],
+    appliedEventsHash: journalEventsHash(staleEvents),
     materializedHash: journalValueHash('10:13')
   };
 
@@ -119,6 +130,7 @@ test('a note referencing a missing journal event fails closed', () => {
   const remaining = [item('op-2:0', '11:02')];
   const noteMeta = {
     appliedEventIds: ['op-1:0', 'op-2:0'],
+    appliedEventsHash: journalEventsHash([item('op-1:0', '10:13'), ...remaining]),
     materializedHash: journalValueHash('10:13\n11:02')
   };
 
@@ -133,10 +145,52 @@ test('a note referencing a missing journal event fails closed', () => {
   );
 });
 
+test('mutating a previously materialized journal event fails closed', () => {
+  const original = [item('op-1:0', '10:13'), item('op-2:0', '11:02')];
+  const noteMeta = {
+    appliedEventIds: original.map(event => event.eventId),
+    appliedEventsHash: journalEventsHash(original),
+    materializedHash: journalValueHash('10:13\n11:02')
+  };
+  const mutated = [original[0], { ...original[1], value: '99:99' }];
+
+  assert.equal(noteMatchesJournalEvents(noteMeta, original), true);
+  assert.equal(noteMatchesJournalEvents(noteMeta, mutated), false);
+  assert.throws(
+    () => shouldRebaseExternalEdit({
+      currentValue: '10:13\n11:02',
+      noteMeta,
+      existingEvents: mutated
+    }),
+    /verändert oder umsortiert/
+  );
+});
+
+test('reordering previously materialized journal events fails closed', () => {
+  const original = [item('op-1:0', '10:13'), item('op-2:0', '11:02')];
+  const noteMeta = {
+    appliedEventIds: original.map(event => event.eventId),
+    appliedEventsHash: journalEventsHash(original),
+    materializedHash: journalValueHash('10:13\n11:02')
+  };
+  const reordered = [original[1], original[0]];
+
+  assert.equal(noteMatchesJournalEvents(noteMeta, reordered), false);
+  assert.throws(
+    () => shouldRebaseExternalEdit({
+      currentValue: '10:13\n11:02',
+      noteMeta,
+      existingEvents: reordered
+    }),
+    /verändert oder umsortiert/
+  );
+});
+
 test('legacy note materializedValue remains readable during transition', () => {
   const meta = { appliedEventIds: ['op-1:0'], materializedValue: '10:13' };
   assert.equal(noteMatchesMaterializedValue(meta, '10:13'), true);
   assert.equal(noteMatchesMaterializedValue(meta, '10:14'), false);
+  assert.equal(noteMatchesJournalEvents(meta, [item('op-1:0', '10:13')]), true);
 });
 
 test('missing note is only auto-recoverable from baseline or fully replayed value', () => {

@@ -1,12 +1,8 @@
 import {
   flushStorage,
-  listRedundantValues,
-  listValuesByPrefix,
   loadJSON,
   loadRedundantValue,
   nowIso,
-  removeRedundantValue,
-  removeValue,
   saveJSON,
   saveRedundantValue,
   uid
@@ -14,80 +10,41 @@ import {
 import { announce } from '../core/ui.js';
 import { markDirty, registerSync } from '../core/sync.js';
 import { buildTrackingWritePlan, getTrackingConfig } from './tracking.js';
-import { findQuickCaptureCommand } from './quick-capture-domain.js';
 import { repairTrackingJournal, writeTrackingPlan } from './tracking-sheet.js';
 import { removeTrackingDraft, trackingDraftIdentity } from './tracking-entry-draft-domain.js';
+import {
+  REDUNDANT_OP_PREFIX,
+  listTrackingOperations,
+  removeTrackingOperation,
+  saveTrackingOperation,
+  updateTrackingOperation
+} from './tracking-operation-store.js';
 
-const REDUNDANT_OP_PREFIX = 'paceTrackingOperationV2:';
-const PRIMARY_OP_PREFIX = 'pace-tracking-operation-v2:';
 const LEGACY_QUEUE_KEY = 'pace-quick-capture-queue-v1';
 const GROUP_DRAFTS_KEY = 'paceTrackingEntryDraftsV1';
 const SYNC_NAME = 'quick-capture';
 const RECOVERY_DELAY = 3500;
-const CONFIRMED_RETENTION = 90 * 24 * 60 * 60 * 1000;
+const TERMINAL_RETENTION = 90 * 24 * 60 * 60 * 1000;
+const LEGACY_MATCH_WINDOW = 5000;
 
 let panel = null;
 let lastRepairConflicts = [];
-
-function redundantOperationKey(id) {
-  return `${REDUNDANT_OP_PREFIX}${id}`;
-}
-
-function primaryOperationKey(id) {
-  return `${PRIMARY_OP_PREFIX}${id}`;
-}
-
-function parseOperation(raw) {
-  try {
-    const value = JSON.parse(raw);
-    return value && typeof value === 'object' && value.id ? value : null;
-  } catch {
-    return null;
-  }
-}
-
-function operationFreshness(operation) {
-  const timestamp = new Date(operation?.updatedAt || operation?.confirmedAt || operation?.createdAt || 0).getTime();
-  return Number.isFinite(timestamp) ? timestamp : 0;
-}
+let groupSubmissionInFlight = false;
 
 function operations() {
-  const merged = new Map();
-  const allRaw = [
-    ...listValuesByPrefix(PRIMARY_OP_PREFIX),
-    ...listRedundantValues(REDUNDANT_OP_PREFIX)
-  ];
-  for (const [, raw] of allRaw) {
-    const operation = parseOperation(raw);
-    if (!operation) continue;
-    const existing = merged.get(operation.id);
-    if (!existing || operationFreshness(operation) >= operationFreshness(existing)) {
-      merged.set(operation.id, operation);
-    }
-  }
-  return [...merged.values()]
-    .sort((left, right) => String(left.createdAt || '').localeCompare(String(right.createdAt || '')));
+  return listTrackingOperations();
 }
 
-function saveOperation(operation) {
-  saveJSON(primaryOperationKey(operation.id), operation);
-  return saveRedundantValue(redundantOperationKey(operation.id), JSON.stringify(operation));
-}
-
-function updateOperation(operation, patch) {
-  const next = { ...operation, ...patch, updatedAt: nowIso() };
-  if (!saveOperation(next)) throw new Error('Die unabhängige lokale Sicherheitsoperation konnte nicht gespeichert werden.');
-  return next;
-}
-
-function pruneConfirmedOperations() {
-  const cutoff = Date.now() - CONFIRMED_RETENTION;
+function pruneTerminalOperations() {
+  const cutoff = Date.now() - TERMINAL_RETENTION;
   for (const operation of operations()) {
-    if (operation.state !== 'confirmed') continue;
-    const confirmed = new Date(operation.confirmedAt || operation.updatedAt || 0).getTime();
-    if (!Number.isFinite(confirmed) || confirmed >= cutoff) continue;
-    removeRedundantValue(redundantOperationKey(operation.id));
-    removeValue(primaryOperationKey(operation.id));
+    if (!['confirmed', 'recovered'].includes(operation.state)) continue;
+    const terminalAt = new Date(
+      operation.confirmedAt || operation.recoveredAt || operation.updatedAt || operation.createdAt || 0
+    ).getTime();
+    if (Number.isFinite(terminalAt) && terminalAt < cutoff) {
+      removeTrackingOperation(operation.id);
+    }
   }
 }
 
@@ -103,27 +60,51 @@ function sameQueuedCapture(operation, queueEntry) {
   return title === String(operation.fieldTitle || '').trim() && value === String(operation.value || '').trim();
 }
 
-function linkOperationsToLegacyQueue() {
+function normalizeLegacyOperationPlans() {
+  for (const operation of operations()) {
+    if (!['captured', 'pending'].includes(operation.state)) continue;
+    if (!operation.plan || Array.isArray(operation.plan) || typeof operation.plan !== 'object') continue;
+    updateTrackingOperation(operation, { plan: [{ ...operation.plan }] });
+  }
+}
+
+function migrateLegacyQueue() {
+  // PR #15 konnte bereits Pending-Operationen mit einem einzelnen Plan-Objekt
+  // erzeugen. Diese würden vom neuen Array-basierten Sync sonst dauerhaft
+  // übersprungen. Vor jeder Migration werden solche Altstände normalisiert.
+  normalizeLegacyOperationPlans();
+
   const queue = legacyQueue();
   let current = operations();
-  const usedQueueIds = new Set(current.map(item => item.queueId).filter(Boolean));
+  const representedQueueIds = new Set(current.map(item => item.queueId).filter(Boolean));
 
-  for (const operation of current) {
-    if (operation.state !== 'captured' || operation.plan) continue;
-    const created = new Date(operation.createdAt || 0).getTime();
-    const match = queue.find(entry => {
-      if (usedQueueIds.has(entry.id) || !sameQueuedCapture(operation, entry)) return false;
-      const queued = new Date(entry.createdAt || 0).getTime();
-      return !Number.isFinite(created) || !Number.isFinite(queued) || queued >= created - 2500;
+  // Compatibility only for captured records created by the pre-#17 version.
+  // Matching is bounded tightly in both directions so a stale orphan cannot
+  // attach itself to a later identical coffee/medication entry.
+  const usedOperationIds = new Set();
+  for (const entry of queue) {
+    if (representedQueueIds.has(entry.id)) continue;
+    const queuedAt = new Date(entry.createdAt || 0).getTime();
+    const match = current.find(operation => {
+      if (usedOperationIds.has(operation.id)) return false;
+      if (operation.state !== 'captured' || operation.source !== 'quick' || operation.plan) return false;
+      if (!sameQueuedCapture(operation, entry)) return false;
+      const capturedAt = new Date(operation.createdAt || 0).getTime();
+      if (!Number.isFinite(queuedAt) || !Number.isFinite(capturedAt)) return false;
+      return Math.abs(queuedAt - capturedAt) <= LEGACY_MATCH_WINDOW;
     });
     if (!match) continue;
-    usedQueueIds.add(match.id);
-    updateOperation(operation, {
+
+    usedOperationIds.add(match.id);
+    representedQueueIds.add(entry.id);
+    updateTrackingOperation(match, {
       state: 'pending',
-      queueId: match.id,
-      fieldId: match.fieldId || match.plan?.fieldId || operation.fieldId || '',
-      icon: match.icon || operation.icon || '',
-      plan: { ...match.plan }
+      queueId: entry.id,
+      fieldId: entry.fieldId || entry.plan?.fieldId || match.fieldId || '',
+      fieldTitle: entry.fieldTitle || entry.plan?.title || match.fieldTitle || 'Eintrag',
+      value: String(entry.plan?.value || match.value || ''),
+      icon: entry.icon || match.icon || '',
+      plan: [{ ...entry.plan }]
     });
   }
 
@@ -133,7 +114,7 @@ function linkOperationsToLegacyQueue() {
     if (represented.has(entry.id)) continue;
     const id = `legacy-${entry.id}`;
     if (current.some(item => item.id === id)) continue;
-    saveOperation({
+    saveTrackingOperation({
       id,
       createdAt: entry.createdAt,
       updatedAt: nowIso(),
@@ -144,79 +125,23 @@ function linkOperationsToLegacyQueue() {
       fieldTitle: entry.fieldTitle || entry.plan?.title || 'Eintrag',
       value: String(entry.plan?.value || ''),
       icon: entry.icon || '',
-      plan: { ...entry.plan }
+      plan: [{ ...entry.plan }]
     });
   }
 }
 
 function removeConfirmedFromLegacyQueue() {
   const confirmedQueueIds = new Set(
-    operations().filter(item => item.state === 'confirmed' && item.queueId).map(item => item.queueId)
+    operations()
+      .filter(item => item.state === 'confirmed' && item.queueId)
+      .map(item => item.queueId)
   );
   if (!confirmedQueueIds.size) return;
+
   const queue = legacyQueue();
   const cleaned = queue.filter(entry => !confirmedQueueIds.has(entry.id));
   if (cleaned.length === queue.length) return;
   saveJSON(LEGACY_QUEUE_KEY, cleaned);
-}
-
-function activeSuggestion() {
-  const box = document.querySelector('.quick-capture-suggestions');
-  if (!box || box.hidden) return null;
-  return box.querySelector('.quick-capture-suggestion.active') || box.querySelector('.quick-capture-suggestion');
-}
-
-function quickCapturePayload(button) {
-  const textarea = document.querySelector('.quick-capture-textarea');
-  if (!textarea || !button) return null;
-  const fieldTitle = button.querySelector('.quick-capture-suggestion-title')?.textContent?.trim() || '';
-  if (!fieldTitle) return null;
-
-  let value = '';
-  if (textarea.selectionStart !== textarea.selectionEnd) {
-    value = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd).trim();
-  } else {
-    value = findQuickCaptureCommand(textarea.value, textarea.selectionStart)?.payload?.trim() || '';
-  }
-  if (!value) return null;
-
-  const matchingFields = (getTrackingConfig().fields || [])
-    .filter(field => field?.status !== 'archived' && String(field.title || '').trim() === fieldTitle);
-
-  return {
-    fieldTitle,
-    value,
-    fieldId: matchingFields.length === 1 ? matchingFields[0].id : '',
-    icon: matchingFields.length === 1 ? matchingFields[0].icon || '' : ''
-  };
-}
-
-function captureQuickOperation(button, event) {
-  const payload = quickCapturePayload(button);
-  if (!payload) return null;
-  const timestamp = nowIso();
-  const operation = {
-    id: uid('capture'),
-    createdAt: timestamp,
-    updatedAt: timestamp,
-    state: 'captured',
-    source: 'quick',
-    ...payload
-  };
-  if (!saveOperation(operation)) {
-    event?.preventDefault?.();
-    event?.stopImmediatePropagation?.();
-    announce('PACE konnte keine unabhängige lokale Sicherheitskopie anlegen. Der Eintrag wurde vorsichtshalber nicht entfernt.', 'bad');
-    return null;
-  }
-
-  for (const delay of [0, 60, 180, 500, 1200, 2600]) {
-    setTimeout(() => {
-      linkOperationsToLegacyQueue();
-      renderPanel();
-    }, delay);
-  }
-  return operation;
 }
 
 function clearGroupDraft(fieldIds) {
@@ -239,13 +164,7 @@ function readGroupValue(wrapper, field) {
   return wrapper.querySelector('[data-part="value"]')?.value.trim() || '';
 }
 
-function queueGroupEntry(event) {
-  const form = event.target;
-  if (!(form instanceof HTMLFormElement) || form.id !== 'trackingEntryForm') return;
-
-  event.preventDefault();
-  event.stopImmediatePropagation();
-
+async function queueGroupEntryOnce(form) {
   const wrappers = [...form.querySelectorAll('[data-field-id]')];
   const config = getTrackingConfig();
   const fieldsById = new Map((config.fields || []).map(field => [field.id, field]));
@@ -271,16 +190,31 @@ function queueGroupEntry(event) {
     id: uid('tracking'),
     createdAt: timestamp,
     updatedAt: timestamp,
-    state: 'pending',
+    state: 'captured',
     source: 'group',
     fieldTitle: document.getElementById('trackingEntryTitle')?.textContent || 'Erfassung',
     value: plan.map(item => item.value).join('\n'),
     plan
   };
 
-  if (!saveOperation(operation)) {
-    announce('Der Erfassungsentwurf konnte nicht als unabhängige lokale Operation gesichert werden. Das Formular bleibt geöffnet.', 'bad');
+  try {
+    saveTrackingOperation(operation);
+    await flushStorage();
+  } catch (error) {
+    try { removeTrackingOperation(operation.id); } catch {}
+    announce(error?.message || 'Der Erfassungsentwurf konnte nicht sicher lokal gespeichert werden. Das Formular bleibt geöffnet.', 'bad');
     return;
+  }
+
+  const pending = updateTrackingOperation(operation, { state: 'pending', readyAt: nowIso() });
+  try {
+    await flushStorage();
+  } catch {
+    // Die captured-Version wurde bereits auf beiden lokalen Speicherwegen
+    // bestätigt und die pending-Version liegt synchron im redundanten Store.
+    // Deshalb darf das Formular jetzt geschlossen werden; die Operation bleibt
+    // sichtbar und wird spätestens beim nächsten Start erneut synchronisiert.
+    announce('Der Eintrag ist lokal gesichert; die zweite lokale Kopie wird später nachgezogen.', '');
   }
 
   clearGroupDraft(wrappers.map(wrapper => wrapper.dataset.fieldId));
@@ -288,11 +222,37 @@ function queueGroupEntry(event) {
   announce(`${plan.length} ${plan.length === 1 ? 'Eintrag lokal gespeichert' : 'Einträge lokal gespeichert'} · Synchronisierung folgt.`, 'good');
   renderPanel();
   markDirty(SYNC_NAME);
+  return pending;
 }
 
-function restoreCapturedOperation(operation) {
+async function queueGroupEntry(event) {
+  const form = event.target;
+  if (!(form instanceof HTMLFormElement) || form.id !== 'trackingEntryForm') return;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+
+  if (groupSubmissionInFlight) {
+    announce('Diese Erfassung wird bereits lokal gespeichert.', '');
+    return;
+  }
+
+  groupSubmissionInFlight = true;
+  const submit = form.querySelector('button[type="submit"]');
+  const wasDisabled = Boolean(submit?.disabled);
+  if (submit) submit.disabled = true;
+
+  try {
+    await queueGroupEntryOnce(form);
+  } finally {
+    groupSubmissionInFlight = false;
+    if (submit) submit.disabled = wasDisabled;
+  }
+}
+
+async function restoreCapturedOperation(operation) {
   const textarea = document.querySelector('.quick-capture-textarea');
-  if (!textarea) return;
+  if (!textarea || operation.source !== 'quick') return;
   const restored = `${operation.value} ,,${operation.fieldTitle}`;
   textarea.value = textarea.value.trim()
     ? `${textarea.value.replace(/\s+$/, '')}\n${restored}`
@@ -300,7 +260,17 @@ function restoreCapturedOperation(operation) {
   textarea.focus();
   textarea.setSelectionRange(textarea.value.length, textarea.value.length);
   textarea.dispatchEvent(new Event('input', { bubbles: true }));
-  updateOperation(operation, { state: 'recovered', recoveredAt: nowIso() });
+
+  try {
+    await flushStorage();
+  } catch {
+    announce('Der Text wurde wieder eingesetzt, aber der Entwurf konnte noch nicht dauerhaft bestätigt werden. Die Sicherheitskopie bleibt erhalten.', 'bad');
+    renderPanel();
+    return;
+  }
+
+  updateTrackingOperation(operation, { state: 'recovered', recoveredAt: nowIso() });
+  try { await flushStorage(); } catch {}
   renderPanel();
 }
 
@@ -348,15 +318,19 @@ function renderPanel() {
   const summary = panel.querySelector('summary');
   const list = panel.querySelector('.capture-ledger-v2-list');
   const conflict = panel.querySelector('.capture-ledger-v2-conflict');
-  const recoverable = active.filter(item => item.state === 'captured' && Date.now() - new Date(item.createdAt).getTime() >= RECOVERY_DELAY);
+  const recoverable = active.filter(item =>
+    item.source === 'quick' && item.state === 'captured' && Date.now() - new Date(item.createdAt).getTime() >= RECOVERY_DELAY
+  );
   const pending = active.filter(item => item.state === 'pending');
   summary.textContent = `${pending.length} lokal ausstehend${recoverable.length ? ` · ${recoverable.length} braucht Prüfung` : ''}`;
   list.innerHTML = '';
 
   for (const operation of [...active].reverse()) {
     const item = document.createElement('div');
-    const needsRecovery = operation.state === 'captured' && Date.now() - new Date(operation.createdAt).getTime() >= RECOVERY_DELAY;
+    const needsRecovery = operation.source === 'quick' && operation.state === 'captured' &&
+      Date.now() - new Date(operation.createdAt).getTime() >= RECOVERY_DELAY;
     item.className = `capture-ledger-v2-item${needsRecovery ? ' bad' : ''}`;
+
     const time = document.createElement('span');
     time.className = 'capture-ledger-v2-time';
     time.textContent = formatTime(operation.createdAt);
@@ -367,12 +341,17 @@ function renderPanel() {
     value.className = 'capture-ledger-v2-value';
     value.textContent = operation.value || operation.plan?.map(entry => entry.value).join('\n') || '';
     item.append(time, title, value);
+
     if (needsRecovery) {
       const restore = document.createElement('button');
       restore.type = 'button';
       restore.className = 'capture-ledger-v2-action';
       restore.textContent = 'In Eingabe wiederherstellen';
-      restore.addEventListener('click', () => restoreCapturedOperation(operation));
+      restore.addEventListener('click', () => {
+        restoreCapturedOperation(operation).catch(error => {
+          announce(error?.message || 'Die Sicherheitskopie konnte nicht wiederhergestellt werden.', 'bad');
+        });
+      });
       item.appendChild(restore);
     }
     list.appendChild(item);
@@ -385,7 +364,7 @@ function renderPanel() {
 }
 
 async function flushOperations({ repair = false } = {}) {
-  linkOperationsToLegacyQueue();
+  migrateLegacyQueue();
   const errors = [];
 
   const pending = operations().filter(item => item.state === 'pending' && Array.isArray(item.plan) && item.plan.length);
@@ -396,9 +375,9 @@ async function flushOperations({ repair = false } = {}) {
         operationId: operation.id,
         source: operation.source || 'local'
       });
-      updateOperation(operation, { state: 'confirmed', confirmedAt: nowIso(), lastError: '' });
+      updateTrackingOperation(operation, { state: 'confirmed', confirmedAt: nowIso(), lastError: '' });
     } catch (error) {
-      try { updateOperation(operation, { lastError: error?.message || String(error) }); } catch {}
+      try { updateTrackingOperation(operation, { lastError: error?.message || String(error) }); } catch {}
       errors.push(error);
     }
   }
@@ -415,49 +394,40 @@ async function flushOperations({ repair = false } = {}) {
     }
   }
 
-  pruneConfirmedOperations();
+  pruneTerminalOperations();
   renderPanel();
   if (errors.length) throw errors[0];
 }
 
-function installCaptureListeners() {
-  document.addEventListener('pointerdown', event => {
-    const button = event.target.closest?.('.quick-capture-suggestion');
-    if (!button) return;
-    captureQuickOperation(button, event);
+function installGroupCaptureListener() {
+  document.addEventListener('submit', event => {
+    queueGroupEntry(event).catch(error => {
+      announce(error?.message || 'Die Erfassung konnte nicht sicher lokal gespeichert werden.', 'bad');
+    });
   }, true);
-
-  document.addEventListener('keydown', event => {
-    if (!['Enter', 'Tab'].includes(event.key)) return;
-    if (!event.target.matches?.('.quick-capture-textarea')) return;
-    const button = activeSuggestion();
-    if (button) captureQuickOperation(button, event);
-  }, true);
-
-  document.addEventListener('submit', queueGroupEntry, true);
 }
 
 export function initTrackingIntegrityV2() {
-  installCaptureListeners();
+  installGroupCaptureListener();
   registerSync(SYNC_NAME, {
     push: () => flushOperations({ repair: false }),
     full: () => flushOperations({ repair: true })
   });
 
-  linkOperationsToLegacyQueue();
+  migrateLegacyQueue();
   removeConfirmedFromLegacyQueue();
   renderPanel();
-  pruneConfirmedOperations();
+  pruneTerminalOperations();
 
   window.addEventListener('storage', event => {
     if (!event.key?.startsWith(REDUNDANT_OP_PREFIX)) return;
-    linkOperationsToLegacyQueue();
+    migrateLegacyQueue();
     renderPanel();
     if (operations().some(item => item.state === 'pending')) markDirty(SYNC_NAME);
   });
 
   setInterval(() => {
-    linkOperationsToLegacyQueue();
+    migrateLegacyQueue();
     renderPanel();
   }, 1200);
 
