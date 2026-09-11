@@ -56,6 +56,48 @@ test('a capture that was never observed in the queue is not silently declared su
   assert.equal(needsRecovery(next, Date.parse('2026-09-11T10:00:10.000Z')), true);
 });
 
+test('two identical captures need two distinct queue entries', () => {
+  const secondCapture = {
+    ...captured,
+    id: 'safety-2',
+    createdAt: '2026-09-11T10:00:00.500Z'
+  };
+  const [first, second] = reconcileCaptureJournal(
+    [
+      { ...captured, state: 'captured' },
+      { ...secondCapture, state: 'captured' }
+    ],
+    [queued],
+    Date.parse('2026-09-11T10:00:01.000Z')
+  );
+  assert.equal(first.state, 'queued');
+  assert.equal(first.queueId, 'queue-1');
+  assert.equal(second.state, 'captured');
+  assert.equal(second.queueId, undefined);
+});
+
+test('two identical captures are both tracked when two queue entries exist', () => {
+  const secondCapture = {
+    ...captured,
+    id: 'safety-2',
+    createdAt: '2026-09-11T10:00:00.500Z'
+  };
+  const secondQueue = {
+    ...queued,
+    id: 'queue-2',
+    createdAt: '2026-09-11T10:00:00.600Z'
+  };
+  const next = reconcileCaptureJournal(
+    [
+      { ...captured, state: 'captured' },
+      { ...secondCapture, state: 'captured' }
+    ],
+    [queued, secondQueue],
+    Date.parse('2026-09-11T10:00:01.000Z')
+  );
+  assert.deepEqual(next.map(entry => entry.queueId), ['queue-1', 'queue-2']);
+});
+
 test('pruning keeps unconfirmed entries much longer than confirmed history', () => {
   const now = Date.parse('2026-09-11T12:00:00.000Z');
   const oldConfirmed = { ...captured, state: 'confirmed', confirmedAt: '2026-09-09T10:00:00.000Z' };
