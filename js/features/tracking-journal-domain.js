@@ -148,6 +148,12 @@ export function noteCoversEvents(meta, events = []) {
   return journalEventIds(events).every(id => applied.has(id));
 }
 
+export function noteReferencesUnknownEvents(meta, events = []) {
+  if (!meta || !Array.isArray(meta.appliedEventIds)) return false;
+  const known = new Set(journalEventIds(events));
+  return meta.appliedEventIds.map(text).some(id => id && !known.has(id));
+}
+
 export function noteMatchesMaterializedValue(meta, currentValue) {
   if (!meta) return false;
   if (meta.materializedHash) return text(meta.materializedHash) === journalValueHash(currentValue);
@@ -159,6 +165,15 @@ export function noteMatchesMaterializedValue(meta, currentValue) {
 
 export function shouldRebaseExternalEdit({ currentValue, noteMeta, existingEvents } = {}) {
   if (!noteMeta) return false;
+
+  // Die Zellnotiz ist zugleich ein Beleg dafür, welche Remote-Ereignisse bereits
+  // materialisiert waren. Verweist sie auf eine Event-ID, die im Journal nicht
+  // mehr existiert, ist das Journal beschädigt oder unvollständig. In diesem Fall
+  // darf PACE die sichtbare Zelle keinesfalls aus dem verkürzten Journal neu bauen.
+  if (noteReferencesUnknownEvents(noteMeta, existingEvents)) {
+    throw new Error('Die Tracking-Zelle verweist auf ein Remote-Ereignis, das im Integritätsjournal fehlt. PACE überschreibt die Zelle vorsichtshalber nicht.');
+  }
+
   const covers = noteCoversEvents(noteMeta, existingEvents);
   const matchesMaterialized = noteMatchesMaterializedValue(noteMeta, currentValue);
 
