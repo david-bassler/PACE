@@ -5,6 +5,7 @@ import {
   needsRecovery,
   pruneCaptureJournal,
   reconcileCaptureJournal,
+  removeConfirmedQueueCopies,
   sameCapture
 } from '../js/features/capture-integrity-domain.js';
 
@@ -96,6 +97,23 @@ test('two identical captures are both tracked when two queue entries exist', () 
     Date.parse('2026-09-11T10:00:01.000Z')
   );
   assert.deepEqual(next.map(entry => entry.queueId), ['queue-1', 'queue-2']);
+});
+
+test('confirmed journal entries remove stale copies from a reloaded queue', () => {
+  const secondQueue = {
+    ...queued,
+    id: 'queue-2',
+    plan: { ...queued.plan, value: '12:15' }
+  };
+  const journal = [{
+    ...captured,
+    state: 'confirmed',
+    queueId: 'queue-1',
+    confirmedAt: '2026-09-11T10:00:05.000Z'
+  }];
+  const result = removeConfirmedQueueCopies([queued, secondQueue], journal);
+  assert.deepEqual(result.removedIds, ['queue-1']);
+  assert.deepEqual(result.queue.map(entry => entry.id), ['queue-2']);
 });
 
 test('pruning keeps unconfirmed entries much longer than confirmed history', () => {
