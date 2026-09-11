@@ -116,10 +116,19 @@ test('confirmed journal entries remove stale copies from a reloaded queue', () =
   assert.deepEqual(result.queue.map(entry => entry.id), ['queue-2']);
 });
 
-test('pruning keeps unconfirmed entries much longer than confirmed history', () => {
+test('pruning removes old confirmed history but never ages out unconfirmed recovery data', () => {
   const now = Date.parse('2026-09-11T12:00:00.000Z');
   const oldConfirmed = { ...captured, state: 'confirmed', confirmedAt: '2026-09-09T10:00:00.000Z' };
-  const oldUnconfirmed = { ...captured, id: 'safety-2', state: 'captured', createdAt: '2026-09-01T10:00:00.000Z' };
-  const next = pruneCaptureJournal([oldConfirmed, oldUnconfirmed], now);
+  const veryOldUnconfirmed = { ...captured, id: 'safety-2', state: 'captured', createdAt: '2025-01-01T10:00:00.000Z' };
+  const next = pruneCaptureJournal([oldConfirmed, veryOldUnconfirmed], now);
   assert.deepEqual(next.map(entry => entry.id), ['safety-2']);
+});
+
+test('pruning never drops unconfirmed entries merely because there are more than 200', () => {
+  const entries = Array.from({ length: 250 }, (_, index) => ({
+    ...captured,
+    id: `safety-${index}`,
+    state: 'captured'
+  }));
+  assert.equal(pruneCaptureJournal(entries).length, 250);
 });

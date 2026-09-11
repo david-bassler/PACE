@@ -22,17 +22,17 @@ export function removeTrackingDraft(drafts = {}, identity) {
   return next;
 }
 
-export function pruneTrackingDrafts(drafts = {}, now = Date.now()) {
-  const cutoff = now - 30 * 24 * 60 * 60 * 1000;
+export function pruneTrackingDrafts(drafts = {}) {
+  // Unabgeschickte Entwürfe sind Nutzdaten. Sie werden nicht automatisch nach
+  // Alter oder Anzahl verworfen, sondern nur nach bestätigtem Speichern über
+  // removeTrackingDraft entfernt. Ungültige Strukturen werden ausgesiebt.
   return Object.fromEntries(
     Object.entries(drafts || {})
-      .filter(([, draft]) => {
-        const updated = new Date(draft?.updatedAt || 0).getTime();
-        return Number.isFinite(updated) && updated >= cutoff;
-      })
-      .sort(([, left], [, right]) =>
-        new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+      .filter(([identity, draft]) =>
+        Boolean(String(identity || '').trim()) &&
+        draft &&
+        typeof draft === 'object' &&
+        !Array.isArray(draft)
       )
-      .slice(0, 20)
   );
 }

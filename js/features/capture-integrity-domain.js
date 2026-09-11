@@ -71,12 +71,13 @@ export function needsRecovery(entry, now = Date.now(), graceMs = 3500) {
 
 export function pruneCaptureJournal(journal = [], now = Date.now()) {
   const confirmedCutoff = now - 24 * 60 * 60 * 1000;
-  const unconfirmedCutoff = now - 30 * 24 * 60 * 60 * 1000;
-  return journal
-    .filter(entry => {
-      const timestamp = new Date(entry.confirmedAt || entry.createdAt).getTime();
-      if (!Number.isFinite(timestamp)) return true;
-      return entry.state === 'confirmed' ? timestamp >= confirmedCutoff : timestamp >= unconfirmedCutoff;
-    })
-    .slice(-200);
+
+  // Unbestätigte Einträge sind Sicherheitsdaten und dürfen nicht allein wegen
+  // ihres Alters oder einer Größenbegrenzung verschwinden. Nur bereits
+  // bestätigte Historie wird nach 24 Stunden entfernt.
+  return journal.filter(entry => {
+    if (entry?.state !== 'confirmed') return true;
+    const timestamp = new Date(entry.confirmedAt || entry.createdAt).getTime();
+    return !Number.isFinite(timestamp) || timestamp >= confirmedCutoff;
+  });
 }
