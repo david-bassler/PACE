@@ -1,8 +1,12 @@
-import { flushStorage, loadJSON, loadValue, nowIso, saveJSON, saveValue, uid } from '../core/storage.js';
+import { flushStorage, loadValue, nowIso, saveValue, uid } from '../core/storage.js';
 import { announce } from '../core/ui.js';
 import { markDirty } from '../core/sync.js';
 import { buildTrackingWritePlan, getTrackingConfig } from './tracking.js';
-import { saveTrackingOperation, updateTrackingOperation } from './tracking-operation-store.js';
+import {
+  listTrackingOperations,
+  saveTrackingOperation,
+  updateTrackingOperation
+} from './tracking-operation-store.js';
 import {
   createSelectionQuickCaptureCommand,
   findQuickCaptureCommand,
@@ -11,12 +15,8 @@ import {
   removeQuickCaptureSelection
 } from './quick-capture-domain.js';
 
-const QUEUE_KEY = 'pace-quick-capture-queue-v1';
 const DRAFT_KEY = 'pace-quick-capture-draft-v1';
 const MAX_SUGGESTIONS = 8;
-
-let queue = loadJSON(QUEUE_KEY, []);
-if (!Array.isArray(queue)) queue = [];
 
 let textarea = null;
 let editorWrap = null;
@@ -29,18 +29,19 @@ let statusTimer = null;
 let rememberedSelection = null;
 let rememberedSelectionTimer = null;
 
-function saveQueue() {
-  saveJSON(QUEUE_KEY, queue);
-}
-
 function saveDraft() {
   if (!textarea) return;
   saveValue(DRAFT_KEY, textarea.value);
 }
 
+function pendingCount() {
+  return listTrackingOperations().filter(operation => operation.state === 'pending').length;
+}
+
 function pendingLabel() {
-  if (!queue.length) return '';
-  return `${queue.length} ${queue.length === 1 ? 'Eintrag' : 'Einträge'} lokal gespeichert · Synchronisierung ausstehend`;
+  const count = pendingCount();
+  if (!count) return '';
+  return `${count} ${count === 1 ? 'Eintrag' : 'Einträge'} lokal gespeichert · Synchronisierung ausstehend`;
 }
 
 function showPendingStatus() {
@@ -53,8 +54,8 @@ function flashStatus(message, delay = 2600) {
   if (!status) return;
   status.textContent = message;
   statusTimer = setTimeout(() => {
-    if (queue.length) showPendingStatus();
-    else status.textContent = '';
+    const label = pendingLabel();
+    status.textContent = label;
   }, delay);
 }
 
@@ -245,21 +246,12 @@ async function chooseField(field) {
 
   const createdAt = nowIso();
   const id = uid('quick-capture');
-  const entry = {
-    id,
-    createdAt,
-    fieldId: field.id,
-    fieldTitle: field.title,
-    icon: field.icon || '',
-    plan: item
-  };
   const operation = {
     id,
     createdAt,
     updatedAt: createdAt,
     state: 'captured',
     source: 'quick',
-    queueId: id,
     fieldId: field.id,
     fieldTitle: field.title,
     value: String(item.value ?? ''),
@@ -267,21 +259,20 @@ async function chooseField(field) {
     plan: [{ ...item }]
   };
 
-  // Die Sicherheitsoperation und der Legacy-Transportpuffer verwenden exakt
-  // dieselbe ID. Erst wenn beide auf dem primären lokalen Speicher bestätigt
-  // sind, darf der eingegebene Text aus dem Editor verschwinden.
+  // Neue Schnelleinträge haben nur noch eine maßgebliche lokale Operation.
+  // Der alte gemeinsame Queue-Key wird ausschließlich von der Migrationslogik
+  // gelesen. Erst nach bestätigtem Persistieren dieser Operation darf Text aus
+  // dem Editor entfernt werden.
   saveTrackingOperation(operation);
-  queue.push(entry);
-  saveQueue();
   await flushStorage();
 
   updateTrackingOperation(operation, { state: 'pending', readyAt: nowIso() });
   try {
     await flushStorage();
   } catch {
-    // Die captured-Version und die Queue wurden bereits persistent bestätigt;
-    // die frischere pending-Version liegt zusätzlich synchron im redundanten
-    // Store. Ein Reload kann die Operation daher sicher wieder aufnehmen.
+    // Die captured-Version wurde bereits auf beiden lokalen Speicherwegen
+    // bestätigt; die frischere pending-Version liegt synchron im redundanten
+    // Store. Ein Reload kann den Vorgang daher sicher wieder aufnehmen.
     announce('Der Eintrag ist lokal gesichert; die zweite lokale Kopie wird später nachgezogen.', '');
   }
 
@@ -546,5 +537,5 @@ export function initQuickCaptureFeature() {
   }
 
   showPendingStatus();
-  if (queue.length) markDirty('quick-capture');
+  if (pendingCount()) markDirty('quick-capture');
 }
