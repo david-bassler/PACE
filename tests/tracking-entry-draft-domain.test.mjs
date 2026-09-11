@@ -32,11 +32,25 @@ test('successful submission can remove exactly one draft', () => {
   assert.deepEqual(Object.keys(removeTrackingDraft(drafts, 'a')), ['b']);
 });
 
-test('pruning drops drafts older than 30 days', () => {
-  const now = Date.parse('2026-09-11T12:00:00.000Z');
+test('unfinished drafts are not discarded merely because they are old', () => {
   const next = pruneTrackingDrafts({
     recent: { updatedAt: '2026-09-10T12:00:00.000Z' },
     old: { updatedAt: '2026-07-01T12:00:00.000Z' }
-  }, now);
-  assert.deepEqual(Object.keys(next), ['recent']);
+  });
+  assert.deepEqual(Object.keys(next), ['recent', 'old']);
+});
+
+test('unfinished drafts are not capped at twenty entries', () => {
+  const drafts = Object.fromEntries(
+    Array.from({ length: 25 }, (_, index) => [
+      `draft-${index}`,
+      { updatedAt: '2026-09-11T10:00:00.000Z' }
+    ])
+  );
+  assert.equal(Object.keys(pruneTrackingDrafts(drafts)).length, 25);
+});
+
+test('malformed draft entries are ignored', () => {
+  const next = pruneTrackingDrafts({ good: { updatedAt: '2026-09-11T10:00:00.000Z' }, bad: null });
+  assert.deepEqual(Object.keys(next), ['good']);
 });
