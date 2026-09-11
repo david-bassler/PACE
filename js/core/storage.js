@@ -242,6 +242,11 @@ export function loadValue(key, fallback = null) {
   return fallback;
 }
 
+export function listValuesByPrefix(prefix = '') {
+  const normalizedPrefix = String(prefix);
+  return [...cache.entries()].filter(([key]) => key.startsWith(normalizedPrefix));
+}
+
 export function saveValue(key, value) {
   const normalized = String(value);
   cache.set(key, normalized);
