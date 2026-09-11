@@ -35,6 +35,7 @@ async function boot() {
     quickCaptureToolbar,
     journeyUx,
     captureIntegrity,
+    trackingEntryDrafts,
     sunTimes,
     breath,
     holding,
@@ -53,6 +54,7 @@ async function boot() {
     import('./features/quick-capture-toolbar.js'),
     import('./features/journey-ux.js'),
     import('./features/capture-integrity.js'),
+    import('./features/tracking-entry-drafts.js'),
     import('./features/sun-times.js'),
     import('./features/breath.js'),
     import('./features/holding.js'),
@@ -71,6 +73,7 @@ async function boot() {
   quickCaptureToolbar.initQuickCaptureToolbarFeature();
   journeyUx.initJourneyUxFeature();
   captureIntegrity.initCaptureIntegrityFeature();
+  trackingEntryDrafts.initTrackingEntryDraftFeature();
   sunTimes.initSunTimesFeature();
   breath.initBreathFeature();
   holding.initHoldingFeature();

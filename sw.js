@@ -1,4 +1,4 @@
-const CACHE = 'pace-v42';
+const CACHE = 'pace-v43';
 const ASSETS = [
   './', './index.html', './style.css', './manifest.webmanifest', './icon.svg', './icon-maskable.svg',
   './js/main.js', './js/core/storage.js', './js/core/ui.js', './js/core/google.js', './js/core/google-picker.js', './js/core/sync.js', './js/core/collections.js',
@@ -6,7 +6,7 @@ const ASSETS = [
   './js/features/progress.js', './js/features/progress-data.js', './js/features/progress-domain.js',
   './js/features/wellbeing.js', './js/features/wellbeing-data.js', './js/features/wellbeing-domain.js',
   './js/features/space.js', './js/features/share.js',
-  './js/features/tracking.js', './js/features/tracking-data.js', './js/features/tracking-domain.js', './js/features/tracking-sheet.js',
+  './js/features/tracking.js', './js/features/tracking-data.js', './js/features/tracking-domain.js', './js/features/tracking-sheet.js', './js/features/tracking-entry-drafts.js', './js/features/tracking-entry-draft-domain.js',
   './js/features/quick-capture.js', './js/features/quick-capture-domain.js', './js/features/quick-capture-toolbar.js', './js/features/journey-ux.js', './js/features/capture-integrity.js', './js/features/capture-integrity-domain.js',
   './js/features/sun-times.js', './js/features/sun-times-domain.js',
   './js/features/breath.js',
