@@ -1,8 +1,8 @@
 import { flushStorage, loadJSON, loadValue, nowIso, saveJSON, saveValue, uid } from '../core/storage.js';
 import { announce } from '../core/ui.js';
-import { markDirty, registerSync } from '../core/sync.js';
+import { markDirty } from '../core/sync.js';
 import { buildTrackingWritePlan, getTrackingConfig } from './tracking.js';
-import { writeTrackingPlan } from './tracking-sheet.js';
+import { saveTrackingOperation, updateTrackingOperation } from './tracking-operation-store.js';
 import {
   createSelectionQuickCaptureCommand,
   findQuickCaptureCommand,
@@ -76,34 +76,6 @@ function rememberSelection() {
   clearRememberedSelection();
   rememberedSelection = { ...command, source: textarea.value };
   rememberedSelectionTimer = setTimeout(clearRememberedSelection, 1600);
-}
-
-async function flushQueue() {
-  if (!queue.length) return;
-
-  const batch = queue
-    .filter(entry => entry?.plan && entry?.createdAt)
-    .map(entry => ({ ...entry, plan: { ...entry.plan } }));
-
-  if (batch.length !== queue.length) {
-    throw new Error('Ein lokaler Schnellerfassungs-Eintrag ist unvollständig und wurde nicht synchronisiert.');
-  }
-
-  // Entries created before one sync pass are written together. This matters
-  // especially when several quick captures append to the same target cell:
-  // writeTrackingPlan can then fold them into one deterministic cell update
-  // instead of relying on an immediate read-after-write from Google Sheets.
-  await writeTrackingPlan(batch.map(entry => entry.plan), {
-    now: new Date(batch[0].createdAt)
-  });
-
-  const syncedIds = new Set(batch.map(entry => entry.id));
-  queue = queue.filter(entry => !syncedIds.has(entry.id));
-  saveQueue();
-  await flushStorage();
-  showPendingStatus();
-
-  flashStatus(`${batch.length} ${batch.length === 1 ? 'Eintrag' : 'Einträge'} in die Tracking-Tabelle synchronisiert.`);
 }
 
 function installStyles() {
@@ -271,18 +243,47 @@ async function chooseField(field) {
     return;
   }
 
+  const createdAt = nowIso();
+  const id = uid('quick-capture');
   const entry = {
-    id: uid('quick-capture'),
-    createdAt: nowIso(),
+    id,
+    createdAt,
     fieldId: field.id,
     fieldTitle: field.title,
     icon: field.icon || '',
     plan: item
   };
+  const operation = {
+    id,
+    createdAt,
+    updatedAt: createdAt,
+    state: 'captured',
+    source: 'quick',
+    queueId: id,
+    fieldId: field.id,
+    fieldTitle: field.title,
+    value: String(item.value ?? ''),
+    icon: field.icon || '',
+    plan: [{ ...item }]
+  };
 
+  // Die Sicherheitsoperation und der Legacy-Transportpuffer verwenden exakt
+  // dieselbe ID. Erst wenn beide auf dem primären lokalen Speicher bestätigt
+  // sind, darf der eingegebene Text aus dem Editor verschwinden.
+  saveTrackingOperation(operation);
   queue.push(entry);
   saveQueue();
   await flushStorage();
+
+  updateTrackingOperation(operation, { state: 'pending', readyAt: nowIso() });
+  try {
+    await flushStorage();
+  } catch {
+    // Die captured-Version und die Queue wurden bereits persistent bestätigt;
+    // die frischere pending-Version liegt zusätzlich synchron im redundanten
+    // Store. Ein Reload kann die Operation daher sicher wieder aufnehmen.
+    announce('Der Eintrag ist lokal gesichert; die zweite lokale Kopie wird später nachgezogen.', '');
+  }
 
   if (command.mode === 'selection') {
     if (textarea.value.slice(command.selectionStart, command.selectionEnd) === selectedSource) {
@@ -297,7 +298,14 @@ async function chooseField(field) {
   }
 
   saveDraft();
-  await flushStorage();
+  try {
+    await flushStorage();
+  } catch {
+    // Die eigentliche Erfassung ist zu diesem Zeitpunkt bereits redundant
+    // gesichert. Ein Draft-Fehler darf sie nicht wieder in einen unsicheren
+    // Zustand zurückversetzen.
+    announce('Der Eintrag ist sicher gespeichert; nur der verbleibende Texteingabe-Entwurf konnte lokal nicht bestätigt werden.', '');
+  }
   hideSuggestions();
   clearRememberedSelection();
 
@@ -510,8 +518,6 @@ function handleKeydown(event) {
 }
 
 export function initQuickCaptureFeature() {
-  registerSync('quick-capture', { push: flushQueue, full: flushQueue });
-
   installStyles();
   if (!createEditor()) return;
 
