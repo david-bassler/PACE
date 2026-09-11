@@ -201,14 +201,6 @@ function recordSafetyCapture(button) {
   if (!payload) return;
   const now = Date.now();
   let journal = loadSafetyJournal();
-  const duplicate = journal.some(entry =>
-    entry.state !== 'confirmed' &&
-    entry.fieldTitle === payload.fieldTitle &&
-    entry.value === payload.value &&
-    Math.abs(now - new Date(entry.createdAt).getTime()) < 2000
-  );
-  if (duplicate) return;
-
   journal.push({
     id: journalId(),
     createdAt: new Date(now).toISOString(),
