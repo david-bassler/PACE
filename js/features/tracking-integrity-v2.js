@@ -1,10 +1,12 @@
 import {
   flushStorage,
   listRedundantValues,
+  listValuesByPrefix,
   loadJSON,
   loadRedundantValue,
   nowIso,
   removeRedundantValue,
+  removeValue,
   saveJSON,
   saveRedundantValue,
   uid
@@ -16,7 +18,8 @@ import { findQuickCaptureCommand } from './quick-capture-domain.js';
 import { repairTrackingJournal, writeTrackingPlan } from './tracking-sheet.js';
 import { removeTrackingDraft, trackingDraftIdentity } from './tracking-entry-draft-domain.js';
 
-const OP_PREFIX = 'paceTrackingOperationV2:';
+const REDUNDANT_OP_PREFIX = 'paceTrackingOperationV2:';
+const PRIMARY_OP_PREFIX = 'pace-tracking-operation-v2:';
 const LEGACY_QUEUE_KEY = 'pace-quick-capture-queue-v1';
 const GROUP_DRAFTS_KEY = 'paceTrackingEntryDraftsV1';
 const SYNC_NAME = 'quick-capture';
@@ -26,8 +29,12 @@ const CONFIRMED_RETENTION = 90 * 24 * 60 * 60 * 1000;
 let panel = null;
 let lastRepairConflicts = [];
 
-function operationKey(id) {
-  return `${OP_PREFIX}${id}`;
+function redundantOperationKey(id) {
+  return `${REDUNDANT_OP_PREFIX}${id}`;
+}
+
+function primaryOperationKey(id) {
+  return `${PRIMARY_OP_PREFIX}${id}`;
 }
 
 function parseOperation(raw) {
@@ -39,20 +46,37 @@ function parseOperation(raw) {
   }
 }
 
+function operationFreshness(operation) {
+  const timestamp = new Date(operation?.updatedAt || operation?.confirmedAt || operation?.createdAt || 0).getTime();
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
 function operations() {
-  return listRedundantValues(OP_PREFIX)
-    .map(([, raw]) => parseOperation(raw))
-    .filter(Boolean)
+  const merged = new Map();
+  const allRaw = [
+    ...listValuesByPrefix(PRIMARY_OP_PREFIX),
+    ...listRedundantValues(REDUNDANT_OP_PREFIX)
+  ];
+  for (const [, raw] of allRaw) {
+    const operation = parseOperation(raw);
+    if (!operation) continue;
+    const existing = merged.get(operation.id);
+    if (!existing || operationFreshness(operation) >= operationFreshness(existing)) {
+      merged.set(operation.id, operation);
+    }
+  }
+  return [...merged.values()]
     .sort((left, right) => String(left.createdAt || '').localeCompare(String(right.createdAt || '')));
 }
 
 function saveOperation(operation) {
-  return saveRedundantValue(operationKey(operation.id), JSON.stringify(operation));
+  saveJSON(primaryOperationKey(operation.id), operation);
+  return saveRedundantValue(redundantOperationKey(operation.id), JSON.stringify(operation));
 }
 
 function updateOperation(operation, patch) {
   const next = { ...operation, ...patch, updatedAt: nowIso() };
-  if (!saveOperation(next)) throw new Error('Die lokale Sicherheitsoperation konnte nicht gespeichert werden.');
+  if (!saveOperation(next)) throw new Error('Die unabhängige lokale Sicherheitsoperation konnte nicht gespeichert werden.');
   return next;
 }
 
@@ -61,7 +85,9 @@ function pruneConfirmedOperations() {
   for (const operation of operations()) {
     if (operation.state !== 'confirmed') continue;
     const confirmed = new Date(operation.confirmedAt || operation.updatedAt || 0).getTime();
-    if (Number.isFinite(confirmed) && confirmed < cutoff) removeRedundantValue(operationKey(operation.id));
+    if (!Number.isFinite(confirmed) || confirmed >= cutoff) continue;
+    removeRedundantValue(redundantOperationKey(operation.id));
+    removeValue(primaryOperationKey(operation.id));
   }
 }
 
@@ -168,10 +194,11 @@ function quickCapturePayload(button) {
 function captureQuickOperation(button, event) {
   const payload = quickCapturePayload(button);
   if (!payload) return null;
+  const timestamp = nowIso();
   const operation = {
     id: uid('capture'),
-    createdAt: nowIso(),
-    updatedAt: nowIso(),
+    createdAt: timestamp,
+    updatedAt: timestamp,
     state: 'captured',
     source: 'quick',
     ...payload
@@ -239,10 +266,11 @@ function queueGroupEntry(event) {
     return;
   }
 
+  const timestamp = nowIso();
   const operation = {
     id: uid('tracking'),
-    createdAt: nowIso(),
-    updatedAt: nowIso(),
+    createdAt: timestamp,
+    updatedAt: timestamp,
     state: 'pending',
     source: 'group',
     fieldTitle: document.getElementById('trackingEntryTitle')?.textContent || 'Erfassung',
@@ -358,7 +386,7 @@ function renderPanel() {
 
 async function flushOperations({ repair = false } = {}) {
   linkOperationsToLegacyQueue();
-  let errors = [];
+  const errors = [];
 
   const pending = operations().filter(item => item.state === 'pending' && Array.isArray(item.plan) && item.plan.length);
   for (const operation of pending) {
@@ -370,7 +398,7 @@ async function flushOperations({ repair = false } = {}) {
       });
       updateOperation(operation, { state: 'confirmed', confirmedAt: nowIso(), lastError: '' });
     } catch (error) {
-      updateOperation(operation, { lastError: error?.message || String(error) });
+      try { updateOperation(operation, { lastError: error?.message || String(error) }); } catch {}
       errors.push(error);
     }
   }
@@ -422,7 +450,7 @@ export function initTrackingIntegrityV2() {
   pruneConfirmedOperations();
 
   window.addEventListener('storage', event => {
-    if (!event.key?.startsWith(OP_PREFIX)) return;
+    if (!event.key?.startsWith(REDUNDANT_OP_PREFIX)) return;
     linkOperationsToLegacyQueue();
     renderPanel();
     if (operations().some(item => item.state === 'pending')) markDirty(SYNC_NAME);
