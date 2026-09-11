@@ -5,6 +5,15 @@ function text(value) {
   return String(value ?? '');
 }
 
+export function journalValueHash(value) {
+  let hash = 2166136261;
+  for (const char of text(value)) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
 export function journalTargetKey({ targetDate, sheetTab, columnId } = {}) {
   return [text(targetDate), text(sheetTab), text(columnId)].join('\u001f');
 }
@@ -139,9 +148,18 @@ export function noteCoversEvents(meta, events = []) {
   return journalEventIds(events).every(id => applied.has(id));
 }
 
+export function noteMatchesMaterializedValue(meta, currentValue) {
+  if (!meta) return false;
+  if (meta.materializedHash) return text(meta.materializedHash) === journalValueHash(currentValue);
+  if (Object.prototype.hasOwnProperty.call(meta, 'materializedValue')) {
+    return text(meta.materializedValue) === text(currentValue);
+  }
+  return false;
+}
+
 export function shouldRebaseExternalEdit({ currentValue, noteMeta, existingEvents } = {}) {
   if (!noteMeta || !noteCoversEvents(noteMeta, existingEvents)) return false;
-  return text(currentValue) !== text(noteMeta.materializedValue);
+  return !noteMatchesMaterializedValue(noteMeta, currentValue);
 }
 
 export function canRecoverMissingNote({ currentValue, existingEvents, applyWriteMode } = {}) {
