@@ -98,9 +98,20 @@ test('manual edit is rebased only when note covered all known remote events', ()
   const complete = { appliedEventIds: ['op-1:0'], materializedHash: journalValueHash('10:13') };
   assert.equal(shouldRebaseExternalEdit({ currentValue: '10:15', noteMeta: complete, existingEvents: events }), true);
   assert.equal(shouldRebaseExternalEdit({ currentValue: '10:13', noteMeta: complete, existingEvents: events }), false);
+});
 
-  const incomplete = { appliedEventIds: [], materializedHash: journalValueHash('') };
-  assert.equal(shouldRebaseExternalEdit({ currentValue: '10:15', noteMeta: incomplete, existingEvents: events }), false);
+test('stale note plus changed cell fails closed instead of overwriting an ambiguous state', () => {
+  const events = [item('op-1:0', '10:13'), item('op-2:0', '10:45')];
+  const stale = {
+    appliedEventIds: ['op-1:0'],
+    materializedHash: journalValueHash('10:13')
+  };
+
+  assert.equal(shouldRebaseExternalEdit({ currentValue: '10:13', noteMeta: stale, existingEvents: events }), false);
+  assert.throws(
+    () => shouldRebaseExternalEdit({ currentValue: 'manuell', noteMeta: stale, existingEvents: events }),
+    /mehrdeutigen Zustand/
+  );
 });
 
 test('legacy note materializedValue remains readable during transition', () => {
