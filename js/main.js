@@ -2,12 +2,6 @@ import { storageReady } from './core/storage.js';
 
 function initServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
-  let refreshing = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (refreshing) return;
-    refreshing = true;
-    window.location.reload();
-  });
 
   const register = async () => {
     try {
@@ -16,6 +10,9 @@ function initServiceWorker() {
     } catch {}
   };
 
+  // Ein aktiviertes Update darf eine laufende Erfassung nicht durch einen
+  // erzwungenen Reload unterbrechen. Die neue Version wird beim nächsten
+  // normalen Laden bzw. Navigieren verwendet.
   if (document.readyState === 'complete') register();
   else window.addEventListener('load', register, { once: true });
 }
