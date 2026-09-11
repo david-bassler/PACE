@@ -74,6 +74,37 @@ function hasFormula(valueRange) {
   );
 }
 
+function sleep(milliseconds) {
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+async function verifyWrittenValues(spreadsheetId, ranges, expectedByRange) {
+  const readBack = async () => {
+    const valueRanges = await batchGetSpreadsheetValues(spreadsheetId, ranges, {
+      valueRenderOption: 'FORMULA',
+      dateTimeRenderOption: 'SERIAL_NUMBER'
+    });
+
+    return ranges.filter((range, index) =>
+      String(firstValue(valueRanges[index]) ?? '') !== String(expectedByRange.get(range) ?? '')
+    );
+  };
+
+  let mismatches = await readBack();
+  if (!mismatches.length) return;
+
+  // Ein zweiter Read verhindert Fehlalarme durch seltene kurze Verzögerungen
+  // zwischen erfolgreichem Batch-Update und anschließendem Readback.
+  await sleep(250);
+  mismatches = await readBack();
+  if (!mismatches.length) return;
+
+  throw new Error(
+    `Google Sheets hat ${mismatches.length === 1 ? 'den Eintrag' : `${mismatches.length} Einträge`} nach dem Schreiben nicht bestätigt. ` +
+    'PACE behält die lokale Kopie und meldet den Vorgang nicht als synchronisiert.'
+  );
+}
+
 export async function writeTrackingPlan(plan, { now = new Date() } = {}) {
   validatePlan(plan);
 
@@ -252,6 +283,7 @@ export async function writeTrackingPlan(plan, { now = new Date() } = {}) {
   }
 
   await batchUpdateSpreadsheet(config.trackingSheetId, requests);
+  await verifyWrittenValues(config.trackingSheetId, targetRanges, currentByRange);
 
   const filledDateCount = fillTabs.reduce(
     (sum, tab) => sum + backfills.get(tab).missingDates.length,
