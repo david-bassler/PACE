@@ -108,7 +108,14 @@ function handleSubmit() {
   if (!dialog.open) return;
   if (!currentIdentity) currentIdentity = identityFromDom();
   persistCurrentDraft();
-  submissionPending = true;
+
+  // Erst nach dem eigentlichen submit-Handler prüfen, ob wirklich ein Write
+  // gestartet wurde. Bei leerer/ungültiger Eingabe bleibt der Submit-Button
+  // aktiv; dann darf der Dialog nicht fälschlich als "Schreibvorgang läuft"
+  // blockiert werden.
+  queueMicrotask(() => {
+    if (dialog?.open && submit?.disabled) submissionPending = true;
+  });
 }
 
 function handleSubmitButtonState() {
