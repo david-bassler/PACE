@@ -208,9 +208,43 @@ export function saveRedundantValue(key, value) {
   }
 }
 
+// Für Integritätsdaten werden Einträge absichtlich als einzelne Keys gespeichert.
+// Zwei Tabs können dadurch verschiedene Operationen hinzufügen, ohne ein gemeinsames
+// JSON-Array nach dem Last-Writer-Wins-Prinzip gegenseitig zu überschreiben.
+export function listRedundantValues(prefix = '') {
+  const normalizedPrefix = String(prefix);
+  const entries = [];
+  try {
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+      if (!key || !key.startsWith(normalizedPrefix)) continue;
+      const value = localStorage.getItem(key);
+      if (value !== null) entries.push([key, value]);
+    }
+  } catch (error) {
+    console.error('PACE: redundant local backup listing failed.', error);
+  }
+  return entries;
+}
+
+export function removeRedundantValue(key) {
+  try {
+    localStorage.removeItem(String(key));
+    return true;
+  } catch (error) {
+    console.error('PACE: redundant local backup removal failed.', error);
+    return false;
+  }
+}
+
 export function loadValue(key, fallback = null) {
   if (cache.has(key)) return cache.get(key);
   return fallback;
+}
+
+export function listValuesByPrefix(prefix = '') {
+  const normalizedPrefix = String(prefix);
+  return [...cache.entries()].filter(([key]) => key.startsWith(normalizedPrefix));
 }
 
 export function saveValue(key, value) {
