@@ -186,6 +186,28 @@ function persistValue(key, value) {
   });
 }
 
+// Bewusst getrennte zweite lokale Speicherspur für kleine Recovery-Daten.
+// Sie wird nicht in IndexedDB gespiegelt und nutzt absichtlich keinen `pace-`
+// Prefix, damit die Legacy-Migration diese Kopie nicht einliest oder löscht.
+export function loadRedundantValue(key, fallback = null) {
+  try {
+    const value = localStorage.getItem(String(key));
+    return value === null ? fallback : value;
+  } catch {
+    return fallback;
+  }
+}
+
+export function saveRedundantValue(key, value) {
+  try {
+    localStorage.setItem(String(key), String(value));
+    return true;
+  } catch (error) {
+    console.error('PACE: redundant local backup failed.', error);
+    return false;
+  }
+}
+
 export function loadValue(key, fallback = null) {
   if (cache.has(key)) return cache.get(key);
   return fallback;
