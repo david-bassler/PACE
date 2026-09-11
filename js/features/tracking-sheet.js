@@ -38,6 +38,8 @@ const JOURNAL_HEADERS = [
   'Baseline', 'Source'
 ];
 const WRITE_LOCK = 'pace-tracking-write-v2';
+const GRID_RANGE_CHUNK = 60;
+const VALUE_RANGE_CHUNK = 100;
 
 let inProcessWriteTail = Promise.resolve();
 
@@ -55,6 +57,22 @@ function firstValue(valueRange) {
 
 function unique(values) {
   return [...new Set(values)];
+}
+
+function chunksOf(items, size) {
+  const result = [];
+  for (let index = 0; index < items.length; index += size) {
+    result.push(items.slice(index, index + size));
+  }
+  return result;
+}
+
+async function batchGetRangesChunked(spreadsheetId, ranges, options = {}) {
+  const result = [];
+  for (const rangesChunk of chunksOf(ranges, VALUE_RANGE_CHUNK)) {
+    result.push(...await batchGetSpreadsheetValues(spreadsheetId, rangesChunk, options));
+  }
+  return result;
 }
 
 function validatePlan(plan) {
@@ -171,11 +189,15 @@ async function ensureJournalSheet(spreadsheetId, metadata) {
     { valueRenderOption: 'UNFORMATTED_VALUE' }
   );
   const existing = headerRange?.values?.[0] || [];
-  if (existing.length && existing[0] !== JOURNAL_HEADERS[0]) {
-    throw new Error(`${JOURNAL_SHEET} existiert bereits, enthält aber kein PACE-Integritätsjournal.`);
+  const compatible = existing.every((value, index) => String(value ?? '') === JOURNAL_HEADERS[index]);
+  if (existing.length && !compatible) {
+    throw new Error(`${JOURNAL_SHEET} existiert bereits, aber seine Header stimmen nicht vollständig mit dem PACE-Integritätsjournal überein.`);
   }
 
-  if (!existing.length) {
+  // Eine nach Teilfehler nur teilweise vorhandene, aber bis dahin korrekte
+  // Headerzeile darf vollständig repariert werden. Fremde/mismatched Header
+  // werden dagegen niemals überschrieben.
+  if (existing.length !== JOURNAL_HEADERS.length) {
     await batchUpdateSpreadsheet(spreadsheetId, [{
       updateCells: {
         range: {
@@ -217,8 +239,7 @@ async function appendJournalEvents(spreadsheetId, journalSheetId, events) {
   }]);
 }
 
-async function fetchGridCells(spreadsheetId, targets) {
-  if (!targets.length) return new Map();
+async function fetchGridCellsChunk(spreadsheetId, targets) {
   const token = getAccessToken();
   if (!token) throw new Error('Bitte zuerst mit Google verbinden.');
 
@@ -250,6 +271,17 @@ async function fetchGridCells(spreadsheetId, targets) {
       });
     }
   }
+  return cells;
+}
+
+async function fetchGridCells(spreadsheetId, targets) {
+  if (!targets.length) return new Map();
+  const cells = new Map();
+
+  for (const targetChunk of chunksOf(targets, GRID_RANGE_CHUNK)) {
+    const chunkCells = await fetchGridCellsChunk(spreadsheetId, targetChunk);
+    for (const [key, value] of chunkCells) cells.set(key, value);
+  }
 
   for (const target of targets) {
     const key = `${target.sheetId}:${target.row}:${target.column}`;
@@ -260,6 +292,24 @@ async function fetchGridCells(spreadsheetId, targets) {
 
 function targetCellState(cells, target) {
   return cells.get(`${target.sheetId}:${target.row}:${target.column}`) || { value: '', note: '' };
+}
+
+function sameCellState(left, right) {
+  return String(left?.value ?? '') === String(right?.value ?? '') &&
+    String(left?.note ?? '') === String(right?.note ?? '');
+}
+
+async function assertCellsUnchanged(spreadsheetId, targets, expectedCells) {
+  const latestCells = await fetchGridCells(spreadsheetId, targets);
+  const changed = targets.filter(target =>
+    !sameCellState(targetCellState(expectedCells, target), targetCellState(latestCells, target))
+  );
+  if (changed.length) {
+    throw new Error(
+      `Mindestens ${changed.length === 1 ? 'eine Tracking-Zelle wurde' : `${changed.length} Tracking-Zellen wurden`} unmittelbar vor dem Schreiben verändert. ` +
+      'PACE bricht vorsichtshalber ab und lässt Operation sowie Remote-Journal erhalten.'
+    );
+  }
 }
 
 async function resolveTargets(events, metadata, spreadsheetId) {
@@ -280,7 +330,7 @@ async function resolveTargets(events, metadata, spreadsheetId) {
   }
 
   const firstColumnRanges = tabs.map(tab => sheetRange(tab, 'A:A'));
-  const firstColumns = await batchGetSpreadsheetValues(spreadsheetId, firstColumnRanges, {
+  const firstColumns = await batchGetRangesChunked(spreadsheetId, firstColumnRanges, {
     valueRenderOption: 'UNFORMATTED_VALUE',
     dateTimeRenderOption: 'SERIAL_NUMBER'
   });
@@ -314,7 +364,7 @@ async function resolveTargets(events, metadata, spreadsheetId) {
     const state = tabState.get(tab);
     return sheetRange(tab, `A${state.idRow}:ZZZ${state.idRow}`);
   });
-  const idRows = await batchGetSpreadsheetValues(spreadsheetId, idRanges, {
+  const idRows = await batchGetRangesChunked(spreadsheetId, idRanges, {
     valueRenderOption: 'UNFORMATTED_VALUE',
     dateTimeRenderOption: 'SERIAL_NUMBER'
   });
@@ -328,14 +378,14 @@ async function resolveTargets(events, metadata, spreadsheetId) {
 
   const formulaRanges = [];
   for (const tab of tabs) {
-    for (const chunk of tabState.get(tab).chunks) {
-      const first = chunk.missingDates[0];
-      const last = chunk.missingDates.at(-1);
+    for (const dateChunk of tabState.get(tab).chunks) {
+      const first = dateChunk.missingDates[0];
+      const last = dateChunk.missingDates.at(-1);
       formulaRanges.push(sheetRange(tab, `A${first.row}:A${last.row}`));
     }
   }
   if (formulaRanges.length) {
-    const checks = await batchGetSpreadsheetValues(spreadsheetId, formulaRanges, {
+    const checks = await batchGetRangesChunked(spreadsheetId, formulaRanges, {
       valueRenderOption: 'FORMULA', dateTimeRenderOption: 'SERIAL_NUMBER'
     });
     checks.forEach((valueRange, index) => {
@@ -350,10 +400,10 @@ async function resolveTargets(events, metadata, spreadsheetId) {
   for (const tab of tabs) {
     const properties = sheetByTitle.get(tab);
     let rowCount = Number(properties.gridProperties?.rowCount || 0);
-    for (const chunk of tabState.get(tab).chunks) {
-      const first = chunk.missingDates[0];
-      const last = chunk.missingDates.at(-1);
-      filledDateCount += chunk.missingDates.length;
+    for (const dateChunk of tabState.get(tab).chunks) {
+      const first = dateChunk.missingDates[0];
+      const last = dateChunk.missingDates.at(-1);
+      filledDateCount += dateChunk.missingDates.length;
       if (last.row > rowCount) {
         backfillRequests.push({
           appendDimension: { sheetId: properties.sheetId, dimension: 'ROWS', length: last.row - rowCount }
@@ -362,7 +412,7 @@ async function resolveTargets(events, metadata, spreadsheetId) {
       }
       backfillRequests.push({
         copyPaste: {
-          source: cellGridRange(properties.sheetId, chunk.previousDateRow, 1),
+          source: cellGridRange(properties.sheetId, dateChunk.previousDateRow, 1),
           destination: {
             sheetId: properties.sheetId,
             startRowIndex: first.row - 1,
@@ -383,7 +433,7 @@ async function resolveTargets(events, metadata, spreadsheetId) {
             startColumnIndex: 0,
             endColumnIndex: 1
           },
-          rows: chunk.missingDates.map(item => ({ values: [{ userEnteredValue: { numberValue: item.serial } }] })),
+          rows: dateChunk.missingDates.map(item => ({ values: [{ userEnteredValue: { numberValue: item.serial } }] })),
           fields: 'userEnteredValue'
         }
       });
@@ -446,7 +496,7 @@ function prepareMaterialization(target, events, cell) {
 
 async function verifyMaterialized(spreadsheetId, targets, expectedByKey) {
   const ranges = targets.map(target => target.range);
-  const valueRanges = await batchGetSpreadsheetValues(spreadsheetId, ranges, {
+  const valueRanges = await batchGetRangesChunked(spreadsheetId, ranges, {
     valueRenderOption: 'FORMULA', dateTimeRenderOption: 'SERIAL_NUMBER'
   });
   const mismatches = targets.filter((target, index) =>
@@ -473,22 +523,33 @@ async function verifyMaterialized(spreadsheetId, targets, expectedByKey) {
 
 async function materializeTargets(spreadsheetId, journalEvents, targetsMap, targetKeys) {
   const grouped = groupJournalEvents(journalEvents);
-  const targets = targetKeys.map(key => targetsMap.get(key)).filter(Boolean);
-  const cells = await fetchGridCells(spreadsheetId, targets);
-  const requests = [];
-  const expectedByKey = new Map();
+  let materializedCount = 0;
 
-  for (const target of targets) {
-    const events = grouped.get(target.key) || [];
-    const cell = targetCellState(cells, target);
-    const materialized = prepareMaterialization(target, events, cell);
-    expectedByKey.set(target.key, materialized.expected);
-    requests.push(updateCellRequest(target, materialized.expected, materialized.note));
+  for (const keyChunk of chunksOf(targetKeys, GRID_RANGE_CHUNK)) {
+    const targets = keyChunk.map(key => targetsMap.get(key)).filter(Boolean);
+    const cells = await fetchGridCells(spreadsheetId, targets);
+    const requests = [];
+    const expectedByKey = new Map();
+
+    for (const target of targets) {
+      const events = grouped.get(target.key) || [];
+      const cell = targetCellState(cells, target);
+      const materialized = prepareMaterialization(target, events, cell);
+      expectedByKey.set(target.key, materialized.expected);
+      requests.push(updateCellRequest(target, materialized.expected, materialized.note));
+    }
+
+    // Das ist kein serverseitiges Compare-and-Swap, verkleinert aber das
+    // verbleibende Race-Fenster auf die Strecke zwischen diesem zweiten Read
+    // und dem unmittelbar folgenden batchUpdate. Jede dazwischen erkannte
+    // manuelle/konkurrierende Änderung führt fail-closed zum Abbruch.
+    await assertCellsUnchanged(spreadsheetId, targets, cells);
+    if (requests.length) await batchUpdateSpreadsheet(spreadsheetId, requests);
+    await verifyMaterialized(spreadsheetId, targets, expectedByKey);
+    materializedCount += targets.length;
   }
 
-  if (requests.length) await batchUpdateSpreadsheet(spreadsheetId, requests);
-  await verifyMaterialized(spreadsheetId, targets, expectedByKey);
-  return targets.length;
+  return materializedCount;
 }
 
 async function writeTrackingPlanLocked(plan, { now = new Date(), operationId = '', source = 'tracking' } = {}) {
@@ -579,7 +640,7 @@ async function writeTrackingPlanLocked(plan, { now = new Date(), operationId = '
     await batchUpdateSpreadsheet(config.trackingSheetId, finalResolved.backfillRequests);
   }
 
-  // Zwei kurze Konvergenzrunden fangen den häufigsten Mehrgeräte-Race ab: Falls
+  // Kurze Konvergenzrunden fangen den häufigsten Mehrgeräte-Race ab: Falls
   // zwischen Journal-Read und Materialisierung auf einem zweiten Gerät noch ein
   // Event angehängt wurde, wird es direkt in denselben Zellstand aufgenommen.
   for (let round = 0; round < 3; round += 1) {
@@ -652,10 +713,18 @@ async function repairTrackingJournalLocked() {
       continue;
     }
 
-    if (shouldRebaseExternalEdit({ currentValue: cell.value, noteMeta: parsed.meta, existingEvents: targetEvents })) {
-      rebases.push(rebaseEvent(target, cell.value, targetEvents));
-    } else if (!noteMatchesMaterializedValue(parsed.meta, cell.value) && !noteCoversEvents(parsed.meta, targetEvents)) {
-      // Unvollständig materialisierte Remote-Ereignisse werden unten aus dem Journal neu aufgebaut.
+    try {
+      if (shouldRebaseExternalEdit({ currentValue: cell.value, noteMeta: parsed.meta, existingEvents: targetEvents })) {
+        rebases.push(rebaseEvent(target, cell.value, targetEvents));
+      } else if (!noteMatchesMaterializedValue(parsed.meta, cell.value) && !noteCoversEvents(parsed.meta, targetEvents)) {
+        // Unvollständig materialisierte Remote-Ereignisse werden unten aus dem Journal neu aufgebaut.
+      }
+    } catch {
+      // Beschädigtes/verkürztes Journal oder anderer mehrdeutiger Zustand:
+      // Full Repair darf nicht den gesamten Lauf abbrechen und anschließend
+      // andere sichere Zellen unberührt lassen. Diese Zielzelle wird isoliert
+      // als Konflikt markiert und nicht materialisiert.
+      conflicts.push(target.range);
     }
   }
 
@@ -673,7 +742,7 @@ async function repairTrackingJournalLocked() {
   );
   const repairKeys = [...resolved.targets.keys()].filter(key => !conflictKeys.has(key));
   const repaired = await materializeTargets(config.trackingSheetId, events, resolved.targets, repairKeys);
-  return { repaired, conflicts };
+  return { repaired, conflicts: unique(conflicts) };
 }
 
 export async function repairTrackingJournal() {
