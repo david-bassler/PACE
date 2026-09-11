@@ -20,6 +20,7 @@ import {
   groupJournalEvents,
   journalEventFromRow,
   journalEventIds,
+  journalEventsHash,
   journalEventToRow,
   journalTargetKey,
   journalValueHash,
@@ -194,9 +195,6 @@ async function ensureJournalSheet(spreadsheetId, metadata) {
     throw new Error(`${JOURNAL_SHEET} existiert bereits, aber seine Header stimmen nicht vollständig mit dem PACE-Integritätsjournal überein.`);
   }
 
-  // Eine nach Teilfehler nur teilweise vorhandene, aber bis dahin korrekte
-  // Headerzeile darf vollständig repariert werden. Fremde/mismatched Header
-  // werden dagegen niemals überschrieben.
   if (existing.length !== JOURNAL_HEADERS.length) {
     await batchUpdateSpreadsheet(spreadsheetId, [{
       updateCells: {
@@ -489,6 +487,7 @@ function prepareMaterialization(target, events, cell) {
       version: 2,
       targetKey: target.key,
       appliedEventIds: journalEventIds(events),
+      appliedEventsHash: journalEventsHash(events),
       materializedHash: journalValueHash(expected)
     })
   };
@@ -539,10 +538,6 @@ async function materializeTargets(spreadsheetId, journalEvents, targetsMap, targ
       requests.push(updateCellRequest(target, materialized.expected, materialized.note));
     }
 
-    // Das ist kein serverseitiges Compare-and-Swap, verkleinert aber das
-    // verbleibende Race-Fenster auf die Strecke zwischen diesem zweiten Read
-    // und dem unmittelbar folgenden batchUpdate. Jede dazwischen erkannte
-    // manuelle/konkurrierende Änderung führt fail-closed zum Abbruch.
     await assertCellsUnchanged(spreadsheetId, targets, cells);
     if (requests.length) await batchUpdateSpreadsheet(spreadsheetId, requests);
     await verifyMaterialized(spreadsheetId, targets, expectedByKey);
@@ -640,9 +635,6 @@ async function writeTrackingPlanLocked(plan, { now = new Date(), operationId = '
     await batchUpdateSpreadsheet(config.trackingSheetId, finalResolved.backfillRequests);
   }
 
-  // Kurze Konvergenzrunden fangen den häufigsten Mehrgeräte-Race ab: Falls
-  // zwischen Journal-Read und Materialisierung auf einem zweiten Gerät noch ein
-  // Event angehängt wurde, wird es direkt in denselben Zellstand aufgenommen.
   for (let round = 0; round < 3; round += 1) {
     await materializeTargets(config.trackingSheetId, relevantEvents, finalResolved.targets, currentTargetKeys);
     const latest = await readJournal(config.trackingSheetId);
@@ -720,10 +712,6 @@ async function repairTrackingJournalLocked() {
         // Unvollständig materialisierte Remote-Ereignisse werden unten aus dem Journal neu aufgebaut.
       }
     } catch {
-      // Beschädigtes/verkürztes Journal oder anderer mehrdeutiger Zustand:
-      // Full Repair darf nicht den gesamten Lauf abbrechen und anschließend
-      // andere sichere Zellen unberührt lassen. Diese Zielzelle wird isoliert
-      // als Konflikt markiert und nicht materialisiert.
       conflicts.push(target.range);
     }
   }
