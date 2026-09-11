@@ -12,6 +12,7 @@ import {
   journalValueHash,
   noteCoversEvents,
   noteMatchesMaterializedValue,
+  noteReferencesUnknownEvents,
   parsePaceNote,
   replayJournalEvents,
   shouldRebaseExternalEdit
@@ -111,6 +112,24 @@ test('stale note plus changed cell fails closed instead of overwriting an ambigu
   assert.throws(
     () => shouldRebaseExternalEdit({ currentValue: 'manuell', noteMeta: stale, existingEvents: events }),
     /mehrdeutigen Zustand/
+  );
+});
+
+test('a note referencing a missing journal event fails closed', () => {
+  const remaining = [item('op-2:0', '11:02')];
+  const noteMeta = {
+    appliedEventIds: ['op-1:0', 'op-2:0'],
+    materializedHash: journalValueHash('10:13\n11:02')
+  };
+
+  assert.equal(noteReferencesUnknownEvents(noteMeta, remaining), true);
+  assert.throws(
+    () => shouldRebaseExternalEdit({
+      currentValue: '10:13\n11:02',
+      noteMeta,
+      existingEvents: remaining
+    }),
+    /Integritätsjournal fehlt/
   );
 });
 
