@@ -1,10 +1,17 @@
-import { loadJSON, loadRedundantValue, saveRedundantValue } from '../core/storage.js';
+import {
+  flushStorage,
+  loadJSON,
+  loadRedundantValue,
+  saveJSON,
+  saveRedundantValue
+} from '../core/storage.js';
 import { markDirty } from '../core/sync.js';
 import { findQuickCaptureCommand } from './quick-capture-domain.js';
 import {
   needsRecovery,
   pruneCaptureJournal,
-  reconcileCaptureJournal
+  reconcileCaptureJournal,
+  removeConfirmedQueueCopies
 } from './capture-integrity-domain.js';
 
 const QUICK_CAPTURE_QUEUE_KEY = 'pace-quick-capture-queue-v1';
@@ -12,6 +19,7 @@ const SAFETY_JOURNAL_KEY = 'paceSafetyJournalV1';
 
 let journalAvailable = true;
 let panels = null;
+let integrityBlocked = false;
 
 function pendingEntries() {
   const parsed = loadJSON(QUICK_CAPTURE_QUEUE_KEY, []);
@@ -219,30 +227,78 @@ function reconcileJournal() {
   if (panels) {
     renderPending(panels.pending, queue);
     renderRecovery(panels.recovery, after);
-    panels.warning.hidden = journalAvailable;
+    if (!integrityBlocked) {
+      panels.warning.hidden = journalAvailable;
+      if (!journalAvailable) {
+        panels.warning.textContent = 'Zusätzliche lokale Sicherheitskopie ist auf diesem Gerät derzeit nicht verfügbar.';
+      }
+    }
   }
+}
+
+async function discardConfirmedQueueCopies() {
+  const current = pendingEntries();
+  const journal = loadSafetyJournal();
+  const cleaned = removeConfirmedQueueCopies(current, journal);
+  if (!cleaned.removedIds.length) return false;
+
+  saveJSON(QUICK_CAPTURE_QUEUE_KEY, cleaned.queue);
+  try {
+    await flushStorage();
+  } catch (error) {
+    integrityBlocked = true;
+    if (panels) {
+      panels.warning.hidden = false;
+      panels.warning.textContent = `PACE hat einen bereits bestätigten Eintrag noch in der lokalen Queue gefunden, konnte die alte Kopie aber nicht sicher entfernen. Neue Erfassungen sind vorsichtshalber blockiert. ${error?.message || ''}`.trim();
+    }
+    return false;
+  }
+
+  // quick-capture.js hält die Queue zusätzlich im Modulzustand. Nach erfolgreicher
+  // Bereinigung laden wir einmal neu, damit auch dieser Zustand garantiert mit
+  // der dauerhaft bereinigten Queue übereinstimmt.
+  globalThis.location?.reload?.();
+  return true;
+}
+
+function installCaptureListeners() {
+  document.addEventListener('pointerdown', event => {
+    const button = event.target.closest?.('.quick-capture-suggestion');
+    if (!button) return;
+    if (integrityBlocked) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
+    recordSafetyCapture(button);
+  }, true);
+
+  document.addEventListener('keydown', event => {
+    if (!['Enter', 'Tab'].includes(event.key)) return;
+    if (!event.target.matches?.('.quick-capture-textarea')) return;
+    if (integrityBlocked) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
+    const button = activeSuggestion();
+    if (button) recordSafetyCapture(button);
+  }, true);
 }
 
 export function initCaptureIntegrityFeature() {
   installStyles();
   panels = createPanels();
   if (!panels) return;
+  installCaptureListeners();
 
-  const initial = pendingEntries();
-  if (initial.length) markDirty('quick-capture');
+  void (async () => {
+    const reloading = await discardConfirmedQueueCopies();
+    if (reloading || integrityBlocked) return;
 
-  document.addEventListener('pointerdown', event => {
-    const button = event.target.closest?.('.quick-capture-suggestion');
-    if (button) recordSafetyCapture(button);
-  }, true);
-
-  document.addEventListener('keydown', event => {
-    if (!['Enter', 'Tab'].includes(event.key)) return;
-    if (!event.target.matches?.('.quick-capture-textarea')) return;
-    const button = activeSuggestion();
-    if (button) recordSafetyCapture(button);
-  }, true);
-
-  reconcileJournal();
-  setInterval(reconcileJournal, 1000);
+    const initial = pendingEntries();
+    if (initial.length) markDirty('quick-capture');
+    reconcileJournal();
+    setInterval(reconcileJournal, 1000);
+  })();
 }
