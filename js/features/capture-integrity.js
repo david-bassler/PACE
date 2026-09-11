@@ -1,4 +1,4 @@
-import { loadJSON } from '../core/storage.js';
+import { loadJSON, loadRedundantValue, saveRedundantValue } from '../core/storage.js';
 import { markDirty } from '../core/sync.js';
 import { findQuickCaptureCommand } from './quick-capture-domain.js';
 import {
@@ -22,7 +22,7 @@ function pendingEntries() {
 
 function loadSafetyJournal() {
   try {
-    const raw = localStorage.getItem(SAFETY_JOURNAL_KEY);
+    const raw = loadRedundantValue(SAFETY_JOURNAL_KEY, null);
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed : [];
   } catch {
@@ -32,14 +32,9 @@ function loadSafetyJournal() {
 }
 
 function saveSafetyJournal(entries) {
-  try {
-    localStorage.setItem(SAFETY_JOURNAL_KEY, JSON.stringify(entries));
-    journalAvailable = true;
-    return true;
-  } catch {
-    journalAvailable = false;
-    return false;
-  }
+  const saved = saveRedundantValue(SAFETY_JOURNAL_KEY, JSON.stringify(entries));
+  journalAvailable = saved;
+  return saved;
 }
 
 function journalId() {
