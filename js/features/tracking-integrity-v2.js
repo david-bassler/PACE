@@ -29,6 +29,7 @@ const LEGACY_MATCH_WINDOW = 5000;
 
 let panel = null;
 let lastRepairConflicts = [];
+let groupSubmissionInFlight = false;
 
 function operations() {
   return listTrackingOperations();
@@ -59,36 +60,27 @@ function sameQueuedCapture(operation, queueEntry) {
   return title === String(operation.fieldTitle || '').trim() && value === String(operation.value || '').trim();
 }
 
+function normalizeLegacyOperationPlans() {
+  for (const operation of operations()) {
+    if (!['captured', 'pending'].includes(operation.state)) continue;
+    if (!operation.plan || Array.isArray(operation.plan) || typeof operation.plan !== 'object') continue;
+    updateTrackingOperation(operation, { plan: [{ ...operation.plan }] });
+  }
+}
+
 function migrateLegacyQueue() {
+  // PR #15 konnte bereits Pending-Operationen mit einem einzelnen Plan-Objekt
+  // erzeugen. Diese würden vom neuen Array-basierten Sync sonst dauerhaft
+  // übersprungen. Vor jeder Migration werden solche Altstände normalisiert.
+  normalizeLegacyOperationPlans();
+
   const queue = legacyQueue();
   let current = operations();
-  const representedQueueIds = new Set(
-    current.flatMap(item => [item.queueId, item.id]).filter(Boolean)
-  );
-
-  // New quick captures already use the queue ID as their operation ID. If a
-  // crash happened after the durable local commit but just before the state
-  // changed from captured -> pending, the exact ID is enough to finish that
-  // transition without looking at title/value/time.
-  for (const entry of queue) {
-    const exact = current.find(item => item.id === entry.id);
-    if (!exact || exact.state !== 'captured') continue;
-    updateTrackingOperation(exact, {
-      state: 'pending',
-      queueId: entry.id,
-      fieldId: exact.fieldId || entry.fieldId || entry.plan?.fieldId || '',
-      fieldTitle: exact.fieldTitle || entry.fieldTitle || entry.plan?.title || 'Eintrag',
-      value: exact.value || String(entry.plan?.value || ''),
-      icon: exact.icon || entry.icon || '',
-      plan: Array.isArray(exact.plan) && exact.plan.length ? exact.plan : [{ ...entry.plan }]
-    });
-    representedQueueIds.add(entry.id);
-  }
+  const representedQueueIds = new Set(current.map(item => item.queueId).filter(Boolean));
 
   // Compatibility only for captured records created by the pre-#17 version.
   // Matching is bounded tightly in both directions so a stale orphan cannot
   // attach itself to a later identical coffee/medication entry.
-  current = operations();
   const usedOperationIds = new Set();
   for (const entry of queue) {
     if (representedQueueIds.has(entry.id)) continue;
@@ -117,7 +109,7 @@ function migrateLegacyQueue() {
   }
 
   current = operations();
-  const represented = new Set(current.flatMap(item => [item.queueId, item.id]).filter(Boolean));
+  const represented = new Set(current.map(item => item.queueId).filter(Boolean));
   for (const entry of queue) {
     if (represented.has(entry.id)) continue;
     const id = `legacy-${entry.id}`;
@@ -141,9 +133,8 @@ function migrateLegacyQueue() {
 function removeConfirmedFromLegacyQueue() {
   const confirmedQueueIds = new Set(
     operations()
-      .filter(item => item.state === 'confirmed')
-      .flatMap(item => [item.queueId, item.source === 'quick' ? item.id : ''])
-      .filter(Boolean)
+      .filter(item => item.state === 'confirmed' && item.queueId)
+      .map(item => item.queueId)
   );
   if (!confirmedQueueIds.size) return;
 
@@ -173,13 +164,7 @@ function readGroupValue(wrapper, field) {
   return wrapper.querySelector('[data-part="value"]')?.value.trim() || '';
 }
 
-async function queueGroupEntry(event) {
-  const form = event.target;
-  if (!(form instanceof HTMLFormElement) || form.id !== 'trackingEntryForm') return;
-
-  event.preventDefault();
-  event.stopImmediatePropagation();
-
+async function queueGroupEntryOnce(form) {
   const wrappers = [...form.querySelectorAll('[data-field-id]')];
   const config = getTrackingConfig();
   const fieldsById = new Map((config.fields || []).map(field => [field.id, field]));
@@ -224,7 +209,7 @@ async function queueGroupEntry(event) {
   const pending = updateTrackingOperation(operation, { state: 'pending', readyAt: nowIso() });
   try {
     await flushStorage();
-  } catch (error) {
+  } catch {
     // Die captured-Version wurde bereits auf beiden lokalen Speicherwegen
     // bestätigt und die pending-Version liegt synchron im redundanten Store.
     // Deshalb darf das Formular jetzt geschlossen werden; die Operation bleibt
@@ -240,6 +225,31 @@ async function queueGroupEntry(event) {
   return pending;
 }
 
+async function queueGroupEntry(event) {
+  const form = event.target;
+  if (!(form instanceof HTMLFormElement) || form.id !== 'trackingEntryForm') return;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+
+  if (groupSubmissionInFlight) {
+    announce('Diese Erfassung wird bereits lokal gespeichert.', '');
+    return;
+  }
+
+  groupSubmissionInFlight = true;
+  const submit = form.querySelector('button[type="submit"]');
+  const wasDisabled = Boolean(submit?.disabled);
+  if (submit) submit.disabled = true;
+
+  try {
+    await queueGroupEntryOnce(form);
+  } finally {
+    groupSubmissionInFlight = false;
+    if (submit) submit.disabled = wasDisabled;
+  }
+}
+
 async function restoreCapturedOperation(operation) {
   const textarea = document.querySelector('.quick-capture-textarea');
   if (!textarea || operation.source !== 'quick') return;
@@ -253,7 +263,7 @@ async function restoreCapturedOperation(operation) {
 
   try {
     await flushStorage();
-  } catch (error) {
+  } catch {
     announce('Der Text wurde wieder eingesetzt, aber der Entwurf konnte noch nicht dauerhaft bestätigt werden. Die Sicherheitskopie bleibt erhalten.', 'bad');
     renderPanel();
     return;
