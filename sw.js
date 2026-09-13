@@ -1,6 +1,7 @@
-const CACHE = 'pace-v50';
+const CACHE = 'pace-v51';
 const ASSETS = [
   './', './index.html', './style.css', './shell-v2.css', './manifest.webmanifest', './icon.svg', './icon-maskable.svg',
+  './vendor/qrcodejs/qrcode.min.js',
   './js/main.js', './js/core/storage.js', './js/core/ui.js', './js/core/google.js', './js/core/google-picker.js', './js/core/sync.js', './js/core/collections.js',
   './js/features/day.js', './js/features/settings.js',
   './js/features/progress.js', './js/features/progress-data.js', './js/features/progress-domain.js',
