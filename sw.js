@@ -1,4 +1,4 @@
-const CACHE = 'pace-v57';
+const CACHE = 'pace-v58';
 const ASSETS = [
   './', './index.html', './style.css', './shell-v2.css', './manifest.webmanifest', './icon.svg', './icon-maskable.svg',
   './assets/tool-states/01_zu_viel_kommt_rein.png', './assets/tool-states/02_koerper_ist_hochgefahren.png', './assets/tool-states/03_wut_eskalation.png', './assets/tool-states/04_zu_viel_im_kopf.png', './assets/tool-states/05_alles_wirkt_riesig.png', './assets/tool-states/06_zu_viele_moeglichkeiten.png', './assets/tool-states/07_ich_bin_leer.png', './assets/tool-states/08_zu_viel_energie_im_koerper.png', './assets/tool-states/09_unsicher_oder_allein.png', './assets/tool-states/10_blick_verengt.png',
@@ -13,7 +13,7 @@ const ASSETS = [
   './js/features/sun-times.js', './js/features/sun-times-domain.js',
   './js/features/breath.js',
   './js/features/holding.js', './js/features/holding-data.js', './js/features/holding-domain.js',
-  './js/features/horizon.js', './js/features/navigation.js',
+  './js/features/horizon.js', './js/features/navigation.js', './js/features/regulation-tools.js',
   './js/features/setup-transfer.js', './js/features/setup-transfer-domain.js'
 ];
 
