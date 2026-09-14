@@ -170,7 +170,7 @@ function setupToolsPage() {
 }
 
 function setupHelpPage() {
-  if (document.getElementById('page-help')) return;
+  if (pageElement('help')) return;
 
   const page = document.createElement('section');
   page.id = 'page-help';
