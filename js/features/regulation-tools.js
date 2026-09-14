@@ -1,3 +1,5 @@
+import { loadJSON, saveJSON } from '../core/storage.js';
+
 function installRegulationStyles() {
   if (document.querySelector('style[data-pace-regulation-tools]')) return;
   const style = document.createElement('style');
@@ -137,20 +139,16 @@ export function createInsurmountableTool() {
 const DIRECTION_STORAGE_KEY = 'pace-direction-focus-v1';
 
 function loadDirectionState() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(DIRECTION_STORAGE_KEY) || '{}');
-    return {
-      now: typeof parsed.now === 'string' ? parsed.now : '',
-      later: Array.isArray(parsed.later) ? parsed.later.filter(item => typeof item === 'string' && item.trim()) : [],
-      notToday: Array.isArray(parsed.notToday) ? parsed.notToday.filter(item => typeof item === 'string' && item.trim()) : []
-    };
-  } catch {
-    return { now: '', later: [], notToday: [] };
-  }
+  const parsed = loadJSON(DIRECTION_STORAGE_KEY, { now: '', later: [], notToday: [] });
+  return {
+    now: typeof parsed.now === 'string' ? parsed.now : '',
+    later: Array.isArray(parsed.later) ? parsed.later.filter(item => typeof item === 'string' && item.trim()) : [],
+    notToday: Array.isArray(parsed.notToday) ? parsed.notToday.filter(item => typeof item === 'string' && item.trim()) : []
+  };
 }
 
 function saveDirectionState(state) {
-  try { localStorage.setItem(DIRECTION_STORAGE_KEY, JSON.stringify(state)); } catch {}
+  saveJSON(DIRECTION_STORAGE_KEY, state);
 }
 
 function uniqueDirectionItems(items) {
