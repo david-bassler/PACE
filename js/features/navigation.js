@@ -28,20 +28,25 @@ const TOOL_DEFINITIONS = [
 ];
 const TOOL_KEYS = new Set(TOOL_DEFINITIONS.map(({key}) => key));
 const HELP_STATES = [
-  ['01_zu_viel_kommt_rein.png','Zu viel kommt rein','input'],
-  ['02_koerper_ist_hochgefahren.png','Mein Körper ist hochgefahren','calm'],
-  ['03_wut_eskalation.png','Ich bin in Wut/Eskalation','disengage'],
-  ['04_zu_viel_im_kopf.png','Zu viel im Kopf','space'],
-  ['05_alles_wirkt_riesig.png','Alles wirkt riesig','insurmountable'],
-  ['06_zu_viele_moeglichkeiten.png','Zu viele Möglichkeiten','direction'],
-  ['07_ich_bin_leer.png','Ich bin leer','day'],
-  ['08_zu_viel_energie_im_koerper.png','Ich habe zu viel Energie im Körper','move'],
-  ['09_unsicher_oder_allein.png','Ich fühle mich unsicher oder allein','safety'],
-  ['10_blick_verengt.png','Mein Blick ist völlig verengt','perspective']
-].map(([image,label,tool]) => ({image,label,tool}));
+  { key:'input-overload', image:'01_zu_viel_kommt_rein.png', label:'Zu viel kommt rein', suggestions:['input','calm'] },
+  { key:'body-high', image:'02_koerper_ist_hochgefahren.png', label:'Mein Körper ist hochgefahren', suggestions:['calm','input'] },
+  { key:'anger', image:'03_wut_eskalation.png', label:'Ich bin in Wut/Eskalation', suggestions:['disengage','move','calm'] },
+  { key:'head-full', image:'04_zu_viel_im_kopf.png', label:'Zu viel im Kopf', suggestions:['space','direction'] },
+  { key:'everything-huge', image:'05_alles_wirkt_riesig.png', label:'Alles wirkt riesig', suggestions:['insurmountable','space'] },
+  { key:'too-many-options', image:'06_zu_viele_moeglichkeiten.png', label:'Zu viele Möglichkeiten', suggestions:['direction','space'] },
+  { key:'empty', image:'07_ich_bin_leer.png', label:'Ich bin leer', suggestions:['day'] },
+  { key:'too-much-energy', image:'08_zu_viel_energie_im_koerper.png', label:'Ich habe zu viel Energie im Körper', suggestions:['move','calm'] },
+  { key:'unsafe-alone', image:'09_unsicher_oder_allein.png', label:'Ich fühle mich unsicher oder allein', suggestions:['safety','calm','perspective'] },
+  { key:'narrow-view', image:'10_blick_verengt.png', label:'Mein Blick ist völlig verengt', suggestions:['perspective','space'] }
+];
+const HELP_STATE_KEYS = new Set(HELP_STATES.map(({key}) => key));
 let currentTool = '';
+let currentHelpState = '';
 
 const pageElement = name => document.querySelector(`[data-page="${name}"]`);
+const toolDefinition = key => TOOL_DEFINITIONS.find(item => item.key === key);
+const helpStateDefinition = key => HELP_STATES.find(item => item.key === key);
+
 function injectShellStyles(){
   if(document.querySelector('link[data-pace-shell-v2]')) return;
   const link=document.createElement('link'); link.rel='stylesheet'; link.href='./shell-v2.css'; link.dataset.paceShellV2='true'; document.head.appendChild(link);
@@ -73,8 +78,11 @@ function setupCapturePage(){
 function createToolScreen(page,definition,elements){
   const screen=document.createElement('section'); screen.className='tool-screen'; screen.dataset.toolScreen=definition.key; screen.hidden=true;
   const header=document.createElement('header'); header.className='subscreen-header';
-  header.innerHTML=`<button class="subscreen-back" type="button" aria-label="Zurück zu Werkzeuge">←</button><div><p class="micro">WERKZEUG</p><h2>${definition.title}</h2></div>`;
-  header.querySelector('.subscreen-back')?.addEventListener('click',()=>navigateTo('tools'));
+  header.innerHTML=`<button class="subscreen-back" type="button" aria-label="Zurück">←</button><div><p class="micro">WERKZEUG</p><h2>${definition.title}</h2></div>`;
+  header.querySelector('.subscreen-back')?.addEventListener('click',()=>{
+    if(currentHelpState) navigateTo('tools',{state:currentHelpState});
+    else navigateTo('tools');
+  });
   screen.appendChild(header); elements.filter(Boolean).forEach(element=>screen.appendChild(element)); page.appendChild(screen);
 }
 function setupToolsPage(){
@@ -87,22 +95,29 @@ function setupToolsPage(){
     button.addEventListener('click',()=>navigateTo('tools',{tool:definition.key})); menu.appendChild(button);
   });
   intro?.insertAdjacentElement('afterend',menu);
+
+  const suggestions=document.createElement('section');
+  suggestions.className='tools-suggestions';
+  suggestions.hidden=true;
+  suggestions.innerHTML=`<header class="tools-context-header"><button class="subscreen-back" type="button" aria-label="Zurück zu Hilfe">←</button><div><p class="micro">JETZT</p><h2>Das könnte helfen</h2></div></header><div class="tools-suggestion-list" role="list"></div>`;
+  suggestions.querySelector('.subscreen-back')?.addEventListener('click',()=>navigateTo('help'));
+  menu.insertAdjacentElement('afterend',suggestions);
+
   const dayElements=[document.querySelector('#page-capture .energy-strip'),document.getElementById('reserveFirst'),document.querySelector('#page-capture .today-panel'),document.getElementById('stuckButton'),document.getElementById('rescueCurrent'),document.querySelector('#page-capture .evening-card')];
   const calm=page.querySelector('.calm-tool'), space=page.querySelector('.space-home'), direction=page.querySelector('.meh-home'), perspective=page.querySelector('.anchor-home'), paceSuggestions=page.querySelector('#paceSuggestionsDetails');
   const progressPage=document.getElementById('page-progress'), progressCard=progressPage?.querySelector('.progress-home');
-  const definition = key => TOOL_DEFINITIONS.find(item => item.key === key);
-  createToolScreen(page,definition('day'),[createReserveCompanion(),...dayElements]);
-  createToolScreen(page,definition('input'),[createInputTool()]);
-  createToolScreen(page,definition('calm'),[createCalmCompanion(),calm]);
-  createToolScreen(page,definition('disengage'),[createDisengageTool()]);
-  createToolScreen(page,definition('space'),[space]);
-  createToolScreen(page,definition('insurmountable'),[createInsurmountableTool()]);
-  createToolScreen(page,definition('direction'),[createDirectionCompanion(),direction]);
-  createToolScreen(page,definition('move'),[createMoveTool()]);
-  createToolScreen(page,definition('safety'),[createSafetyTool()]);
-  createToolScreen(page,definition('perspective'),[createPerspectiveCompanion(),perspective]);
-  createToolScreen(page,definition('pace'),[paceSuggestions]);
-  createToolScreen(page,definition('progress'),[progressCard]);
+  createToolScreen(page,toolDefinition('day'),[createReserveCompanion(),...dayElements]);
+  createToolScreen(page,toolDefinition('input'),[createInputTool()]);
+  createToolScreen(page,toolDefinition('calm'),[createCalmCompanion(),calm]);
+  createToolScreen(page,toolDefinition('disengage'),[createDisengageTool()]);
+  createToolScreen(page,toolDefinition('space'),[space]);
+  createToolScreen(page,toolDefinition('insurmountable'),[createInsurmountableTool()]);
+  createToolScreen(page,toolDefinition('direction'),[createDirectionCompanion(),direction]);
+  createToolScreen(page,toolDefinition('move'),[createMoveTool()]);
+  createToolScreen(page,toolDefinition('safety'),[createSafetyTool()]);
+  createToolScreen(page,toolDefinition('perspective'),[createPerspectiveCompanion(),perspective]);
+  createToolScreen(page,toolDefinition('pace'),[paceSuggestions]);
+  createToolScreen(page,toolDefinition('progress'),[progressCard]);
   if(progressPage){ progressPage.hidden=true; progressPage.removeAttribute('data-page'); progressPage.classList.remove('active'); }
 }
 function setupHelpPage(){
@@ -112,7 +127,7 @@ function setupHelpPage(){
   HELP_STATES.forEach(state=>{
     const button=document.createElement('button'); button.type='button'; button.className='help-tile'; button.setAttribute('aria-label',`${state.label}: passende Werkzeuge öffnen`);
     button.innerHTML=`<img src="./assets/tool-states/${state.image}" alt="" loading="lazy"><span>${state.label}</span>`;
-    button.addEventListener('click',()=>navigateTo('tools',{tool:state.tool,scroll:false})); grid.appendChild(button);
+    button.addEventListener('click',()=>navigateTo('tools',{state:state.key,scroll:false})); grid.appendChild(button);
   });
   page.appendChild(grid); const configPage=document.getElementById('page-more');
   if(configPage) configPage.insertAdjacentElement('beforebegin',page); else document.querySelector('.app-shell')?.appendChild(page);
@@ -127,30 +142,60 @@ function setupShell(){
   if(document.body.classList.contains('pace-shell-v2')) return;
   document.body.classList.add('pace-shell-v2'); injectShellStyles(); setupRootNavigation(); setupCapturePage(); setupToolsPage(); setupHelpPage(); setupConfigPage();
 }
-function showToolsOverview(){
-  currentTool=''; const page=pageElement('tools'); if(!page) return; page.classList.remove('showing-tool'); page.querySelector('.page-intro')?.removeAttribute('hidden');
-  const overview=page.querySelector('.tools-overview'); if(overview) overview.hidden=false; page.querySelectorAll('[data-tool-screen]').forEach(screen=>{screen.hidden=true;});
+function hideToolModes(page){
+  const overview=page.querySelector('.tools-overview'); if(overview) overview.hidden=true;
+  const suggestions=page.querySelector('.tools-suggestions'); if(suggestions) suggestions.hidden=true;
+  page.querySelectorAll('[data-tool-screen]').forEach(screen=>{screen.hidden=true;});
 }
-function showTool(key){
+function showToolsOverview(){
+  currentTool=''; currentHelpState=''; const page=pageElement('tools'); if(!page) return;
+  page.classList.remove('showing-tool','showing-suggestions'); page.querySelector('.page-intro')?.removeAttribute('hidden');
+  hideToolModes(page); const overview=page.querySelector('.tools-overview'); if(overview) overview.hidden=false;
+}
+function showSuggestions(stateKey){
+  const page=pageElement('tools'), state=helpStateDefinition(stateKey), panel=page?.querySelector('.tools-suggestions');
+  if(!page||!state||!panel) return false;
+  currentTool=''; currentHelpState=state.key; page.classList.remove('showing-tool'); page.classList.add('showing-suggestions');
+  const intro=page.querySelector('.page-intro'); if(intro) intro.hidden=true; hideToolModes(page);
+  const list=panel.querySelector('.tools-suggestion-list'); if(!list) return false;
+  list.innerHTML='';
+  state.suggestions.map(toolDefinition).filter(Boolean).forEach((definition,index)=>{
+    const button=document.createElement('button'); button.type='button'; button.className='tools-suggestion-row'; button.setAttribute('role','listitem');
+    button.innerHTML=`<span class="tools-suggestion-rank" aria-hidden="true">${index+1}</span><span><strong>${definition.title}</strong><small>${definition.hint}</small></span><span class="screen-menu-arrow" aria-hidden="true">›</span>`;
+    button.addEventListener('click',()=>navigateTo('tools',{tool:definition.key,state:state.key})); list.appendChild(button);
+  });
+  panel.hidden=false; return true;
+}
+function showTool(key,{state=''}={}){
   const page=pageElement('tools'), screen=page?.querySelector(`[data-tool-screen="${key}"]`); if(!page||!screen) return false;
-  currentTool=key; page.classList.add('showing-tool'); const intro=page.querySelector('.page-intro'); if(intro) intro.hidden=true; const overview=page.querySelector('.tools-overview'); if(overview) overview.hidden=true;
-  page.querySelectorAll('[data-tool-screen]').forEach(candidate=>{candidate.hidden=candidate!==screen;}); return true;
+  currentTool=key; currentHelpState=HELP_STATE_KEYS.has(state)?state:''; page.classList.remove('showing-suggestions'); page.classList.add('showing-tool');
+  const intro=page.querySelector('.page-intro'); if(intro) intro.hidden=true; hideToolModes(page); screen.hidden=false; return true;
 }
 function toolForFocus(focus){ if(!focus) return ''; return document.getElementById(focus)?.closest('[data-tool-screen]')?.dataset.toolScreen||''; }
-function normalizeRoute(name,{tool='',focus=''}={}){
+function normalizeRoute(name,{tool='',focus='',state=''}={}){
   const requested=PAGE_ALIASES[name]||'capture', page=ROOT_PAGES.has(requested)?requested:'capture'; let requestedTool='';
   if(page==='tools'){
     if(name==='progress') requestedTool='progress'; else if(TOOL_KEYS.has(tool)) requestedTool=tool; else requestedTool=toolForFocus(focus);
   }
-  return {page,tool:TOOL_KEYS.has(requestedTool)?requestedTool:'',focus:focus||''};
+  return {
+    page,
+    tool:TOOL_KEYS.has(requestedTool)?requestedTool:'',
+    state:page==='tools'&&HELP_STATE_KEYS.has(state)?state:'',
+    focus:focus||''
+  };
 }
 function routeFromUrl(){
   const url=new URL(window.location.href);
-  return normalizeRoute(url.searchParams.get('page')||'capture',{tool:url.searchParams.get('tool')||'',focus:url.searchParams.get('focus')||''});
+  return normalizeRoute(url.searchParams.get('page')||'capture',{
+    tool:url.searchParams.get('tool')||'',
+    state:url.searchParams.get('state')||'',
+    focus:url.searchParams.get('focus')||''
+  });
 }
 function routeUrl(route){
-  const url=new URL(window.location.href); ['page','tool','focus'].forEach(key=>url.searchParams.delete(key));
+  const url=new URL(window.location.href); ['page','tool','state','focus'].forEach(key=>url.searchParams.delete(key));
   if(route.page!=='capture') url.searchParams.set('page',route.page);
+  if(route.page==='tools'&&route.state) url.searchParams.set('state',route.state);
   if(route.page==='tools'&&route.tool) url.searchParams.set('tool',route.tool);
   if(route.focus) url.searchParams.set('focus',route.focus);
   return `${url.pathname}${url.search}${url.hash}`;
@@ -162,13 +207,17 @@ function writeRoute(route,mode='push'){
 function applyRoute(route,{scroll=true}={}){
   document.querySelectorAll('[data-page]').forEach(section=>{ const active=section.dataset.page===route.page; section.hidden=!active; section.classList.toggle('active',active); });
   document.querySelectorAll('[data-page-target]').forEach(button=>{ const active=button.dataset.pageTarget===route.page; button.classList.toggle('active',active); if(active) button.setAttribute('aria-current','page'); else button.removeAttribute('aria-current'); });
-  if(route.page==='tools'){ if(route.tool) showTool(route.tool); else showToolsOverview(); } else currentTool='';
+  if(route.page==='tools'){
+    if(route.tool) showTool(route.tool,{state:route.state});
+    else if(route.state) showSuggestions(route.state);
+    else showToolsOverview();
+  } else { currentTool=''; currentHelpState=''; }
   const target=route.focus?document.getElementById(route.focus):null;
   if(target&&!target.closest('[hidden]')) window.requestAnimationFrame(()=>target.scrollIntoView({block:'center',behavior:'smooth'}));
   else if(scroll) window.requestAnimationFrame(()=>window.scrollTo({top:0,behavior:'auto'}));
 }
-export function navigateTo(name,{focus='',scroll=true,tool='',replace=false,history=true}={}){
-  const route=normalizeRoute(name,{tool,focus}); if(history) writeRoute(route,replace?'replace':'push'); applyRoute(route,{scroll});
+export function navigateTo(name,{focus='',scroll=true,tool='',state='',replace=false,history=true}={}){
+  const route=normalizeRoute(name,{tool,state,focus}); if(history) writeRoute(route,replace?'replace':'push'); applyRoute(route,{scroll});
 }
 function closeDialog(id){ const dialog=document.getElementById(id); if(dialog?.open) dialog.close(); }
 export function initNavigation(){
@@ -177,7 +226,7 @@ export function initNavigation(){
   document.querySelectorAll('[data-page-target]').forEach(button=>button.addEventListener('click',()=>navigateTo(button.dataset.pageTarget)));
   window.addEventListener('pace:navigate',event=>{
     const detail=typeof event.detail==='string'?{page:event.detail}:(event.detail||{});
-    navigateTo(detail.page,{focus:detail.focus||'',tool:detail.tool||'',scroll:detail.scroll!==false,replace:detail.replace===true});
+    navigateTo(detail.page,{focus:detail.focus||'',tool:detail.tool||'',state:detail.state||'',scroll:detail.scroll!==false,replace:detail.replace===true});
   });
   window.addEventListener('popstate',()=>applyRoute(routeFromUrl(),{scroll:false}));
   document.getElementById('openSettingsFromMore')?.addEventListener('click',()=>document.getElementById('settingsButton')?.click());
