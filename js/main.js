@@ -39,6 +39,7 @@ async function boot() {
     horizon,
     navigation,
     regulationState,
+    userInputState,
     setupTransfer
   ] = await Promise.all([
     import('./features/day.js'),
@@ -59,6 +60,7 @@ async function boot() {
     import('./features/horizon.js'),
     import('./features/navigation.js'),
     import('./features/regulation-state.js'),
+    import('./features/user-input-state.js'),
     import('./features/setup-transfer.js')
   ]);
 
@@ -82,6 +84,7 @@ async function boot() {
   });
   navigation.initNavigation();
   regulationState.initRegulationStateFeature();
+  userInputState.initUserInputStateFeature();
 
   settings.setExtraSheetsProvider(() => ({
     ...progress.progressSheetSpecs,
@@ -89,7 +92,8 @@ async function boot() {
     ...space.spaceSheetSpecs,
     ...tracking.trackingSheetSpecs,
     ...holding.holdingSheetSpecs,
-    ...regulationState.regulationStateSheetSpecs
+    ...regulationState.regulationStateSheetSpecs,
+    ...userInputState.userInputStateSheetSpecs
   }));
   settings.initSettings();
   setupTransfer.initSetupTransferFeature();
