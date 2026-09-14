@@ -1,25 +1,42 @@
+import {
+  createInputTool,
+  createCalmCompanion,
+  createDisengageTool,
+  createInsurmountableTool,
+  createDirectionCompanion,
+  createReserveCompanion,
+  createMoveTool,
+  createSafetyTool,
+  createPerspectiveCompanion
+} from './regulation-tools.js';
+
 const ROOT_PAGES = new Set(['capture', 'tools', 'help', 'config']);
 const PAGE_ALIASES = { today:'capture', capture:'capture', tools:'tools', help:'help', progress:'tools', more:'config', config:'config' };
 const TOOL_DEFINITIONS = [
-  { key:'day', icon:'◷', title:'Tagessteuerung', hint:'Tagesform, Reserve und Abschluss' },
-  { key:'calm', icon:'◯', title:'Ruhe im System', hint:'Atemkreis' },
-  { key:'space', icon:'↘', title:'Kopf entlasten', hint:'Parken, verkleinern, behalten' },
-  { key:'direction', icon:'→', title:'Richtung finden', hint:'Wenn gerade nichts eindeutig zieht' },
-  { key:'perspective', icon:'◇', title:'Perspektive wechseln', hint:'Erinnern, Haltepunkte, Horizont' },
+  { key:'day', icon:'◷', title:'Reserve schützen', hint:'Grundbedarf, Reserve und Anforderungen' },
+  { key:'input', icon:'↓', title:'Input reduzieren', hint:'Reize und Zufuhr verändern' },
+  { key:'calm', icon:'◯', title:'Ruhe im System', hint:'Körper physiologisch runterregeln' },
+  { key:'disengage', icon:'⏸', title:'Auskuppeln', hint:'Eskalation unterbrechen, später entscheiden' },
+  { key:'space', icon:'↘', title:'Kopf entlasten', hint:'Parken, schreiben, aus dem Kopf bringen' },
+  { key:'insurmountable', icon:'·', title:'Unüberwindbar verkleinern', hint:'Nicht erledigen – nur vorbereiten' },
+  { key:'direction', icon:'→', title:'Richtung finden', hint:'Auswahl verkleinern und eine Sache wählen' },
+  { key:'move', icon:'↟', title:'Energie raus', hint:'Bewegungsenergie sicher abbauen' },
+  { key:'safety', icon:'⌂', title:'Sicherheit & Nähe', hint:'Sicherheit oder Co-Regulation herstellen' },
+  { key:'perspective', icon:'◇', title:'Perspektive wechseln', hint:'Blick wieder weiter machen' },
   { key:'pace', icon:'P', title:'PACE-Vorschläge', hint:'Direkt nach P · A · C · E' },
   { key:'progress', icon:'↗', title:'Fortschritt', hint:'Lebenslandkarte und nächste Schritte' }
 ];
 const TOOL_KEYS = new Set(TOOL_DEFINITIONS.map(({key}) => key));
 const HELP_STATES = [
-  ['01_zu_viel_kommt_rein.png','Zu viel kommt rein','calm'],
+  ['01_zu_viel_kommt_rein.png','Zu viel kommt rein','input'],
   ['02_koerper_ist_hochgefahren.png','Mein Körper ist hochgefahren','calm'],
-  ['03_wut_eskalation.png','Ich bin in Wut/Eskalation','calm'],
+  ['03_wut_eskalation.png','Ich bin in Wut/Eskalation','disengage'],
   ['04_zu_viel_im_kopf.png','Zu viel im Kopf','space'],
-  ['05_alles_wirkt_riesig.png','Alles wirkt riesig','space'],
+  ['05_alles_wirkt_riesig.png','Alles wirkt riesig','insurmountable'],
   ['06_zu_viele_moeglichkeiten.png','Zu viele Möglichkeiten','direction'],
   ['07_ich_bin_leer.png','Ich bin leer','day'],
-  ['08_zu_viel_energie_im_koerper.png','Ich habe zu viel Energie im Körper','calm'],
-  ['09_unsicher_oder_allein.png','Ich fühle mich unsicher oder allein','perspective'],
+  ['08_zu_viel_energie_im_koerper.png','Ich habe zu viel Energie im Körper','move'],
+  ['09_unsicher_oder_allein.png','Ich fühle mich unsicher oder allein','safety'],
   ['10_blick_verengt.png','Mein Blick ist völlig verengt','perspective']
 ].map(([image,label,tool]) => ({image,label,tool}));
 let currentTool = '';
@@ -73,7 +90,19 @@ function setupToolsPage(){
   const dayElements=[document.querySelector('#page-capture .energy-strip'),document.getElementById('reserveFirst'),document.querySelector('#page-capture .today-panel'),document.getElementById('stuckButton'),document.getElementById('rescueCurrent'),document.querySelector('#page-capture .evening-card')];
   const calm=page.querySelector('.calm-tool'), space=page.querySelector('.space-home'), direction=page.querySelector('.meh-home'), perspective=page.querySelector('.anchor-home'), paceSuggestions=page.querySelector('#paceSuggestionsDetails');
   const progressPage=document.getElementById('page-progress'), progressCard=progressPage?.querySelector('.progress-home');
-  createToolScreen(page,TOOL_DEFINITIONS[0],dayElements); createToolScreen(page,TOOL_DEFINITIONS[1],[calm]); createToolScreen(page,TOOL_DEFINITIONS[2],[space]); createToolScreen(page,TOOL_DEFINITIONS[3],[direction]); createToolScreen(page,TOOL_DEFINITIONS[4],[perspective]); createToolScreen(page,TOOL_DEFINITIONS[5],[paceSuggestions]); createToolScreen(page,TOOL_DEFINITIONS[6],[progressCard]);
+  const definition = key => TOOL_DEFINITIONS.find(item => item.key === key);
+  createToolScreen(page,definition('day'),[createReserveCompanion(),...dayElements]);
+  createToolScreen(page,definition('input'),[createInputTool()]);
+  createToolScreen(page,definition('calm'),[createCalmCompanion(),calm]);
+  createToolScreen(page,definition('disengage'),[createDisengageTool()]);
+  createToolScreen(page,definition('space'),[space]);
+  createToolScreen(page,definition('insurmountable'),[createInsurmountableTool()]);
+  createToolScreen(page,definition('direction'),[createDirectionCompanion(),direction]);
+  createToolScreen(page,definition('move'),[createMoveTool()]);
+  createToolScreen(page,definition('safety'),[createSafetyTool()]);
+  createToolScreen(page,definition('perspective'),[createPerspectiveCompanion(),perspective]);
+  createToolScreen(page,definition('pace'),[paceSuggestions]);
+  createToolScreen(page,definition('progress'),[progressCard]);
   if(progressPage){ progressPage.hidden=true; progressPage.removeAttribute('data-page'); progressPage.classList.remove('active'); }
 }
 function setupHelpPage(){
