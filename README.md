@@ -17,6 +17,20 @@ Die zentrale Frage für Features ist:
 
 > Erhöht das die Wahrscheinlichkeit eines guten Tages – oder erhöht es vor allem den Druck, einen guten Tag produzieren zu müssen?
 
+## Verbindliche Datenregel
+
+**Alle Daten, die der Nutzer in PACE eingibt und die nach der aktuellen Interaktion irgendeinen Wert behalten sollen, müssen im privaten Google Sheet persistiert und geräteübergreifend synchronisiert werden.** Lokale IndexedDB-Speicherung ist dabei nur die Offline-/Recovery-Schicht und niemals die einzige dauerhafte Quelle für Nutzerdaten.
+
+Für neue Features gilt deshalb verbindlich:
+
+- Nutzereingaben werden sofort lokal gesichert, damit PACE offline und bei Verbindungsfehlern benutzbar bleibt.
+- Dieselben Daten bekommen ein definiertes Sheet-Schema und werden über `core/sync.js` in das private PACE-Sheet übertragen.
+- Bei einer vollständigen Synchronisation müssen lokale und entfernte Daten nach einer expliziten Merge-Regel wieder zusammengeführt werden.
+- Ein Feature mit dauerhafter Nutzereingabe ist **nicht fertig**, solange nur lokale Speicherung existiert.
+- Rein flüchtige UI-Zustände wie ein geöffnetes Akkordeon, Hover/Fokus oder ein noch nicht als Inhalt gemeinter Navigationszustand müssen nicht in Sheets gespeichert werden.
+
+Diese Regel gilt auch für Werkzeugdaten. Dafür existiert der generische private Tab `Werkzeugdaten`; „Richtung finden“ und Texteingaben aus „Unüberwindbar verkleinern“ verwenden ihn bereits.
+
 ## PACE als dynamisches System
 
 PACE ist nicht als Sammlung von vier unabhängigen Tagesaufgaben gedacht. Die vier Bereiche können sich gegenseitig verstärken oder schwächen.
@@ -113,6 +127,7 @@ PACE verwendet aktuell:
 - `ErfassungKonfig` – private Konfiguration der flexiblen Erfassungsfelder und Gruppen
 - `Haltepunkte` – private Aussagen, Geschichten/Bilder/Metaphern und viele-zu-viele-Zuordnungen
 - `HaltepunktSituationen` – freiwillig festgehaltene aktuelle und später vergangene Situationen
+- `Werkzeugdaten` – geräteübergreifende Nutzereingaben und Zustände aus Regulationswerkzeugen, z. B. Fokus/Ablage aus „Richtung finden“
 
 Die App legt fehlende Tabs bei bestehender Google-Verbindung selbst an.
 
