@@ -1,6 +1,7 @@
-const CACHE = 'pace-v51';
+const CACHE = 'pace-v52';
 const ASSETS = [
   './', './index.html', './style.css', './shell-v2.css', './manifest.webmanifest', './icon.svg', './icon-maskable.svg',
+  './assets/tool-states/01_zu_viel_kommt_rein.png', './assets/tool-states/02_koerper_ist_hochgefahren.png', './assets/tool-states/03_wut_eskalation.png', './assets/tool-states/04_zu_viel_im_kopf.png', './assets/tool-states/05_alles_wirkt_riesig.png', './assets/tool-states/06_zu_viele_moeglichkeiten.png', './assets/tool-states/07_ich_bin_leer.png', './assets/tool-states/08_zu_viel_energie_im_koerper.png', './assets/tool-states/09_unsicher_oder_allein.png', './assets/tool-states/10_blick_verengt.png',
   './vendor/qrcodejs/qrcode.min.js',
   './js/main.js', './js/core/storage.js', './js/core/ui.js', './js/core/google.js', './js/core/google-picker.js', './js/core/sync.js', './js/core/collections.js',
   './js/features/day.js', './js/features/settings.js',
