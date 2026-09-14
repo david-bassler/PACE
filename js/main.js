@@ -38,6 +38,7 @@ async function boot() {
     holding,
     horizon,
     navigation,
+    regulationState,
     setupTransfer
   ] = await Promise.all([
     import('./features/day.js'),
@@ -57,6 +58,7 @@ async function boot() {
     import('./features/holding.js'),
     import('./features/horizon.js'),
     import('./features/navigation.js'),
+    import('./features/regulation-state.js'),
     import('./features/setup-transfer.js')
   ]);
 
@@ -79,13 +81,15 @@ async function boot() {
     openHolding: holding.openHoldingChooser
   });
   navigation.initNavigation();
+  regulationState.initRegulationStateFeature();
 
   settings.setExtraSheetsProvider(() => ({
     ...progress.progressSheetSpecs,
     ...wellbeing.wellbeingSheetSpecs,
     ...space.spaceSheetSpecs,
     ...tracking.trackingSheetSpecs,
-    ...holding.holdingSheetSpecs
+    ...holding.holdingSheetSpecs,
+    ...regulationState.regulationStateSheetSpecs
   }));
   settings.initSettings();
   setupTransfer.initSetupTransferFeature();
