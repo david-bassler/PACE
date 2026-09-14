@@ -1,8 +1,9 @@
-const ROOT_PAGES = new Set(['capture', 'tools', 'config']);
+const ROOT_PAGES = new Set(['capture', 'tools', 'help', 'config']);
 const PAGE_ALIASES = {
   today: 'capture',
   capture: 'capture',
   tools: 'tools',
+  help: 'help',
   progress: 'tools',
   more: 'config',
   config: 'config'
@@ -16,6 +17,19 @@ const TOOL_DEFINITIONS = [
   { key: 'perspective', icon: '◇', title: 'Perspektive wechseln', hint: 'Erinnern, Haltepunkte, Horizont' },
   { key: 'pace', icon: 'P', title: 'PACE-Vorschläge', hint: 'Direkt nach P · A · C · E' },
   { key: 'progress', icon: '↗', title: 'Fortschritt', hint: 'Lebenslandkarte und nächste Schritte' }
+];
+
+const HELP_STATES = [
+  { image: '01_zu_viel_kommt_rein.png', label: 'Zu viel kommt rein', tool: 'calm' },
+  { image: '02_koerper_ist_hochgefahren.png', label: 'Mein Körper ist hochgefahren', tool: 'calm' },
+  { image: '03_wut_eskalation.png', label: 'Ich bin in Wut/Eskalation', tool: 'calm' },
+  { image: '04_zu_viel_im_kopf.png', label: 'Zu viel im Kopf', tool: 'space' },
+  { image: '05_alles_wirkt_riesig.png', label: 'Alles wirkt riesig', tool: 'space' },
+  { image: '06_zu_viele_moeglichkeiten.png', label: 'Zu viele Möglichkeiten', tool: 'direction' },
+  { image: '07_ich_bin_leer.png', label: 'Ich bin leer', tool: 'day' },
+  { image: '08_zu_viel_energie_im_koerper.png', label: 'Ich habe zu viel Energie im Körper', tool: 'calm' },
+  { image: '09_unsicher_oder_allein.png', label: 'Ich fühle mich unsicher oder allein', tool: 'perspective' },
+  { image: '10_blick_verengt.png', label: 'Mein Blick ist völlig verengt', tool: 'perspective' }
 ];
 
 let currentTool = '';
@@ -46,6 +60,7 @@ function setupRootNavigation() {
   nav.innerHTML = [
     rootButtonMarkup('capture', 'Erfassen', '<svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg>'),
     rootButtonMarkup('tools', 'Werkzeuge', '<svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5 5L4 17l3 3 5.7-5.7a4 4 0 0 0 5-5l-2.4 2.4-3-3z"/></svg>'),
+    rootButtonMarkup('help', 'Hilfe', '<svg viewBox="0 0 24 24"><path d="M9.5 9a2.8 2.8 0 1 1 4.7 2c-1.2 1-2.2 1.5-2.2 3M12 18h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/></svg>'),
     rootButtonMarkup('config', 'Konfiguration', '<svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm8 4 2-1-2-3-2 .5a8 8 0 0 0-1.5-1.5L17 5l-3-2-1 2a8 8 0 0 0-2 0l-1-2-3 2 .5 2A8 8 0 0 0 6 8.5L4 8l-2 3 2 1a8 8 0 0 0 0 2l-2 1 2 3 2-.5A8 8 0 0 0 7.5 19L7 21l3 2 1-2a8 8 0 0 0 2 0l1 2 3-2-.5-2a8 8 0 0 0 1.5-1.5l2 .5 2-3-2-1a8 8 0 0 0 0-2Z"/></svg>')
   ].join('');
 }
@@ -154,6 +169,38 @@ function setupToolsPage() {
   }
 }
 
+function setupHelpPage() {
+  if (document.getElementById('page-help')) return;
+
+  const page = document.createElement('section');
+  page.id = 'page-help';
+  page.className = 'app-page help-page';
+  page.dataset.page = 'help';
+  page.hidden = true;
+
+  const grid = document.createElement('div');
+  grid.className = 'help-grid';
+  grid.setAttribute('aria-label', 'Hilfe nach aktuellem Zustand');
+
+  HELP_STATES.forEach(state => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'help-tile';
+    button.setAttribute('aria-label', `${state.label}: passende Werkzeuge öffnen`);
+    button.innerHTML = `<img src="./assets/tool-states/${state.image}" alt="" loading="lazy"><span>${state.label}</span>`;
+    button.addEventListener('click', () => {
+      navigateTo('tools', { scroll: false });
+      showTool(state.tool);
+    });
+    grid.appendChild(button);
+  });
+
+  page.appendChild(grid);
+  const configPage = document.getElementById('page-more');
+  if (configPage) configPage.insertAdjacentElement('beforebegin', page);
+  else document.querySelector('.app-shell')?.appendChild(page);
+}
+
 function setupConfigPage() {
   const page = document.getElementById('page-more');
   if (!page) return;
@@ -182,6 +229,7 @@ function setupShell() {
   setupRootNavigation();
   setupCapturePage();
   setupToolsPage();
+  setupHelpPage();
   setupConfigPage();
 }
 
