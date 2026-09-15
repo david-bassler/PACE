@@ -3,6 +3,7 @@ import { announce, emptyMessage } from '../core/ui.js';
 import { loadTable, replaceTable } from '../core/google.js';
 import { markDirty, registerSync } from '../core/sync.js';
 import { mergeUpdatedById } from '../core/collections.js';
+import { setTrackingWriteActions } from './tracking-domain.js';
 
 const KEY = 'pace-tracking-actions-v1';
 const SYNC_NAME = 'tracking-actions';
@@ -33,6 +34,7 @@ let data = normalizeData(loadJSON(KEY, EMPTY));
 let getTrackingConfigProvider = () => ({ fields: [] });
 let editingId = '';
 let root = null;
+setTrackingWriteActions(data.actions);
 
 function normalizeAction(raw = {}) {
   return {
@@ -98,6 +100,10 @@ export function getTrackingActions({ includeArchived = false } = {}) {
   return structuredClone(sortedActions(actions));
 }
 
+function refreshRuntimeActions() {
+  setTrackingWriteActions(data.actions);
+}
+
 function activeFields() {
   return (getTrackingConfigProvider()?.fields || [])
     .filter(field => field.status !== 'archived')
@@ -110,6 +116,7 @@ function fieldTitle(id) {
 
 function persist(sync = true) {
   saveJSON(KEY, data);
+  refreshRuntimeActions();
   render();
   if (sync) markDirty(SYNC_NAME);
 }
@@ -123,6 +130,7 @@ async function syncTrackingActions() {
   const remote = (rows || []).map(actionFromRow);
   data.actions = mergeUpdatedById(data.actions, remote).map(normalizeAction);
   saveJSON(KEY, data);
+  refreshRuntimeActions();
   await push();
   render();
 }
