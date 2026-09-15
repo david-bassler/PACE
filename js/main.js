@@ -28,6 +28,7 @@ async function boot() {
     space,
     share,
     tracking,
+    trackingActions,
     quickCapture,
     quickCaptureToolbar,
     journeyUx,
@@ -49,6 +50,7 @@ async function boot() {
     import('./features/space.js'),
     import('./features/share.js'),
     import('./features/tracking.js'),
+    import('./features/tracking-actions.js'),
     import('./features/quick-capture.js'),
     import('./features/quick-capture-toolbar.js'),
     import('./features/journey-ux.js'),
@@ -70,6 +72,7 @@ async function boot() {
   space.initSpaceFeature();
   share.initShareFeature();
   tracking.initTrackingFeature();
+  trackingActions.initTrackingActionsFeature({ getTrackingConfig: tracking.getTrackingConfig });
   quickCapture.initQuickCaptureFeature();
   quickCaptureToolbar.initQuickCaptureToolbarFeature();
   journeyUx.initJourneyUxFeature();
@@ -91,6 +94,7 @@ async function boot() {
     ...wellbeing.wellbeingSheetSpecs,
     ...space.spaceSheetSpecs,
     ...tracking.trackingSheetSpecs,
+    ...trackingActions.trackingActionSheetSpecs,
     ...holding.holdingSheetSpecs,
     ...regulationState.regulationStateSheetSpecs,
     ...userInputState.userInputStateSheetSpecs
