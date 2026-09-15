@@ -1,4 +1,4 @@
-const CACHE = 'pace-v64';
+const CACHE = 'pace-v65';
 const ASSETS = [
   './', './index.html', './style.css', './shell-v2.css', './manifest.webmanifest', './icon.svg', './icon-maskable.svg',
   './assets/tool-states/01_zu_viel_kommt_rein.png', './assets/tool-states/02_koerper_ist_hochgefahren.png', './assets/tool-states/03_wut_eskalation.png', './assets/tool-states/04_zu_viel_im_kopf.png', './assets/tool-states/05_alles_wirkt_riesig.png', './assets/tool-states/06_zu_viele_moeglichkeiten.png', './assets/tool-states/07_ich_bin_leer.png', './assets/tool-states/08_zu_viel_energie_im_koerper.png', './assets/tool-states/09_unsicher_oder_allein.png', './assets/tool-states/10_blick_verengt.png',
@@ -8,7 +8,7 @@ const ASSETS = [
   './js/features/progress.js', './js/features/progress-data.js', './js/features/progress-domain.js',
   './js/features/wellbeing.js', './js/features/wellbeing-data.js', './js/features/wellbeing-domain.js',
   './js/features/space.js', './js/features/share.js',
-  './js/features/tracking.js', './js/features/tracking-data.js', './js/features/tracking-domain.js', './js/features/tracking-sheet.js', './js/features/tracking-journal-domain.js', './js/features/tracking-integrity-v2.js', './js/features/tracking-operation-store.js', './js/features/tracking-entry-drafts.js', './js/features/tracking-entry-draft-domain.js',
+  './js/features/tracking.js', './js/features/tracking-data.js', './js/features/tracking-domain.js', './js/features/tracking-sheet.js', './js/features/tracking-journal-domain.js', './js/features/tracking-integrity-v2.js', './js/features/tracking-operation-store.js', './js/features/tracking-entry-drafts.js', './js/features/tracking-entry-draft-domain.js', './js/features/tracking-actions.js',
   './js/features/quick-capture.js', './js/features/quick-capture-domain.js', './js/features/quick-capture-toolbar.js', './js/features/journey-ux.js', './js/features/capture-integrity.js', './js/features/capture-integrity-domain.js',
   './js/features/sun-times.js', './js/features/sun-times-domain.js',
   './js/features/breath.js',
