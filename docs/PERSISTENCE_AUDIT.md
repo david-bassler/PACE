@@ -12,7 +12,7 @@ Dauerhafte inhaltliche Nutzereingaben dürfen in PACE nicht ausschließlich loka
 
 Die Abgrenzung zur Google-Drive-Backup-Policy ist in [GOOGLE_API_COMPLIANCE.md](GOOGLE_API_COMPLIANCE.md) dokumentiert.
 
-## Audit 2026-09-14
+## Audit 2026-09-15
 
 | Bereich | Lokale Speicherung | Google-Sheets-Ziel | Ergebnis |
 | --- | --- | --- | --- |
@@ -22,13 +22,16 @@ Die Abgrenzung zur Google-Drive-Backup-Policy ist in [GOOGLE_API_COMPLIANCE.md](
 | Geparkte Themen und Behalten-Einträge | `pace-space-v1` | `Geparkt`, `Behalten` | synchronisiert |
 | Haltepunkte und Situationen | `pace-holding-v1` | `Haltepunkte`, `HaltepunktSituationen` | synchronisiert |
 | Erfassungskonfiguration | `pace-tracking-config-v1` | `ErfassungKonfig` | synchronisiert |
-| Tracking-Einträge | lokale Write-/Recovery-Operationen | ausgewählte Tracking-Tabelle | synchronisiert / bis Bestätigung lokal abgesichert |
+| Erfassungs-Folgeaktionen | `pace-tracking-actions-v1` | `ErfassungAktionen` | synchronisiert |
+| Tracking-Einträge inkl. eingefrorener Folgeaktionen | lokale Write-/Recovery-Operationen | ausgewählte Tracking-Tabelle + `_PACE_Log` | synchronisiert / bis Bestätigung lokal abgesichert |
 | Richtung finden | `pace-regulation-state-v1` | `Werkzeugdaten` | synchronisiert |
 | Unüberwindbar verkleinern | `pace-regulation-state-v1` | `Werkzeugdaten` | synchronisiert |
 | Horizont / eigener Zeitraum | bisher `pace-horizon-v1` | `Nutzereingaben` | **im Audit ergänzt** |
 | Atemtempo | bisher `pace-breath-settings-v1` | `Nutzereingaben` | **im Audit ergänzt** |
 | Schnellerfassungs-Entwurf | bisher `pace-quick-capture-draft-v1` | `Nutzereingaben` | **im Audit ergänzt** |
 | Nicht abgeschickte Tracking-Dialog-Entwürfe | bisher redundanter lokaler Draft-Store | `Nutzereingaben` | **im Audit ergänzt** |
+
+Die Semantik und das Sheet-Schema der Erfassungs-Folgeaktionen sind in [ERFASSUNG_FOLGEAKTIONEN.md](ERFASSUNG_FOLGEAKTIONEN.md) festgehalten. Die dort beschriebene Konfiguration ist bewusst maschinenlesbar, damit sie später auch über einen Chat-Workflow erzeugt werden kann, ohne Fachlogik im JavaScript zu hardcoden.
 
 ## Neuer Tab `Nutzereingaben`
 
@@ -52,6 +55,7 @@ Nicht jede lokale Speicherung ist eine eigenständige Nutzereingabe. Folgende Da
 - OAuth Client-ID, Spreadsheet-IDs, Picker-API-Key und ähnliche Bootstrap-Konfiguration. Diese Daten werden benötigt, um die Sheet-Verbindung überhaupt herzustellen; für Gerätewechsel gibt es den Setup-Transfer.
 - Access Tokens. Sie bleiben absichtlich ausschließlich im Arbeitsspeicher.
 - redundante Safety-Journale, Pending-Operationen und Recovery-Kopien von Tracking-Einträgen. Der fachliche Zielzustand dieser Daten ist bereits die Tracking-Tabelle; die lokalen Kopien existieren nur bis zur bestätigten Übertragung bzw. für Recovery.
+- eingefrorene Folgeaktionen innerhalb einer Pending-Tracking-Operation. Sie sind keine zweite Konfigurationsquelle, sondern der unveränderliche Ausführungsplan genau dieser bereits ausgelösten Erfassung.
 - abgeleitete UI-Komfortdaten wie zuletzt verwendete Emojis oder automatisch gelernte Dezimalvorschläge. Sie sind keine autoritativen Nutzerdaten und können ohne Informationsverlust neu entstehen.
 - temporäre, nicht persistierte UI-Zustände wie geöffnete Dialoge, Filtertexte oder aktuell markierte Vorschlagsbuttons.
 
@@ -69,5 +73,6 @@ Vor Merge eines Features mit Nutzerinput prüfen:
 6. Wird lokaler Recovery-Speicher erst entfernt, wenn die eigentliche Übertragung bestätigt ist?
 7. Entsteht durch das Feature versehentlich ein zweiter autoritativer entwicklerkontrollierter Datenbestand oder ein Drive-Backup-Modell?
 8. Bleibt der OAuth-Zugriff innerhalb des vorgesehenen `drive.file`-Modells? Falls nicht, ist vor Umsetzung eine neue Policy-Prüfung nötig.
+9. Wenn eine Erfassung weitere Schreibwirkungen hat: Werden diese als Teil derselben Operation eingefroren und idempotent über das Integritätsjournal ausgeführt?
 
 Wenn Frage 2 mit **ja** beantwortet wird und Frage 3 keine Antwort hat, ist das Feature noch nicht vollständig.
