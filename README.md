@@ -19,7 +19,9 @@ Die zentrale Frage für Features ist:
 
 ## Verbindliche Datenregel
 
-**Alle Daten, die der Nutzer in PACE eingibt und die nach der aktuellen Interaktion irgendeinen Wert behalten sollen, müssen im privaten Google Sheet persistiert und geräteübergreifend synchronisiert werden.** Lokale IndexedDB-Speicherung ist dabei nur die Offline-/Recovery-Schicht und niemals die einzige dauerhafte Quelle für Nutzerdaten.
+**Alle Daten, die der Nutzer in PACE eingibt und die nach der aktuellen Interaktion irgendeinen Wert behalten sollen, müssen im nutzereigenen Google Sheet persistiert und geräteübergreifend synchronisiert werden.** Google Sheets ist dabei die autoritative dauerhafte Datenebene; lokale IndexedDB-Speicherung ist nur Offline-/Recovery-/Queue-Schicht und niemals die einzige dauerhafte Quelle für Nutzerdaten.
+
+PACE verwendet Google Drive / Google Sheets ausdrücklich **nicht als sekundäres Backup-Ziel eines separaten entwicklerkontrollierten Backends**. Die Abgrenzung zur Google-Drive-Backup-Policy und die daraus folgenden Architekturregeln stehen in [docs/GOOGLE_API_COMPLIANCE.md](docs/GOOGLE_API_COMPLIANCE.md).
 
 Für neue Features gilt deshalb verbindlich:
 
@@ -108,7 +110,7 @@ Im selben Repository ist eine separate Node-App zur Übernahme von Fitbit-/Googl
 
 Das öffentliche GitHub-Repository enthält **nur App-Logik, UI, generische Erklärungstexte und PWA-Dateien**.
 
-Persönliche Inhalte gehören ausschließlich in das private Google Sheet und in den lokalen IndexedDB-Speicher des Browsers. Insbesondere gehören persönliche Zielbereiche, Beispiele und Resonanzgeschichten **nicht** ins Repository.
+Persönliche Inhalte gehören in die nutzereigenen privaten Google Sheets. Lokale IndexedDB-Kopien dienen nur Offline-Nutzung, Recovery und ausstehender Synchronisation. Insbesondere gehören persönliche Zielbereiche, Beispiele und Resonanzgeschichten **nicht** ins Repository.
 
 ### Private Sheet-Tabs
 
@@ -128,6 +130,7 @@ PACE verwendet aktuell:
 - `Haltepunkte` – private Aussagen, Geschichten/Bilder/Metaphern und viele-zu-viele-Zuordnungen
 - `HaltepunktSituationen` – freiwillig festgehaltene aktuelle und später vergangene Situationen
 - `Werkzeugdaten` – geräteübergreifende Nutzereingaben und Zustände aus Regulationswerkzeugen, z. B. Fokus/Ablage aus „Richtung finden“
+- `Nutzereingaben` – geräteübergreifende Zustände und Entwürfe, die nicht sinnvoll in einen fachlichen Haupttab passen, z. B. Horizont, Atemtempo und noch nicht abgeschickte Erfassungsentwürfe
 
 Die App legt fehlende Tabs bei bestehender Google-Verbindung selbst an.
 
@@ -139,6 +142,8 @@ Die Features arbeiten weiterhin mit einem synchronen In-Memory-Cache; Schreibvor
 
 `localStorage` bleibt nur als technischer Fallback erhalten, falls IndexedDB im Browser tatsächlich nicht verfügbar oder nicht nutzbar ist.
 
+Lokale persistente Kopien werden in PACE als **Offline-Kopie**, **Recovery-Kopie** oder **Write-Queue** behandelt. Sie sind nicht als eigenständiges „Google-Backup“ konzipiert.
+
 ## Google Sheets
 
 PACE verwendet Googles OAuth Token Model direkt im Browser und fordert nur:
@@ -146,6 +151,24 @@ PACE verwendet Googles OAuth Token Model direkt im Browser und fordert nur:
 `https://www.googleapis.com/auth/drive.file`
 
 Es wird **kein Client Secret** verwendet. Die Client-ID und Spreadsheet-ID werden lokal in IndexedDB gespeichert; der kurzlebige Access Token bleibt nur im Arbeitsspeicher.
+
+### Datenmodell und Google-Drive-Policy
+
+Das vom Nutzer erstellte oder ausgewählte Google Sheet ist die **autoritative dauerhafte Datenquelle** für die jeweiligen PACE-Daten. PACE unterhält keine separate Cloud-Datenbank, deren Inhalt zusätzlich nach Google Drive gespiegelt oder dort als Sicherung abgelegt wird.
+
+Google beschreibt Drive-integrierte Apps ausdrücklich auch als Apps, die Drive „as its storage solution“ verwenden. Gleichzeitig untersagen die Drive-Nutzungsbedingungen ohne vorherige schriftliche Zustimmung das Backup von Nutzer- oder App-Inhalten aus einer Entwickler-App bzw. einem Entwicklerprojekt nach Drive. PACE ist deshalb bewusst als Storage-/Productivity-Modell und nicht als Drive-Backup-Modell aufgebaut.
+
+Relevante Google-Dokumentation:
+
+- Drive als Speicherlösung für Apps: https://developers.google.com/workspace/drive/api/guides/about-sdk
+- Drive API Terms / verbotene Backup-Nutzung: https://developers.google.com/workspace/drive/api/terms
+- `drive.file` und empfohlene eingeschränkte Dateiberechtigungen: https://developers.google.com/workspace/drive/api/guides/api-specific-auth
+- Sheets API Scopes: https://developers.google.com/workspace/sheets/api/scopes
+- Google Workspace API User Data Policy: https://developers.google.com/workspace/workspace-api-user-data-developer-policy
+
+Die ausführliche PACE-spezifische Auslegung und Review-Regel steht in [docs/GOOGLE_API_COMPLIANCE.md](docs/GOOGLE_API_COMPLIANCE.md).
+
+Für Produkttexte und Architektur-Dokumentation verwenden wir deshalb **Speicherung in Google Sheets**, **Synchronisierung**, **Offline-Kopie**, **Recovery-Kopie** und **Write-Queue**. Die aktuelle Architektur wird nicht als „Backup nach Google Drive“ beschrieben.
 
 ### Einmalige Einrichtung
 
@@ -213,12 +236,12 @@ Für neu ergänzte Datumszellen übernimmt PACE das Zellformat des letzten vorha
 Für die ursprünglichen P/A/C/E-Vorschläge erwartet die Importfunktion:
 
 ```text
-Typ	Bereich	Text
-VORSCHLAG	P	...
-VORSCHLAG	A	...
-VORSCHLAG	C	...
-VORSCHLAG	E	...
-FESTSTECKEN		...
+Typ\tBereich\tText
+VORSCHLAG\tP\t...
+VORSCHLAG\tA\t...
+VORSCHLAG\tC\t...
+VORSCHLAG\tE\t...
+FESTSTECKEN\t\t...
 ```
 
 Die neueren privaten Daten werden direkt über die App gepflegt.
@@ -252,8 +275,7 @@ URL:
 
 ## Offline
 
-Das App-Shell funktioniert offline. Bereits geladene private Inhalte bleiben im lokalen Browser-Cache verfügbar. Änderungen werden lokal gespeichert und bei bestehender Google-Verbindung wieder synchronisiert.
-
+Das App-Shell funktioniert offline. Bereits geladene private Inhalte bleiben als lokale Offline-/Recovery-Kopie verfügbar. Änderungen werden lokal zwischengespeichert und bei bestehender Google-Verbindung mit der autoritativen Google-Sheets-Datenquelle synchronisiert.
 
 ## Synchronisierung und Rate Limits
 
