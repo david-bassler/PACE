@@ -1,14 +1,47 @@
-export function buildTrackingWritePlan(fields = [], valuesById = {}) {
-  return fields
-    .map(field => ({
-      fieldId: field.id,
-      title: field.title,
-      sheetTab: field.sheetTab || '',
-      columnId: field.columnId || '',
-      writeMode: field.writeMode || 'append_newline',
-      value: String(valuesById[field.id] ?? '').trim()
+const FOLLOW_UP_WRITE_MODES = new Set(['add_number', 'replace', 'append_newline']);
+
+function followUpMatches(action, fieldId, value) {
+  if (!action || action.status === 'archived') return false;
+  if (String(action.triggerFieldId || '') !== String(fieldId || '')) return false;
+  if (action.condition === 'equals') return String(value) === String(action.conditionValue ?? '').trim();
+  return Boolean(String(value).trim());
+}
+
+function followUpWrites(field, value, actions = []) {
+  return [...actions]
+    .filter(action => followUpMatches(action, field.id, value))
+    .sort((a, b) => Number(a.order || 0) - Number(b.order || 0) || String(a.id || '').localeCompare(String(b.id || ''), 'de'))
+    .map(action => ({
+      fieldId: `action:${action.id || ''}`,
+      actionId: String(action.id || ''),
+      triggerFieldId: String(field.id || ''),
+      title: `${field.title || 'Erfassung'} · Folgeaktion`,
+      sheetTab: String(action.sheetTab || '').trim(),
+      columnId: String(action.columnId ?? '').trim(),
+      writeMode: FOLLOW_UP_WRITE_MODES.has(action.operation) ? action.operation : 'replace',
+      value: String(action.value ?? '').trim()
     }))
     .filter(item => item.value);
+}
+
+export function buildTrackingWritePlan(fields = [], valuesById = {}, actions = []) {
+  return fields
+    .map(field => {
+      const value = String(valuesById[field.id] ?? '').trim();
+      if (!value) return null;
+      const item = {
+        fieldId: field.id,
+        title: field.title,
+        sheetTab: field.sheetTab || '',
+        columnId: field.columnId || '',
+        writeMode: field.writeMode || 'append_newline',
+        value
+      };
+      const additional = followUpWrites(field, value, actions);
+      if (additional.length) item.followUpWrites = additional;
+      return item;
+    })
+    .filter(Boolean);
 }
 
 function cellValue(row) {
@@ -233,11 +266,27 @@ export function findTrackingDateRow(firstColumnValues = [], dateKey, { afterRow 
   return matches[0];
 }
 
+function numericTrackingValue(value, { emptyAsZero = false } = {}) {
+  const raw = String(value ?? '').trim();
+  if (!raw && emptyAsZero) return 0;
+  const normalized = raw.replace(',', '.');
+  if (!/^[+-]?\d+(?:\.\d+)?$/.test(normalized)) {
+    throw new Error(`„${raw || 'leer'}“ ist keine Zahl; die konfigurierte Addition wurde nicht ausgeführt.`);
+  }
+  const number = Number(normalized);
+  if (!Number.isFinite(number)) throw new Error('Die konfigurierte Addition enthält keine gültige Zahl.');
+  return number;
+}
+
 export function applyTrackingWriteMode(existingValue, newValue, writeMode = 'append_newline') {
   const existing = String(existingValue ?? '');
   const incoming = String(newValue ?? '');
 
   if (writeMode === 'replace') return incoming;
+  if (writeMode === 'add_number') {
+    const sum = numericTrackingValue(existing, { emptyAsZero: true }) + numericTrackingValue(incoming);
+    return Number(sum.toFixed(12));
+  }
   if (writeMode !== 'append_newline') throw new Error(`Unbekannter Schreibmodus: ${writeMode}`);
   if (!existing) return incoming;
   if (!incoming) return existing;
