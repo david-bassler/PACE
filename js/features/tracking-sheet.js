@@ -76,6 +76,20 @@ async function batchGetRangesChunked(spreadsheetId, ranges, options = {}) {
   return result;
 }
 
+function expandTrackingPlan(plan = []) {
+  const expanded = [];
+  for (const raw of plan) {
+    if (!raw) continue;
+    const { followUpWrites, ...primary } = raw;
+    expanded.push(primary);
+    if (!Array.isArray(followUpWrites)) continue;
+    for (const followUp of followUpWrites) {
+      if (followUp) expanded.push({ ...followUp });
+    }
+  }
+  return expanded;
+}
+
 function validatePlan(plan) {
   if (!plan.length) throw new Error('Keine Eingabe zum Speichern vorhanden.');
   for (const item of plan) {
@@ -135,10 +149,13 @@ function cellGridRange(sheetId, row, column) {
 }
 
 function updateCellRequest(target, value, note) {
+  const userEnteredValue = typeof value === 'number' && Number.isFinite(value)
+    ? { numberValue: value }
+    : { stringValue: String(value ?? '') };
   return {
     updateCells: {
       range: cellGridRange(target.sheetId, target.row, target.column),
-      rows: [{ values: [{ userEnteredValue: { stringValue: String(value ?? '') }, note: String(note ?? '') }] }],
+      rows: [{ values: [{ userEnteredValue, note: String(note ?? '') }] }],
       fields: 'userEnteredValue,note'
     }
   };
@@ -548,7 +565,8 @@ async function materializeTargets(spreadsheetId, journalEvents, targetsMap, targ
 }
 
 async function writeTrackingPlanLocked(plan, { now = new Date(), operationId = '', source = 'tracking' } = {}) {
-  validatePlan(plan);
+  const expandedPlan = expandTrackingPlan(plan);
+  validatePlan(expandedPlan);
   const config = getConfig();
   if (!config.trackingSheetId) throw new Error('Bitte zuerst in den Einstellungen eine Tracking-Tabelle auswählen.');
 
@@ -566,7 +584,7 @@ async function writeTrackingPlanLocked(plan, { now = new Date(), operationId = '
 
   let journalEvents = await readJournal(config.trackingSheetId);
   const existingIds = new Set(journalEvents.map(event => event.eventId));
-  const candidates = plan.map((item, index) => ({
+  const candidates = expandedPlan.map((item, index) => ({
     eventId: operationItemId(stableOperationId, index),
     operationId: stableOperationId,
     createdAt: now.toISOString(),
@@ -653,6 +671,7 @@ async function writeTrackingPlanLocked(plan, { now = new Date(), operationId = '
     dateKey: targetDate,
     timeZone,
     fieldCount: plan.length,
+    writeCount: expandedPlan.length,
     cellCount: currentTargetKeys.length,
     filledDateCount: resolved.filledDateCount,
     operationId: stableOperationId,
