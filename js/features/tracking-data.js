@@ -16,7 +16,8 @@ export const INPUT_TYPES = {
 
 export const WRITE_MODES = {
   append_newline: 'mit Zeilenumbruch anhängen',
-  replace: 'Zellinhalt ersetzen'
+  replace: 'Zellinhalt ersetzen',
+  add_number: 'Zahl addieren'
 };
 
 function normalizeType(value) {
