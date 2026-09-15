@@ -1,4 +1,11 @@
 const FOLLOW_UP_WRITE_MODES = new Set(['add_number', 'replace', 'append_newline']);
+let configuredFollowUpActions = [];
+
+export function setTrackingWriteActions(actions = []) {
+  configuredFollowUpActions = Array.isArray(actions)
+    ? actions.map(action => ({ ...action })).filter(action => action.status !== 'archived')
+    : [];
+}
 
 function followUpMatches(action, fieldId, value) {
   if (!action || action.status === 'archived') return false;
@@ -7,7 +14,7 @@ function followUpMatches(action, fieldId, value) {
   return Boolean(String(value).trim());
 }
 
-function followUpWrites(field, value, actions = []) {
+function followUpWrites(field, value, actions = configuredFollowUpActions) {
   return [...actions]
     .filter(action => followUpMatches(action, field.id, value))
     .sort((a, b) => Number(a.order || 0) - Number(b.order || 0) || String(a.id || '').localeCompare(String(b.id || ''), 'de'))
@@ -24,7 +31,7 @@ function followUpWrites(field, value, actions = []) {
     .filter(item => item.value);
 }
 
-export function buildTrackingWritePlan(fields = [], valuesById = {}, actions = []) {
+export function buildTrackingWritePlan(fields = [], valuesById = {}, actions = configuredFollowUpActions) {
   return fields
     .map(field => {
       const value = String(valuesById[field.id] ?? '').trim();
