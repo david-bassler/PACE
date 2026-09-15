@@ -127,6 +127,7 @@ PACE verwendet aktuell:
 - `Geparkt` – offene Schleifen mit nächstem Schritt / Wiederaufnahme
 - `Behalten` – kurze Savour-Marker
 - `ErfassungKonfig` – private Konfiguration der flexiblen Erfassungsfelder und Gruppen
+- `ErfassungAktionen` – generische Folgeaktionen von Erfassungsfeldern, z. B. einen Zahlenwert in einer anderen stabil adressierten Spalte erhöhen
 - `Haltepunkte` – private Aussagen, Geschichten/Bilder/Metaphern und viele-zu-viele-Zuordnungen
 - `HaltepunktSituationen` – freiwillig festgehaltene aktuelle und später vergangene Situationen
 - `Werkzeugdaten` – geräteübergreifende Nutzereingaben und Zustände aus Regulationswerkzeugen, z. B. Fokus/Ablage aus „Richtung finden“
@@ -215,10 +216,19 @@ PACE kann eine private, geräteübergreifend synchronisierbare Erfassungskonfigu
 - Ziel über **Tabellenblatt + stabile Spalten-ID** statt Spaltenbuchstaben
 - Eingabetypen Text, Uhrzeit + Text, Uhrzeit, Zahl und Ja/Nein
 - Schreibmodus „mit Zeilenumbruch anhängen“ oder „ersetzen“
+- **konfigurierbare Folgeaktionen**, die bei einer Erfassung weitere stabile Zielspalten verändern können
 - dynamische Schnell-Erfassungsoberfläche aus dieser Konfiguration
 - neue Felder verwenden standardmäßig das Tabellenblatt `Tage`, können aber weiterhin auf andere Tabs zeigen
 
-Die Tracking-Tabelle wird zentral unter **Einstellungen → Google Sheets** ausgewählt. Unter **Erfassung konfigurieren** werden nur Gruppen und Felder gepflegt; dort gibt es bewusst keinen zweiten Picker.
+Die Tracking-Tabelle wird zentral unter **Einstellungen → Google Sheets** ausgewählt. Unter **Erfassung konfigurieren** werden Gruppen, Felder und zusätzliche Schreibaktionen gepflegt; dort gibt es bewusst keinen zweiten Picker.
+
+### Zusätzliche Schreibaktionen
+
+Ein Erfassungsfeld kann beim Speichern null oder mehrere zusätzliche Aktionen auslösen. Aktuell stehen dafür **Zahl addieren**, **Wert setzen/ersetzen** und **Text anhängen** zur Verfügung. Eine Aktion kann immer beim Speichern eines nichtleeren Feldes oder nur bei exakter Übereinstimmung mit einem konfigurierten Eingabewert ausgelöst werden.
+
+Auch Folgeaktionen adressieren ihr Ziel ausschließlich über **Tabellenblatt + stabile Spalten-ID**. Relative Ziele wie „nächste Spalte“ werden nicht gespeichert. Bei `Zahl addieren` gilt eine leere Zielzelle als 0; ein vorhandener nichtnumerischer Inhalt führt zum Abbruch statt zu einem stillen Überschreiben.
+
+Beim Auslösen einer Erfassung werden die zu diesem Zeitpunkt gültigen Folgeaktionen in den konkreten Schreibplan eingefroren. Primärwert und Folgeaktionen laufen unter derselben Tracking-Operation durch `_PACE_Log`; Retries dürfen eine Addition deshalb nicht mehrfach anwenden. Die vollständige Semantik, das Sheet-Schema und der Vertrag für eine spätere Konfiguration via Chat stehen in [docs/ERFASSUNG_FOLGEAKTIONEN.md](docs/ERFASSUNG_FOLGEAKTIONEN.md).
 
 Beim Speichern liest PACE die ausgewählte Tracking-Datei direkt:
 
@@ -226,8 +236,8 @@ Beim Speichern liest PACE die ausgewählte Tracking-Datei direkt:
 2. In der ersten Spalte die eindeutige Zeile mit `ID` finden.
 3. Die konfigurierte stabile Spalten-ID in die aktuelle Spaltenposition auflösen.
 4. Über die Spreadsheet-Zeitzone das heutige Datum bestimmen. Fehlt die heutige Datenzeile, ergänzt PACE ab dem letzten vorhandenen Datum alle fehlenden Kalendertage in Spalte A bis einschließlich heute.
-5. Vorhandenen Zellinhalt lesen und je nach Schreibmodus ersetzen oder mit Zeilenumbruch ergänzen.
-6. Datumsauffüllung und Zielzellen gemeinsam über einen atomaren Google-Sheets-Batch aktualisieren.
+5. Vorhandenen Zellinhalt lesen und je nach Schreibmodus ersetzen, mit Zeilenumbruch ergänzen oder bei einer Folgeaktion numerisch verändern.
+6. Datumsauffüllung und Zielzellen gemeinsam über das bestehende Integritätsjournal und Google-Sheets-Batches materialisieren und anschließend zurücklesen.
 
 Für neu ergänzte Datumszellen übernimmt PACE das Zellformat des letzten vorhandenen Datums. Bereits vorbereitete reine Tageszahlen in Spalte A (z. B. `8`, `9`, `10`) gelten als Platzhalter und dürfen durch das vollständige Datum ersetzt werden, **wenn die Zahl genau zum einzutragenden Kalendertag passt**. PACE schreibt weiterhin bewusst **nicht**, wenn die ID-Zeile oder eine konfigurierte Spalten-ID fehlt bzw. mehrdeutig ist, das letzte vorhandene Datum mehrfach vorkommt oder eine zum Auffüllen benötigte Zelle in Spalte A anderen Inhalt bzw. eine Formel enthält. Doppelte IDs werden ebenfalls blockiert; es gibt keine Ersatzspalte. Formelzellen werden nicht überschrieben.
 
